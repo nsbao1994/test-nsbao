@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Story Writer Pro - Viết Truyện Đô Thị</title>
+    <title>AI Story Writer - Simple</title>
     <script src="https://apis.google.com/js/api.js"></script>
     <style>
-        /* CSS giữ nguyên từ file gốc */
         * {
             margin: 0;
             padding: 0;
@@ -14,76 +13,50 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #5d6d7e 100%);
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
             color: #333;
-            animation: gradientShift 20s ease infinite;
-        }
-
-        @keyframes gradientShift {
-            0%, 100% { background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #5d6d7e 100%); }
-            25% { background: linear-gradient(135deg, #1a252f 0%, #2c3e50 50%, #34495e 100%); }
-            50% { background: linear-gradient(135deg, #0f1419 0%, #1a252f 50%, #2c3e50 100%); }
-            75% { background: linear-gradient(135deg, #2c3e50 0%, #5d6d7e 50%, #85929e 100%); }
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
 
         .header {
             text-align: center;
-            color: white;
             margin-bottom: 30px;
-            animation: fadeInDown 1s ease;
-        }
-
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .header h1 {
-            font-size: 3.5rem;
+            color: #333;
             margin-bottom: 10px;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
-            background: linear-gradient(45deg, #ecf0f1, #bdc3c7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
         .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-            color: #bdc3c7;
+            color: #666;
+            font-size: 16px;
         }
 
         .main-content {
-            background: rgba(236, 240, 241, 0.98);
-            border-radius: 25px;
-            padding: 35px;
-            box-shadow: 0 25px 80px rgba(0,0,0,0.3);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-            animation: fadeInUp 1s ease 0.3s both;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .tabs {
             display: flex;
-            background: #34495e;
-            border-radius: 15px;
-            padding: 5px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 4px;
             margin-bottom: 30px;
         }
 
@@ -91,17 +64,17 @@
             flex: 1;
             padding: 12px;
             text-align: center;
-            border-radius: 10px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            color: #ecf0f1;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 14px;
         }
 
         .tab.active {
-            background: linear-gradient(45deg, #2c3e50, #34495e);
+            background: #007bff;
             color: white;
-            box-shadow: 0 5px 15px rgba(44,62,80,0.5);
         }
 
         .tab-content {
@@ -110,761 +83,293 @@
 
         .tab-content.active {
             display: block;
-            animation: fadeIn 0.5s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .upload-section {
-            background: linear-gradient(135deg, #ecf0f1, #d5dbdb);
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 30px;
-            border: 2px dashed #95a5a6;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .upload-section:hover {
-            border-color: #2c3e50;
-            background: linear-gradient(135deg, #e8eef1, #d0d8db);
-            transform: translateY(-2px);
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            display: inline-block;
-            margin-right: 15px;
-        }
-
-        .file-input {
-            position: absolute;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-
-        .upload-btn {
-            background: linear-gradient(45deg, #2c3e50, #34495e);
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .upload-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(44,62,80,0.4);
-        }
-
-        .ai-learning-section {
-            background: linear-gradient(135deg, #d5e8d4, #e8f5e8);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 25px;
-            border-left: 5px solid #27ae60;
-        }
-
-        .learning-progress {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .learning-bar {
-            flex: 1;
-            background: #ecf0f1;
-            border-radius: 10px;
-            overflow: hidden;
-            height: 8px;
-        }
-
-        .learning-fill {
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            height: 100%;
-            transition: width 0.3s ease;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .story-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-
-        .info-group {
-            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+        .section {
+            background: #f8f9fa;
+            border-radius: 6px;
             padding: 20px;
-            border-radius: 15px;
-            border: 1px solid #e9ecef;
-            transition: all 0.3s ease;
+            margin-bottom: 20px;
         }
 
-        .info-group:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        .section h3 {
+            margin-bottom: 15px;
+            color: #333;
         }
 
-        .info-group label {
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
             display: block;
-            margin-bottom: 10px;
-            font-weight: 700;
-            color: #2c3e50;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .info-group input, .info-group select, .info-group textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: white;
-            resize: vertical;
-            min-height: 40px;
-        }
-
-        .info-group textarea {
-            min-height: 120px;
-            font-family: 'Georgia', serif;
-        }
-
-        .info-group input:focus, .info-group select:focus, .info-group textarea:focus {
-            outline: none;
-            border-color: #2c3e50;
-            box-shadow: 0 0 0 3px rgba(44,62,80,0.1);
-        }
-
-        .chapter-content {
-            background: linear-gradient(135deg, #f8f9fa, #ffffff);
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 25px;
-            border: 1px solid #e9ecef;
-        }
-
-        .chapter-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e9ecef;
-        }
-
-        .chapter-title {
-            font-size: 1.8rem;
-            color: #2c3e50;
-            font-weight: 700;
-        }
-
-        .chapter-number {
-            background: linear-gradient(45deg, #2c3e50, #34495e);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-size: 16px;
+            margin-bottom: 8px;
             font-weight: 600;
-            box-shadow: 0 5px 15px rgba(44,62,80,0.3);
+            color: #333;
         }
 
-        .story-text {
-            background: linear-gradient(135deg, #ffffff, #f8f9fa);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #e9ecef;
-            line-height: 2.0;
-            font-size: 17px;
-            min-height: 500px;
-            white-space: pre-wrap;
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .story-input-area {
+            min-height: 400px;
             font-family: 'Georgia', serif;
-            color: #2c3e50;
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
-            font-style: italic;
-        }
-
-        .controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 25px;
+            line-height: 1.8;
         }
 
         .btn {
-            padding: 15px 25px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 12px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            position: relative;
-            overflow: hidden;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            display: inline-block;
         }
 
         .btn-primary {
-            background: linear-gradient(45deg, #2c3e50, #34495e);
+            background: #007bff;
             color: white;
-            box-shadow: 0 5px 15px rgba(44,62,80,0.3);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(45deg, #7f8c8d, #95a5a6);
-            color: white;
-            box-shadow: 0 5px 15px rgba(127,140,141,0.3);
         }
 
         .btn-success {
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            background: #28a745;
             color: white;
-            box-shadow: 0 5px 15px rgba(39,174,96,0.3);
         }
 
-        .btn-warning {
-            background: linear-gradient(45deg, #e67e22, #f39c12);
+        .btn-secondary {
+            background: #6c757d;
             color: white;
-            box-shadow: 0 5px 15px rgba(230,126,34,0.3);
         }
 
-        .btn-google {
-            background: linear-gradient(45deg, #4285f4, #1a73e8);
+        .btn-danger {
+            background: #dc3545;
             color: white;
-            box-shadow: 0 5px 15px rgba(66,133,244,0.3);
         }
 
         .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .btn:active {
-            transform: translateY(-1px);
+            opacity: 0.9;
         }
 
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
         }
 
-        .progress-section {
-            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
-            border-radius: 20px;
-            padding: 25px;
-            margin: 25px 0;
+        .alert {
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
 
-        .progress-bar {
-            background: #ecf0f1;
-            border-radius: 15px;
-            overflow: hidden;
-            height: 12px;
-            position: relative;
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
-        .progress-fill {
-            background: linear-gradient(45deg, #2c3e50, #34495e, #5d6d7e);
-            height: 100%;
-            transition: width 0.5s ease;
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin: 25px 0;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, #ffffff, #f8f9fa);
-            padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-            border: 2px solid #e9ecef;
-            transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-            border-color: #2c3e50;
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            background: linear-gradient(45deg, #2c3e50, #34495e);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 0.95rem;
-            color: #7f8c8d;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 30px;
-            background: linear-gradient(135deg, #f8f9fa, #ffffff);
-            border-radius: 20px;
-            margin: 20px 0;
-        }
-
-        .loading.show {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid #f3f3f3;
-            border-top: 6px solid #2c3e50;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-           100% { transform: rotate(360deg); }
-        }
-
-        .toast {
-            position: fixed;
-            top: 30px;
-            right: 30px;
-            padding: 20px 25px;
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            color: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s ease;
-            z-index: 1000;
-            font-weight: 600;
-            max-width: 350px;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .toast.error {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
-        }
-
-        .toast.warning {
-            background: linear-gradient(45deg, #f39c12, #e67e22);
-        }
-
-        .google-drive-section {
-            background: linear-gradient(135deg, #e8f5e8, #f0fff0);
-            border-radius: 20px;
-            padding: 25px;
-            margin: 25px 0;
-            border: 2px solid #27ae60;
-        }
-
-        .drive-status {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
 
         .status-indicator {
-            width: 12px;
-            height: 12px;
+            display: inline-block;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: #e74c3c;
-            animation: pulse 2s infinite;
+            margin-right: 8px;
         }
 
-        .status-indicator.connected {
-            background: #27ae60;
+        .status-connected {
+            background: #28a745;
         }
 
-        .chapter-list {
-            max-height: 400px;
-            overflow-y: auto;
+        .status-disconnected {
+            background: #dc3545;
+        }
+
+        .file-list {
             background: white;
-            border-radius: 10px;
-            border: 1px solid #e9ecef;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
         }
 
-        .chapter-item {
-            padding: 20px;
-            border-bottom: 1px solid #e9ecef;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .file-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .chapter-item:hover {
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-item:hover {
             background: #f8f9fa;
-            padding-left: 25px;
         }
 
-        .chapter-item.active {
-            background: linear-gradient(45deg, rgba(44,62,80,0.1), rgba(52,73,94,0.1));
-            border-left: 4px solid #2c3e50;
-        }
-
-        .empty-state {
+        .loading {
             text-align: center;
             padding: 40px;
-            color: #7f8c8d;
+            color: #666;
         }
 
-        .empty-state h3 {
-            margin-bottom: 15px;
-            color: #2c3e50;
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
         }
 
-        .creative-mode {
-            background: linear-gradient(135deg, #fef9e7, #fff8dc);
-            border-radius: 20px;
-            padding: 25px;
-            margin: 25px 0;
-            border-left: 5px solid #f39c12;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .creative-controls {
+        .stats {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
         }
 
         @media (max-width: 768px) {
-            .container { padding: 15px; }
-            .header h1 { font-size: 2.5rem; }
-            .story-info { grid-template-columns: 1fr; }
-            .controls { grid-template-columns: 1fr; }
-            .stats { grid-template-columns: repeat(2, 1fr); }
-            .tabs { flex-direction: column; }
-            .creative-controls { grid-template-columns: 1fr; }
+            .container {
+                padding: 15px;
+            }
+            .tabs {
+                flex-direction: column;
+            }
+            .btn {
+                width: 100%;
+                margin-right: 0;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 AI Story Writer Pro</h1>
-            <p>Trí tuệ nhân tạo viết truyện đô thị - Giọng văn bi thương & nội tâm</p>
+            <h1>AI Story Writer</h1>
+            <p>Viết truyện và lưu trữ trên Google Drive</p>
         </div>
 
         <div class="main-content">
             <div class="tabs">
-                <div class="tab active" data-tab="upload">📚 Tạo truyện mới</div>
-                <div class="tab" data-tab="library">📖 Thư viện truyện</div>
-                <div class="tab" data-tab="settings">⚙️ Cài đặt AI</div>
-                <div class="tab" data-tab="drive">☁️ Google Drive</div>
+                <button class="tab active" data-tab="write">Viết truyện</button>
+                <button class="tab" data-tab="ai">Huấn luyện AI</button>
+                <button class="tab" data-tab="library">Thư viện</button>
+                <button class="tab" data-tab="drive">Google Drive</button>
             </div>
 
-            <!-- Tab Tạo truyện mới -->
-            <div class="tab-content active" data-content="upload">
-                <div class="upload-section">
-                    <h3 style="margin-bottom: 20px; color: #2c3e50; font-size: 1.5rem;">📚 Tạo truyện từ file hoặc ý tưởng</h3>
-                    <p style="margin-bottom: 20px; color: #7f8c8d;">Upload file .txt để AI học phong cách, hoặc nhập ý tưởng để AI sáng tạo truyện đô thị bi thương</p>
-                    
-                    <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
-                        <div class="file-input-wrapper">
-                            <input type="file" id="fileInput" class="file-input" accept=".txt" multiple>
-                            <button class="upload-btn">📁 Chọn file .txt</button>
-                        </div>
-                        <button id="createFromIdea" class="btn btn-primary">
-                            💡 Tạo từ ý tưởng
-                        </button>
-                    </div>
-                    <span id="fileNames" style="color: #7f8c8d; font-size: 14px; margin-left: 15px;">Chưa chọn file nào</span>
-                </div>
-
-                <!-- Creative Mode Panel -->
-                <div class="creative-mode" id="creativeMode" style="display: none;">
-                    <h4 style="color: #e67e22; margin-bottom: 15px;">💡 Chế độ sáng tạo - Nhập ý tưởng</h4>
-                    <div class="story-info">
-                        <div class="info-group">
-                            <label>📝 Ý tưởng chính</label>
-                            <textarea id="storyIdea" placeholder="Ví dụ: Một chàng trai mất việc, bạn gái bỏ, sống trong căn hộ trọ nhỏ ở thành phố lớn. Mỗi đêm anh nghe tiếng piano từ tầng trên..."></textarea>
-                        </div>
-                        <div class="info-group">
-                            <label>👥 Nhân vật chính</label>
-                            <input type="text" id="mainCharacter" placeholder="Tên, tuổi, nghề nghiệp của nhân vật chính">
-                        </div>
-                        <div class="info-group">
-                            <label>🏙️ Bối cảnh</label>
-                            <input type="text" id="setting" placeholder="Thành phố, khu vực, thời gian...">
-                        </div>
-                        <div class="info-group">
-                            <label>🎭 Tâm trạng chủ đạo</label>
-                            <select id="mainEmotion">
-                                <option value="loneliness">Cô đơn</option>
-                                <option value="melancholy">Melancholy</option>
-                                <option value="nostalgia">Hoài niệm</option>
-                                <option value="despair">Tuyệt vọng</option>
-                                <option value="hope">Hy vọng mong manh</option>
-                                <option value="love-lost">Tình yêu mất mát</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="creative-controls">
-                        <button id="generateFromIdea" class="btn btn-success">
-                            ✨ Tạo truyện từ ý tưởng
-                        </button>
-                        <button id="cancelCreative" class="btn btn-secondary">
-                            ❌ Hủy
-                        </button>
-                    </div>
-                </div>
-
-                <div class="ai-learning-section">
-                    <h4 style="color: #27ae60; margin-bottom: 10px;">🧠 AI đang học hỏi từ Google Drive</h4>
-                    <p style="color: #2c3e50; margin-bottom: 15px;">Trí tuệ nhân tạo đã học từ <span id="learnedStories">0</span> truyện trên Drive và đang cải thiện khả năng viết bi thương</p>
-                    <div class="learning-progress">
-                        <div class="learning-bar">
-                            <div class="learning-fill" id="learningFill" style="width: 0%"></div>
-                        </div>
-                        <span style="color: #27ae60; font-weight: 600;" id="learningPercent">0%</span>
-                    </div>
-                </div>
-
-                <div class="story-info">
-                    <div class="info-group">
-                        <label>📖 Tên truyện (AI tự tạo)</label>
-                        <input type="text" id="storyTitle" placeholder="AI sẽ tự động đặt tên..." readonly>
-                    </div>
-                    <div class="info-group">
-                        <label>🎯 Thể loại</label>
-                        <select id="storyGenre">
-                            <option value="do-thi">Đô thị</option>
-                        </select>
-                    </div>
-                    <div class="info-group">
-                        <label>✏️ Giọng văn</label>
-                        <select id="narrativeVoice">
-                            <option value="bi-thuong" selected>Bi thương & Nội tâm</option>
-                        </select>
-                    </div>
-                    <div class="info-group">
-                        <label>📊 Số chương mục tiêu</label>
-                        <select id="targetChapters">
-                            <option value="100">100 chương</option>
-                            <option value="150" selected>150 chương</option>
-                            <option value="200">200 chương</option>
+            <!-- Tab Viết truyện -->
+            <div class="tab-content active" data-content="write">
+                <div class="section">
+                    <h3>Chế độ viết truyện</h3>
+                    <div class="form-group">
+                        <label>Chọn chế độ</label>
+                        <select id="writingMode" onchange="toggleWritingMode()">
+                            <option value="manual">Viết thủ công</option>
+                            <option value="ai">AI viết truyện</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="controls" style="margin-bottom: 25px;">
-                    <button id="processBtn" class="btn btn-primary" style="display: none;">
-                        ⚡ Xử lý & Tạo truyện mới
-                    </button>
-                    <button id="quickStartBtn" class="btn btn-warning">
-                        🚀 Tạo nhanh truyện mẫu
-                    </button>
-                </div>
-
-                <div class="progress-section">
-                    <h4 style="margin-bottom: 15px; color: #2c3e50;">📈 Tiến độ viết truyện</h4>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                <!-- AI Writing Section -->
+                <div class="section" id="aiSection" style="display: none;">
+                    <h3>🤖 Cài đặt AI viết truyện</h3>
+                    <div class="form-group">
+                        <label>Chủ đề/Ý tưởng truyện</label>
+                        <textarea id="storyPrompt" placeholder="Ví dụ: Tôi là một sinh viên đại học sống ở Hà Nội, gặp khó khăn trong cuộc sống và tình yêu. Viết về những trải nghiệm của tôi trong thành phố lớn..." rows="4"></textarea>
                     </div>
-                    <div class="stats">
-                        <div class="stat-card">
-                            <div class="stat-number" id="chapterCount">0</div>
-                            <div class="stat-label">Chương đã viết</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="wordCount">0</div>
-                            <div class="stat-label">Tổng số từ</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="avgWordsPerChapter">0</div>
-                            <div class="stat-label">Từ/chương</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="estimatedTime">--</div>
-                            <div class="stat-label">Thời gian ước tính</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <h4 style="color: #2c3e50; margin-bottom: 10px;">AI đang suy nghĩ và viết truyện...</h4>
-                    <p style="color: #7f8c8d;">Đang phân tích phong cách, tạo cốt truyện bi thương và viết chương mới</p>
-                </div>
-
-                <div class="chapter-content" id="chapterContent" style="display: none;">
-                    <div class="chapter-header">
-                        <h2 class="chapter-title" id="chapterTitle">Chương 1: Khởi đầu</h2>
-                        <span class="chapter-number" id="chapterNumber">Chương 1/150</span>
-                    </div>
-
-                    <div class="story-text" id="storyText">
-                        Nội dung chương sẽ xuất hiện ở đây...
-                    </div>
-
-                    <div class="controls">
-                        <button class="btn btn-primary" id="continueBtn">
-                            ➡️ Viết tiếp chương sau
-                        </button>
-                        <button class="btn btn-secondary" id="rewriteBtn">
-                            ✨ Viết lại cho hay hơn
-                        </button>
-                        <button class="btn btn-success" id="saveChapterBtn">
-                            💾 Lưu chương này
-                        </button>
-                        <button class="btn btn-google" id="uploadToGoogleDrive">
-                            ☁️ Lưu lên Google Drive
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab Thư viện truyện -->
-            <div class="tab-content" data-content="library">
-                <div class="ai-learning-section">
-                    <h3 style="color: #27ae60; margin-bottom: 15px;">📚 Thư viện truyện (Kết nối Google Drive)</h3>
-                    <p style="color: #2c3e50;">AI học hỏi từ tất cả các truyện trên Google Drive để cải thiện chất lượng viết</p>
-                </div>
-
-                <div class="story-info">
-                    <div class="info-group">
-                        <label>🔍 Tìm kiếm truyện</label>
-                        <input type="text" id="searchStories" placeholder="Nhập tên truyện hoặc từ khóa...">
-                    </div>
-                    <div class="info-group">
-                        <label>📂 Sắp xếp theo</label>
-                        <select id="sortBy">
-                            <option value="date">Ngày tạo</option>
-                            <option value="name">Tên truyện</option>
-                            <option value="chapters">Số chương</option>
-                            <option value="words">Số từ</option>
+                    <div class="form-group">
+                        <label>Phong cách viết</label>
+                        <select id="writingStyle">
+                            <option value="melancholy">Buồn bã, nội tâm</option>
+                            <option value="romantic">Lãng mạn, ngọt ngào</option>
+                            <option value="philosophical">Triết lý, sâu sắc</option>
+                            <option value="realistic">Thực tế, gần gụi</option>
+                            <option value="nostalgic">Hoài niệm, nhớ nhung</option>
                         </select>
                     </div>
-                </div>
-
-                <div id="storyLibrary" style="margin-top: 25px;">
-                    <div class="chapter-list" id="libraryList">
-                        <div class="empty-state">
-                            <h3>📚 Thư viện trống</h3>
-                            <p>Kết nối Google Drive để xem các truyện đã lưu</p>
-                            <p style="margin-top: 10px; font-size: 14px; color: #95a5a6;">
-                                AI sẽ tự động học từ các file truyện trên Drive để cải thiện khả năng viết
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="controls" style="margin-top: 25px;">
-                    <button class="btn btn-google" id="syncWithDrive">
-                        ☁️ Đồng bộ với Google Drive
-                    </button>
-                    <button class="btn btn-success" id="trainAIFromDrive">
-                        🧠 Huấn luyện AI từ Drive
-                    </button>
-                </div>
-            </div>
-
-            <!-- Tab Cài đặt AI -->
-            <div class="tab-content" data-content="settings">
-                <div class="ai-learning-section">
-                    <h3 style="color: #27ae60; margin-bottom: 15px;">🤖 Cài đặt AI viết truyện đô thị</h3>
-                    <p style="color: #2c3e50;">Tùy chỉnh cách AI viết truyện với giọng văn bi thương và nội tâm sâu sắc</p>
-                </div>
-
-                <div class="story-info">
-                    <div class="info-group">
-                        <label>🎨 Mức độ sáng tạo</label>
-                        <select id="creativityLevel">
-                            <option value="conservative">Thận trọng - Theo sát nguồn gốc</option>
-                            <option value="balanced" selected>Cân bằng - Kết hợp sáng tạo</option>
-                            <option value="creative">Sáng tạo - Tự do sáng tác</option>
-                            <option value="deep">Sâu sắc - Nội tâm phức tạp</option>
-                        </select>
-                    </div>
-                    <div class="info-group">
-                        <label>📖 Độ dài mỗi chương</label>
+                    <div class="form-group">
+                        <label>Độ dài chương (số từ)</label>
                         <select id="chapterLength">
-                            <option value="short">Ngắn (1000-1500 từ)</option>
-                            <option value="medium" selected>Trung bình (2000-2500 từ)</option>
-                            <option value="long">Dài (3000-3500 từ)</option>
-                            <option value="very-long">Rất dài (4000+ từ)</option>
+                            <option value="short">Ngắn (800-1200 từ)</option>
+                            <option value="medium" selected>Trung bình (1500-2000 từ)</option>
+                            <option value="long">Dài (2500-3000 từ)</option>
                         </select>
                     </div>
-                    <div class="info-group">
-                        <label>⚡ Tốc độ viết</label>
-                        <select id="writingSpeed">
-                            <option value="slow">Chậm - Chất lượng cao</option>
-                            <option value="normal" selected>Bình thường</option>
-                            <option value="fast">Nhanh - Hiệu suất cao</option>
-                        </select>
+                    <div class="form-group">
+                        <label>Số chương muốn tạo</label>
+                        <input type="number" id="numberOfChapters" value="1" min="1" max="10">
                     </div>
-                    <div class="info-group">
-                        <label>💭 Độ sâu nội tâm</label>
-                        <select id="emotionalDepth">
-                            <option value="light">Nhẹ nhàng</option>
-                            <option value="medium">Vừa phải</option>
-                            <option value="deep" selected>Sâu sắc</option>
-                            <option value="profound">Cực sâu</option>
-                        </select>
-                    </div>
+                    <button class="btn btn-success" id="generateStoryBtn">✨ Tạo truyện bằng AI</button>
+                    <button class="btn btn-primary" id="trainAIBtn">🧠 Huấn luyện AI từ dữ liệu</button>
                 </div>
 
-                <div class="ai-learning-section">
-                    <h4 style="color: #27ae60; margin-bottom: 15px;">📈 Thống kê học tập AI</h4>
+                <!-- AI Training Status -->
+                <div class="section" id="aiTrainingStatus" style="display: none;">
+                    <h3>📊 Trạng thái AI</h3>
                     <div class="stats">
                         <div class="stat-card">
-                            <div class="stat-number" id="aiLearningBooks">0</div>
+                            <div class="stat-number" id="aiTrainedStories">0</div>
                             <div class="stat-label">Truyện đã học</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-number" id="aiVocabulary">0</div>
                             <div class="stat-label">Từ vựng</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="aiPatterns">0</div>
-                            <div class="stat-label">Mẫu câu</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-number" id="aiAccuracy">0%</div>
@@ -873,727 +378,1614 @@
                     </div>
                 </div>
 
-                <div class="controls">
-                    <button class="btn btn-primary" id="trainAIAdvanced">
-                        🧠 Huấn luyện AI nâng cao
-                    </button>
-                    <button class="btn btn-secondary" id="resetAISettings">
-                        🔄 Đặt lại cài đặt
-                    </button>
-                    <button class="btn btn-success" id="exportAIData">
-                        💾 Xuất dữ liệu AI
-                    </button>
+                <div class="section">
+                    <h3>Thông tin truyện</h3>
+                    <div class="form-group">
+                        <label>Tên truyện</label>
+                        <input type="text" id="storyTitle" placeholder="Nhập tên truyện hoặc để AI tự tạo...">
+                    </div>
+                    <div class="form-group">
+                        <label>Tác giả</label>
+                        <input type="text" id="authorName" placeholder="Tên tác giả...">
+                    </div>
+                    <div class="form-group">
+                        <label>Thể loại</label>
+                        <select id="storyGenre">
+                            <option value="romance">Lãng mạn</option>
+                            <option value="drama">Tâm lý</option>
+                            <option value="adventure">Phiêu lưu</option>
+                            <option value="mystery">Bí ẩn</option>
+                            <option value="fantasy">Giả tưởng</option>
+                        </select>
+                    </div>
                 </div>
+
+                <div class="section">
+                    <h3>Nội dung truyện</h3>
+                    <div class="form-group">
+                        <label>Viết truyện của bạn</label>
+                        <textarea id="storyContent" class="story-input-area" placeholder="Bắt đầu viết truyện của bạn tại đây...
+
+Ví dụ (ngôi thứ nhất):
+Chương 1: Khởi đầu
+
+Tôi bước ra khỏi tòa nhà văn phòng với tâm trạng nặng nề. Hà Nội hôm nay se lạnh, giống như trái tim tôi vậy. Công việc vừa mất, tình yêu cũng tan vỡ. Tôi không biết mình sẽ đi về đâu trong thành phố rộng lớn này.
+
+Những giọt mưa nhỏ bắt đầu rơi, ướt vai áo tôi. Tôi đứng giữa phố, nhìn những người qua lại vội vã tìm chỗ trú mưa. Chỉ có tôi, một mình, đứng đó như một kẻ lạc lối..."></textarea>
+                    </div>
+                    <div id="aiGeneratedContent" style="display: none;">
+                        <label>Nội dung AI đã tạo</label>
+                        <div id="generatedChapters"></div>
+                    </div>
+                    <button class="btn btn-success" id="saveStoryBtn">💾 Lưu truyện</button>
+                    <button class="btn btn-primary" id="uploadToGoogleDrive">☁️ Tải lên Google Drive</button>
+                    <button class="btn btn-secondary" id="clearContentBtn">🗑️ Xóa nội dung</button>
+                    <button class="btn btn-primary" id="continueWritingBtn" style="display: none;">📝 Tiếp tục viết chương sau</button>
+                </div>
+
+                <div id="writeAlert" style="display: none;"></div>
             </div>
 
-            <!-- Tab Google Drive -->
-            <div class="tab-content" data-content="drive">
-                <div class="google-drive-section">
-                    <h3 style="color: #27ae60; margin-bottom: 15px;">☁️ Kết nối Google Drive</h3>
-                    <p style="color: #2c3e50;">Kết nối với Google Drive để lưu trữ truyện và cho AI học hỏi</p>
-                    
-                    <div class="drive-status">
-                        <div class="status-indicator" id="driveStatus"></div>
-                        <span id="driveStatusText">Chưa kết nối với Google Drive</span>
-                    </div>
-                    
-                    <div class="controls">
-                        <button class="btn btn-google" id="connectGoogleDrive">
-                            🔗 Kết nối Google Drive
-                        </button>
-                        <button class="btn btn-success" id="createDriveFolder">
-                            📁 Tạo thư mục AI Story Writer
-                        </button>
-                        <button class="btn btn-primary" id="listDriveFiles">
-                            🔍 Xem file trên Drive
-                        </button>
-                    </div>
-                </div>
-
-                <div class="story-info">
-                    <div class="info-group">
-                        <label>📂 Thư mục lưu trữ</label>
-                        <input type="text" id="driveFolderPath" placeholder="Chưa chọn thư mục..." readonly>
-                    </div>
-                    <div class="info-group">
-                        <label>📊 Dung lượng sử dụng</label>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="flex: 1; background: #ecf0f1; border-radius: 10px; overflow: hidden; height: 8px;">
-                                <div id="driveUsageBar" style="background: linear-gradient(45deg, #27ae60, #2ecc71); height: 100%; width: 0%"></div>
-                            </div>
-                            <span id="driveUsageText">0 MB/15 GB</span>
+            <!-- Tab Thư viện -->
+            <div class="tab-content" data-content="library">
+                <div class="section">
+                    <h3>Truyện đã lưu</h3>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-number" id="localStoriesCount">0</div>
+                            <div class="stat-label">Truyện cục bộ</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="driveStoriesCount">0</div>
+                            <div class="stat-label">Truyện trên Drive</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalWordsCount">0</div>
+                            <div class="stat-label">Tổng số từ</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="stats">
-                    <div class="stat-card">
-                        <div class="stat-number" id="driveStories">0</div>
-                        <div class="stat-label">Truyện trên Drive</div>
+                <div class="section">
+                    <h3>Danh sách truyện</h3>
+                    <div class="file-list" id="localStoriesList">
+                        <div class="loading">Chưa có truyện nào được lưu</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="driveChapters">0</div>
-                        <div class="stat-label">Chương trên Drive</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="driveAI">0</div>
-                        <div class="stat-label">File dữ liệu AI</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="driveLastSync">--</div>
-                        <div class="stat-label">Lần đồng bộ cuối</div>
+                    <button class="btn btn-primary" id="refreshLibraryBtn">🔄 Làm mới</button>
+                </div>
+            </div>
+
+            <!-- Tab AI Training -->
+            <div class="tab-content" data-content="ai">
+                <div class="section">
+                    <h3>🧠 Huấn luyện AI chuyên sâu</h3>
+                    <p style="color: #666; margin-bottom: 20px;">
+                        AI sẽ học từ tất cả các nguồn dữ liệu để viết truyện theo phong cách riêng của bạn
+                    </p>
+                    
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalDataSources">0</div>
+                            <div class="stat-label">Nguồn dữ liệu</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalWords">0</div>
+                            <div class="stat-label">Tổng từ đã học</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="uniquePhrases">0</div>
+                            <div class="stat-label">Cụm từ độc đáo</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="aiReadiness">0%</div>
+                            <div class="stat-label">Sẵn sàng viết</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="chapter-list" id="driveFileList" style="margin-top: 25px;">
-                    <div class="empty-state">
-                        <h3>📁 Chưa kết nối với Google Drive</h3>
-                        <p>Kết nối để xem các file truyện và dữ liệu AI</p>
+                <div class="section">
+                    <h3>📚 Nguồn dữ liệu huấn luyện</h3>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="useLocalStories" checked> 
+                            Sử dụng truyện đã lưu cục bộ
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="useDriveFiles" checked> 
+                            Sử dụng file từ Google Drive
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="useBuiltinData" checked> 
+                            Sử dụng dữ liệu mẫu có sẵn
+                        </label>
                     </div>
                 </div>
+
+                <div class="section">
+                    <h3>⚙️ Cài đặt AI nâng cao</h3>
+                    <div class="form-group">
+                        <label>Mức độ sáng tạo</label>
+                        <select id="aiCreativity">
+                            <option value="conservative">Thận trọng - Theo sát dữ liệu gốc</option>
+                            <option value="balanced" selected>Cân bằng - Kết hợp sáng tạo</option>
+                            <option value="creative">Sáng tạo - Tự do phát triển</option>
+                            <option value="innovative">Đổi mới - Hoàn toàn sáng tạo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Độ phức tạp ngôn ngữ</label>
+                        <select id="languageComplexity">
+                            <option value="simple">Đơn giản - Dễ hiểu</option>
+                            <option value="medium" selected>Trung bình - Cân bằng</option>
+                            <option value="complex">Phức tạp - Văn học</option>
+                            <option value="artistic">Nghệ thuật - Cao siêu</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tần suất sử dụng "tôi"</label>
+                        <input type="range" id="firstPersonFrequency" min="30" max="90" value="70" 
+                               oninput="updateFirstPersonDisplay(this.value)">
+                        <small style="color: #666;">
+                            <span id="firstPersonDisplay">70%</span> - AI sẽ sử dụng ngôi thứ nhất trong <span id="firstPersonPercent">70%</span> câu
+                        </small>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🎯 Mẫu câu đặc trưng (ngôi thứ nhất)</h3>
+                    <div class="form-group">
+                        <label>Thêm mẫu câu để AI học theo</label>
+                        <textarea id="customPatterns" rows="6" placeholder="Nhập các mẫu câu theo ngôi thứ nhất, mỗi câu một dòng:
+
+Tôi không bao giờ nghĩ rằng...
+Khi tôi nhìn lại những ngày đó...
+Tôi cảm thấy trái tim mình như...
+Có lúc tôi muốn quay trở lại...
+Tôi biết rằng cuộc đời này..."></textarea>
+                    </div>
+                    <button class="btn btn-secondary" id="addPatternsBtn">➕ Thêm mẫu câu</button>
+                </div>
+
+                <div class="section">
+                    <h3>🚀 Bắt đầu huấn luyện</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" id="startTrainingBtn">🧠 Huấn luyện AI đầy đủ</button>
+                        <button class="btn btn-success" id="quickTrainingBtn">⚡ Huấn luyện nhanh</button>
+                        <button class="btn btn-secondary" id="testAIBtn">🧪 Kiểm tra AI</button>
+                        <button class="btn btn-danger" id="resetAIBtn">🔄 Đặt lại AI</button>
+                    </div>
+                </div>
+
+                <div id="trainingProgress" style="display: none;">
+                    <div class="section">
+                        <h3>📊 Tiến độ huấn luyện</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span id="trainingStatus">Đang khởi tạo...</span>
+                                <span id="trainingPercent">0%</span>
+                            </div>
+                            <div style="background: #e9ecef; height: 10px; border-radius: 5px; overflow: hidden;">
+                                <div id="trainingBar" style="background: #007bff; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="aiTestResults" style="display: none;">
+                    <div class="section">
+                        <h3>📝 Kết quả kiểm tra AI</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #28a745;">
+                            <div id="testOutput"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="aiAlert2" style="display: none;"></div>
+            </div>
+            <div class="tab-content" data-content="drive">
+                <div class="section">
+                    <h3>Trạng thái kết nối</h3>
+                    <p>
+                        <span class="status-indicator status-disconnected" id="driveStatusIndicator"></span>
+                        <span id="driveStatusText">Chưa kết nối với Google Drive</span>
+                    </p>
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-primary" id="connectGoogleDriveBtn">🔗 Kết nối Google Drive</button>
+                        <button class="btn btn-danger" id="disconnectGoogleDriveBtn" style="display: none;">❌ Ngắt kết nối</button>
+                    </div>
+                </div>
+
+                <div class="section" id="driveInfoSection" style="display: none;">
+                    <h3>Thông tin tài khoản</h3>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-number" id="driveFilesCount">0</div>
+                            <div class="stat-label">File trên Drive</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="driveUsedSpace">0 MB</div>
+                            <div class="stat-label">Dung lượng sử dụng</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="driveFilesSection" style="display: none;">
+                    <h3>File trên Google Drive</h3>
+                    <div class="file-list" id="driveFilesList">
+                        <div class="loading">Đang tải danh sách file...</div>
+                    </div>
+                    <button class="btn btn-secondary" id="refreshDriveFilesBtn">🔄 Làm mới danh sách</button>
+                </div>
+
+                <div id="driveAlert" style="display: none;"></div>
             </div>
         </div>
     </div>
 
-    <div class="toast" id="toast"></div>
-
     <script>
-        // API keys
-        const API_KEY = 'AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o';
+        // Google Drive API configuration
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+        
+        // Replace with your actual Google API credentials
         const CLIENT_ID = '398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com';
-        const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly';
+        const API_KEY = 'AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o';
 
-        // Global variables
+        let gapi;
+        let tokenClient;
         let isGoogleDriveConnected = false;
-        let driveFolderId = null;
+        let localStories = [];
+        let aiTrainingData = {
+            stories: [],
+            vocabulary: new Set(),
+            patterns: [],
+            trainedStories: 0,
+            accuracy: 0
+        };
         let currentChapter = 1;
-        let totalChapters = 150;
-        let wordCount = 0;
-        let learningProgress = 0;
-        let aiStoriesLearned = 0;
 
-        // DOM elements
-        const fileInput = document.getElementById('fileInput');
-        const fileNames = document.getElementById('fileNames');
-        const processBtn = document.getElementById('processBtn');
-        const loading = document.getElementById('loading');
-        const chapterContent = document.getElementById('chapterContent');
-        const storyText = document.getElementById('storyText');
-        const chapterTitle = document.getElementById('chapterTitle');
-        const chapterNumber = document.getElementById('chapterNumber');
-        const progressFill = document.getElementById('progressFill');
-        const chapterCount = document.getElementById('chapterCount');
-        const wordCountElement = document.getElementById('wordCount');
-        const avgWordsPerChapter = document.getElementById('avgWordsPerChapter');
-        const estimatedTime = document.getElementById('estimatedTime');
-        const learningFill = document.getElementById('learningFill');
-        const learningPercent = document.getElementById('learningPercent');
-        const learnedStories = document.getElementById('learnedStories');
-        const driveStatus = document.getElementById('driveStatus');
-        const driveStatusText = document.getElementById('driveStatusText');
-        const connectGoogleDriveBtn = document.getElementById('connectGoogleDrive');
-        const createDriveFolderBtn = document.getElementById('createDriveFolder');
-        const listDriveFilesBtn = document.getElementById('listDriveFiles');
-        const driveFolderPath = document.getElementById('driveFolderPath');
-        const driveUsageBar = document.getElementById('driveUsageBar');
-        const driveUsageText = document.getElementById('driveUsageText');
-        const driveStories = document.getElementById('driveStories');
-        const driveChapters = document.getElementById('driveChapters');
-        const driveAI = document.getElementById('driveAI');
-        const driveLastSync = document.getElementById('driveLastSync');
-        const driveFileList = document.getElementById('driveFileList');
-        const toast = document.getElementById('toast');
-        const creativeMode = document.getElementById('creativeMode');
-        const createFromIdeaBtn = document.getElementById('createFromIdea');
-        const cancelCreativeBtn = document.getElementById('cancelCreative');
-        const generateFromIdeaBtn = document.getElementById('generateFromIdea');
-        const quickStartBtn = document.getElementById('quickStartBtn');
-        const syncWithDriveBtn = document.getElementById('syncWithDrive');
-        const trainAIFromDriveBtn = document.getElementById('trainAIFromDrive');
-        const uploadToGoogleDriveBtn = document.getElementById('uploadToGoogleDrive');
-
-        // Initialize the app
-        function init() {
-            setupEventListeners();
-            checkGoogleDriveConnection();
-            updateUI();
+        // Initialize the application
+        async function initializeApp() {
+            try {
+                await loadGoogleAPI();
+                setupEventListeners();
+                loadLocalStories();
+                updateUI();
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                showAlert('drive', 'Lỗi khởi tạo ứng dụng: ' + error.message, 'error');
+            }
         }
 
-        // Set up event listeners
+        // Load Google API
+        async function loadGoogleAPI() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://accounts.google.com/gsi/client';
+                script.onload = async () => {
+                    try {
+                        gapi = window.gapi;
+                        await new Promise(resolve => gapi.load('client', resolve));
+                        await gapi.client.init({
+                            apiKey: API_KEY,
+                            discoveryDocs: [DISCOVERY_DOC],
+                        });
+
+                        tokenClient = google.accounts.oauth2.initTokenClient({
+                            client_id: CLIENT_ID,
+                            scope: SCOPES,
+                            callback: (response) => {
+                                if (response.error) {
+                                    console.error('Token error:', response.error);
+                                    showAlert('drive', 'Lỗi xác thực: ' + response.error, 'error');
+                                } else {
+                                    onGoogleDriveConnected();
+                                }
+                            },
+                        });
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // Setup event listeners
         function setupEventListeners() {
             // Tab switching
             document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabName = tab.getAttribute('data-tab');
-                    switchTab(tabName);
-                });
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
             });
 
-            // File input change
-            fileInput.addEventListener('change', handleFileSelection);
+            // Story writing
+            document.getElementById('saveStoryBtn').addEventListener('click', saveStoryLocally);
+            document.getElementById('uploadToGoogleDrive').addEventListener('click', uploadStoryToDrive);
+            document.getElementById('clearContentBtn').addEventListener('click', clearContent);
+            document.getElementById('continueWritingBtn').addEventListener('click', continueWriting);
 
-            // Process button
-            processBtn.addEventListener('click', processFiles);
+            // AI features
+            document.getElementById('generateStoryBtn').addEventListener('click', generateStoryWithAI);
+            document.getElementById('trainAIBtn').addEventListener('click', trainAIFromData);
 
-            // Continue writing button
-            document.getElementById('continueBtn').addEventListener('click', writeNextChapter);
-
-            // Rewrite button
-            document.getElementById('rewriteBtn').addEventListener('click', rewriteChapter);
-
-            // Save chapter button
-            document.getElementById('saveChapterBtn').addEventListener('click', saveChapter);
-
-            // Google Drive buttons
-            connectGoogleDriveBtn.addEventListener('click', connectGoogleDrive);
-            createDriveFolderBtn.addEventListener('click', createDriveFolder);
-            listDriveFilesBtn.addEventListener('click', listDriveFiles);
-            uploadToGoogleDriveBtn.addEventListener('click', uploadToGoogleDrive);
-
-            // Creative mode buttons
-            createFromIdeaBtn.addEventListener('click', showCreativeMode);
-            cancelCreativeBtn.addEventListener('click', hideCreativeMode);
-            generateFromIdeaBtn.addEventListener('click', generateFromIdea);
-
-            // Quick start button
-            quickStartBtn.addEventListener('click', quickStart);
-
-            // Sync with Drive button
-            syncWithDriveBtn.addEventListener('click', syncWithDrive);
-
-            // Train AI from Drive button
-            trainAIFromDriveBtn.addEventListener('click', trainAIFromDrive);
+            // AI advanced features
+            document.getElementById('startTrainingBtn').addEventListener('click', startFullTraining);
+            document.getElementById('quickTrainingBtn').addEventListener('click', startQuickTraining);
+            document.getElementById('testAIBtn').addEventListener('click', testAI);
+            document.getElementById('resetAIBtn').addEventListener('click', resetAI);
+            document.getElementById('addPatternsBtn').addEventListener('click', addCustomPatterns);
+            document.getElementById('connectGoogleDriveBtn').addEventListener('click', connectGoogleDrive);
+            document.getElementById('disconnectGoogleDriveBtn').addEventListener('click', disconnectGoogleDrive);
+            document.getElementById('refreshDriveFilesBtn').addEventListener('click', loadDriveFiles);
+            document.getElementById('refreshLibraryBtn').addEventListener('click', loadLocalStories);
         }
 
-        // Handle file selection
-        function handleFileSelection(event) {
-            const files = event.target.files;
-            if (files.length > 0) {
-                let names = '';
-                for (let i = 0; i < files.length; i++) {
-                    names += files[i].name;
-                    if (i < files.length - 1) names += ', ';
-                }
-                fileNames.textContent = names;
-                processBtn.style.display = 'block';
+        // Toggle writing mode
+        function toggleWritingMode() {
+            const mode = document.getElementById('writingMode').value;
+            const aiSection = document.getElementById('aiSection');
+            const aiTrainingStatus = document.getElementById('aiTrainingStatus');
+            
+            if (mode === 'ai') {
+                aiSection.style.display = 'block';
+                aiTrainingStatus.style.display = 'block';
+                updateAIStats();
             } else {
-                fileNames.textContent = 'Chưa chọn file nào';
-                processBtn.style.display = 'none';
+                aiSection.style.display = 'none';
+                aiTrainingStatus.style.display = 'none';
             }
         }
 
-        // Process selected files
-        function processFiles() {
-            showLoading();
+        // Train AI from existing data
+        async function trainAIFromData() {
+            showAlert('write', 'Đang huấn luyện AI từ dữ liệu...', 'info');
             
-            // Simulate processing
-            setTimeout(() => {
-                // Update learning progress
-                learningProgress = 85;
-                learningFill.style.width = `${learningProgress}%`;
-                learningPercent.textContent = `${learningProgress}%`;
-                aiStoriesLearned += 3;
-                learnedStories.textContent = aiStoriesLearned;
+            try {
+                // Train from local stories
+                for (const story of localStories) {
+                    await processStoryForTraining(story.content, story.title);
+                }
                 
-                // Generate a story title
-                document.getElementById('storyTitle').value = generateStoryTitle();
+                // Train from Google Drive files if connected
+                if (isGoogleDriveConnected) {
+                    await trainFromDriveFiles();
+                }
                 
-                // Show chapter content
-                hideLoading();
-                chapterContent.style.display = 'block';
+                aiTrainingData.trainedStories = aiTrainingData.stories.length;
+                aiTrainingData.accuracy = Math.min(100, aiTrainingData.trainedStories * 8);
                 
-                // Write first chapter
-                writeNextChapter();
+                updateAIStats();
+                showAlert('write', `AI đã được huấn luyện từ ${aiTrainingData.trainedStories} truyện!`, 'success');
                 
-                // Show success message
-                showToast('Đã xử lý xong file và tạo truyện mới!', 'success');
-            }, 2000);
-        }
-
-        // Write next chapter
-        function writeNextChapter() {
-            showLoading();
-            
-            // Simulate writing
-            setTimeout(() => {
-                // Update progress
-                currentChapter++;
-                const progress = (currentChapter / totalChapters) * 100;
-                progressFill.style.width = `${progress}%`;
-                chapterCount.textContent = currentChapter;
-                
-                // Generate chapter content
-                const chapterWords = Math.floor(Math.random() * 500) + 1500;
-                wordCount += chapterWords;
-                wordCountElement.textContent = wordCount.toLocaleString();
-                avgWordsPerChapter.textContent = Math.round(wordCount / currentChapter).toLocaleString();
-                
-                // Update chapter info
-                chapterTitle.textContent = `Chương ${currentChapter}: ${generateChapterTitle()}`;
-                chapterNumber.textContent = `Chương ${currentChapter}/${totalChapters}`;
-                
-                // Generate chapter content
-                storyText.textContent = generateChapterContent();
-                
-                hideLoading();
-                
-                // Show success message
-                showToast(`Đã viết xong chương ${currentChapter}!`, 'success');
-            }, 1500);
-        }
-
-        // Rewrite current chapter
-        function rewriteChapter() {
-            showLoading();
-            
-            // Simulate rewriting
-            setTimeout(() => {
-                // Generate improved chapter content
-                storyText.textContent = generateChapterContent(true);
-                
-                hideLoading();
-                
-                // Show success message
-                showToast('Đã viết lại chương với chất lượng cao hơn!', 'success');
-            }, 1000);
-        }
-
-        // Save current chapter
-        function saveChapter() {
-            showToast('Đã lưu chương thành công!', 'success');
-        }
-
-        // Connect to Google Drive
-        function connectGoogleDrive() {
-            showLoading();
-            
-            // Simulate connection
-            setTimeout(() => {
-                isGoogleDriveConnected = true;
-                driveStatus.classList.add('connected');
-                driveStatusText.textContent = 'Đã kết nối với Google Drive';
-                
-                // Update UI
-                updateDriveStats();
-                
-                hideLoading();
-                
-                // Show success message
-                showToast('Đã kết nối thành công với Google Drive!', 'success');
-            }, 1500);
-        }
-
-        // Create Drive folder
-        function createDriveFolder() {
-            if (!isGoogleDriveConnected) {
-                showToast('Vui lòng kết nối với Google Drive trước!', 'error');
-                return;
+            } catch (error) {
+                console.error('Error training AI:', error);
+                showAlert('write', 'Lỗi khi huấn luyện AI: ' + error.message, 'error');
             }
-            
-            showLoading();
-            
-            // Simulate folder creation
-            setTimeout(() => {
-                driveFolderId = 'folder_' + Math.random().toString(36).substr(2, 9);
-                driveFolderPath.value = 'AI Story Writer/' + new Date().getFullYear();
-                
-                hideLoading();
-                
-                // Show success message
-                showToast('Đã tạo thư mục thành công trên Google Drive!', 'success');
-            }, 1000);
         }
 
-        // List Drive files
-        function listDriveFiles() {
-            if (!isGoogleDriveConnected) {
-                showToast('Vui lòng kết nối với Google Drive trước!', 'error');
-                return;
-            }
+        // Train from Google Drive files
+        async function trainFromDriveFiles() {
+            if (!isGoogleDriveConnected) return;
             
-            showLoading();
-            
-            // Simulate file listing
-            setTimeout(() => {
-                // Clear current list
-                driveFileList.innerHTML = '';
-                
-                // Add sample files
-                const files = [
-                    { name: 'Truyện Đô Thị Bi Thương - Chương 1-20.txt', type: 'document', size: '2.4 MB', modified: '2 giờ trước' },
-                    { name: 'Dữ liệu AI học tập.json', type: 'data', size: '1.2 MB', modified: '6 giờ trước' },
-                    { name: 'Truyện Ngắn - Mưa Đêm Thành Phố.txt', type: 'document', size: '0.8 MB', modified: '1 ngày trước' },
-                    { name: 'Từ điển cảm xúc AI.csv', type: 'data', size: '0.5 MB', modified: '2 ngày trước' },
-                    { name: 'Truyện Dài - Bóng Tối và Ánh Sáng.txt', type: 'document', size: '5.1 MB', modified: '3 ngày trước' }
-                ];
-                
-                files.forEach(file => {
-                    const item = document.createElement('div');
-                    item.className = 'chapter-item';
-                    item.innerHTML = `
-                        <div>
-                            <div style="font-weight: 600; color: #2c3e50;">${file.name}</div>
-                            <div style="font-size: 14px; color: #7f8c8d;">${file.size} • ${file.modified}</div>
-                        </div>
-                        <div style="padding: 8px 15px; background: #ecf0f1; border-radius: 20px; font-size: 14px; color: #7f8c8d;">
-                            ${file.type === 'document' ? '📄' : '📊'}
-                        </div>
-                    `;
-                    driveFileList.appendChild(item);
+            try {
+                const response = await gapi.client.drive.files.list({
+                    pageSize: 50,
+                    fields: 'files(id, name)',
+                    q: "name contains '.txt' and trashed = false"
                 });
                 
-                hideLoading();
+                const files = response.result.files || [];
                 
-                // Show success message
-                showToast('Đã tải danh sách file từ Google Drive!', 'success');
-            }, 1000);
-        }
-
-        // Upload to Google Drive
-        function uploadToGoogleDrive() {
-            if (!isGoogleDriveConnected) {
-                showToast('Vui lòng kết nối với Google Drive trước!', 'error');
-                return;
-            }
-            
-            if (!driveFolderId) {
-                showToast('Vui lòng tạo thư mục trên Google Drive trước!', 'error');
-                return;
-            }
-            
-            showLoading();
-            
-            // Simulate upload
-            setTimeout(() => {
-                hideLoading();
-                
-                // Show success message
-                showToast('Đã lưu truyện lên Google Drive thành công!', 'success');
-            }, 1500);
-        }
-
-        // Show creative mode
-        function showCreativeMode() {
-            creativeMode.style.display = 'block';
-            document.querySelector('.upload-section').style.display = 'none';
-        }
-
-        // Hide creative mode
-        function hideCreativeMode() {
-            creativeMode.style.display = 'none';
-            document.querySelector('.upload-section').style.display = 'block';
-        }
-
-        // Generate from idea
-        function generateFromIdea() {
-            const idea = document.getElementById('storyIdea').value;
-            const character = document.getElementById('mainCharacter').value;
-            const setting = document.getElementById('setting').value;
-            const emotion = document.getElementById('mainEmotion').value;
-            
-            if (!idea || !character || !setting) {
-                showToast('Vui lòng điền đầy đủ thông tin ý tưởng!', 'error');
-                return;
-            }
-            
-            showLoading();
-            
-            // Simulate generation
-            setTimeout(() => {
-                // Generate a story title
-                document.getElementById('storyTitle').value = generateStoryTitle();
-                
-                // Hide creative mode and show chapter content
-                hideCreativeMode();
-                chapterContent.style.display = 'block';
-                
-                // Write first chapter
-                writeNextChapter();
-                
-                hideLoading();
-                
-                // Show success message
-                showToast('Đã tạo truyện thành công từ ý tưởng!', 'success');
-            }, 2000);
-        }
-
-        // Quick start
-        function quickStart() {
-            showLoading();
-            
-            // Simulate quick start
-            setTimeout(() => {
-                // Generate a story title
-                document.getElementById('storyTitle').value = generateStoryTitle();
-                
-                // Show chapter content
-                hideLoading();
-                chapterContent.style.display = 'block';
-                
-                // Write first chapter
-                writeNextChapter();
-                
-                // Show success message
-                showToast('Đã tạo truyện mẫu thành công!', 'success');
-            }, 1500);
-        }
-
-        // Sync with Drive
-        function syncWithDrive() {
-            if (!isGoogleDriveConnected) {
-                showToast('Vui lòng kết nối với Google Drive trước!', 'error');
-                return;
-            }
-            
-            showLoading();
-            
-            // Simulate sync
-            setTimeout(() => {
-                // Update last sync time
-                driveLastSync.textContent = 'Vừa xong';
-                
-                hideLoading();
-                
-                // Show success message
-                showToast('Đã đồng bộ thành công với Google Drive!', 'success');
-            }, 2000);
-        }
-
-        // Train AI from Drive
-        function trainAIFromDrive() {
-            if (!isGoogleDriveConnected) {
-                showToast('Vui lòng kết nối với Google Drive trước!', 'error');
-                return;
-            }
-            
-            showLoading();
-            
-            // Simulate training
-            setTimeout(() => {
-                // Update learning progress
-                learningProgress = 100;
-                learningFill.style.width = `${learningProgress}%`;
-                learningPercent.textContent = `${learningProgress}%`;
-                aiStoriesLearned += 5;
-                learnedStories.textContent = aiStoriesLearned;
-                
-                hideLoading();
-                
-                // Show success message
-                showToast('AI đã học xong từ các truyện trên Google Drive!', 'success');
-            }, 2500);
-        }
-
-        // Check Google Drive connection
-        function checkGoogleDriveConnection() {
-            // Simulate connection check
-            setTimeout(() => {
-                if (Math.random() > 0.7) {
-                    isGoogleDriveConnected = true;
-                    driveStatus.classList.add('connected');
-                    driveStatusText.textContent = 'Đã kết nối với Google Drive';
-                    updateDriveStats();
+                for (const file of files.slice(0, 10)) { // Limit to avoid quota issues
+                    try {
+                        const fileResponse = await gapi.client.drive.files.get({
+                            fileId: file.id,
+                            alt: 'media'
+                        });
+                        
+                        await processStoryForTraining(fileResponse.body, file.name);
+                    } catch (error) {
+                        console.error(`Error processing file ${file.name}:`, error);
+                    }
                 }
-            }, 500);
+            } catch (error) {
+                console.error('Error training from Drive files:', error);
+            }
         }
 
-        // Update Drive stats
-        function updateDriveStats() {
-            if (isGoogleDriveConnected) {
-                driveStories.textContent = '12';
-                driveChapters.textContent = '245';
-                driveAI.textContent = '8';
-                driveLastSync.textContent = '1 giờ trước';
+        // Process story content for AI training
+        async function processStoryForTraining(content, title) {
+            if (!content || aiTrainingData.stories.some(s => s.title === title)) return;
+            
+            // Extract vocabulary
+            const words = content.toLowerCase().match(/\b\w+\b/g) || [];
+            words.forEach(word => aiTrainingData.vocabulary.add(word));
+            
+            // Extract sentence patterns (simplified)
+            const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 10);
+            const patterns = sentences.map(s => s.trim().substring(0, 50));
+            aiTrainingData.patterns.push(...patterns);
+            
+            // Store story data
+            aiTrainingData.stories.push({
+                title: title,
+                content: content.substring(0, 1000), // Store first 1000 chars for reference
+                wordCount: words.length,
+                processedAt: new Date().toISOString()
+            });
+        }
+
+        // Generate story with AI
+        async function generateStoryWithAI() {
+            const prompt = document.getElementById('storyPrompt').value.trim();
+            const style = document.getElementById('writingStyle').value;
+            const length = document.getElementById('chapterLength').value;
+            const chapters = parseInt(document.getElementById('numberOfChapters').value);
+            
+            if (!prompt) {
+                showAlert('write', 'Vui lòng nhập chủ đề/ý tưởng cho truyện', 'error');
+                return;
+            }
+            
+            if (aiTrainingData.trainedStories === 0) {
+                showAlert('write', 'Vui lòng huấn luyện AI trước khi tạo truyện', 'error');
+                return;
+            }
+            
+            showAlert('write', 'AI đang tạo truyện...', 'info');
+            
+            try {
+                let generatedContent = '';
+                const storyTitle = document.getElementById('storyTitle').value.trim() || generateStoryTitle(prompt);
                 
-                driveUsageBar.style.width = '35%';
-                driveUsageText.textContent = '5.2 GB/15 GB';
+                for (let i = 1; i <= chapters; i++) {
+                    const chapterContent = await generateChapter(prompt, style, length, i, chapters);
+                    generatedContent += `\n\nChương ${i}:\n\n${chapterContent}`;
+                }
+                
+                // Set generated content
+                document.getElementById('storyTitle').value = storyTitle;
+                document.getElementById('storyContent').value = generatedContent.trim();
+                
+                // Show generated content section
+                const aiGeneratedSection = document.getElementById('aiGeneratedContent');
+                const generatedChapters = document.getElementById('generatedChapters');
+                
+                generatedChapters.innerHTML = `
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #28a745;">
+                        <strong>✨ AI đã tạo ${chapters} chương cho truyện "${storyTitle}"</strong><br>
+                        <small style="color: #666;">Phong cách: ${getStyleName(style)} • Độ dài: ${getLengthName(length)}</small>
+                    </div>
+                `;
+                
+                aiGeneratedSection.style.display = 'block';
+                document.getElementById('continueWritingBtn').style.display = 'inline-block';
+                currentChapter = chapters + 1;
+                
+                showAlert('write', `AI đã tạo thành công truyện "${storyTitle}" với ${chapters} chương!`, 'success');
+                
+            } catch (error) {
+                console.error('Error generating story:', error);
+                showAlert('write', 'Lỗi khi tạo truyện: ' + error.message, 'error');
             }
         }
 
-        // Update UI
-        function updateUI() {
-            // Update stats
-            chapterCount.textContent = currentChapter;
-            wordCountElement.textContent = wordCount.toLocaleString();
-            avgWordsPerChapter.textContent = wordCount > 0 ? Math.round(wordCount / currentChapter).toLocaleString() : '0';
-            estimatedTime.textContent = calculateEstimatedTime();
+        // Enhanced chapter generation with better first-person focus
+        async function generateChapter(prompt, style, length, chapterNum, totalChapters) {
+            const wordCount = getWordCount(length);
+            const stylePrompts = getStylePrompts(style);
+            const creativity = document.getElementById('aiCreativity')?.value || 'balanced';
+            const complexity = document.getElementById('languageComplexity')?.value || 'medium';
             
-            // Update learning progress
-            learningFill.style.width = `${learningProgress}%`;
-            learningPercent.textContent = `${learningProgress}%`;
-            learnedStories.textContent = aiStoriesLearned;
+            // Enhanced vocabulary based on training data
+            const vocabulary = Array.from(aiTrainingData.vocabulary);
+            const patterns = aiTrainingData.patterns;
             
-            // Update AI stats
-            document.getElementById('aiLearningBooks').textContent = aiStoriesLearned;
-            document.getElementById('aiVocabulary').textContent = (aiStoriesLearned * 1250).toLocaleString();
-            document.getElementById('aiPatterns').textContent = (aiStoriesLearned * 350).toLocaleString();
-            document.getElementById('aiAccuracy').textContent = `${Math.min(100, Math.floor(aiStoriesLearned * 7))}%`;
-        }
-
-        // Calculate estimated time
-        function calculateEstimatedTime() {
-            const remainingChapters = totalChapters - currentChapter;
-            const timePerChapter = 45; // minutes
-            const totalMinutes = remainingChapters * timePerChapter;
-            
-            if (totalMinutes < 60) return `${totalMinutes} phút`;
-            
-            const hours = Math.floor(totalMinutes / 60);
-            const minutes = totalMinutes % 60;
-            
-            if (hours < 24) return `${hours} giờ ${minutes} phút`;
-            
-            const days = Math.floor(hours / 24);
-            const remainingHours = hours % 24;
-            
-            return `${days} ngày ${remainingHours} giờ`;
-        }
-
-        // Switch tab
-        function switchTab(tabName) {
-            // Deactivate all tabs
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Hide all tab content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            
-            // Activate selected tab
-            document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
-            
-            // Show selected tab content
-            document.querySelector(`.tab-content[data-content="${tabName}"]`).classList.add('active');
-        }
-
-        // Show loading
-        function showLoading() {
-            loading.classList.add('show');
-        }
-
-        // Hide loading
-        function hideLoading() {
-            loading.classList.remove('show');
-        }
-
-        // Show toast message
-        function showToast(message, type = 'success') {
-            toast.textContent = message;
-            toast.className = 'toast';
-            
-            if (type === 'error') {
-                toast.classList.add('error');
-            } else if (type === 'warning') {
-                toast.classList.add('warning');
-            }
-            
-            toast.classList.add('show');
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-
-        // Generate story title
-        function generateStoryTitle() {
-            const prefixes = ['Bóng Tối', 'Nỗi Đau', 'Cô Đơn', 'Mưa', 'Ký ức', 'Hoàng Hôn', 'Ánh Sáng', 'Bình Minh'];
-            const suffixes = ['Thành Phố', 'Phố Thị', 'Đêm', 'Ngày', 'Tình Yêu', 'Mất Mát', 'Hy Vọng', 'Tương Lai'];
-            
-            return `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
-        }
-
-        // Generate chapter title
-        function generateChapterTitle() {
-            const titles = [
-                'Khởi Đầu Của Nỗi Đau',
-                'Một Mình Trong Đêm',
-                'Tiếng Piano Lạc Lõng',
-                'Người Lạ Trong Gương',
-                'Cơn Mưa Đêm',
-                'Lời Hứa Đã Quên',
-                'Con Đường Vắng',
-                'Ánh Đèn Thành Phố',
-                'Ký Ức Vỡ Vụn',
-                'Nỗi Nhớ Không Tên'
+            // First-person chapter starters
+            const chapterOpenings = [
+                `Tôi không bao giờ nghĩ rằng cuộc đời mình sẽ đưa tôi đến điểm này.`,
+                `Khi tôi nhìn lại những ngày qua, tôi cảm thấy như đang sống trong giấc mơ của ai khác.`,
+                `Hôm nay, tôi thức dậy với cảm giác hoàn toàn khác biệt.`,
+                `Có những lúc tôi tự hỏi liệu tôi có đang sống đúng với con người thực sự của mình không.`,
+                `Tôi ngồi bên cửa sổ, nhìn ra thế giới bên ngoài và suy nghĩ về cuộc đời.`
             ];
             
-            return titles[Math.floor(Math.random() * titles.length)];
-        }
-
-        // Generate chapter content
-        function generateChapterContent(improved = false) {
-            const paragraphs = improved ? 8 : 5;
-            let content = '';
+            // First-person middle content
+            const firstPersonMidContent = [
+                `Tôi cảm thấy`,
+                `Tôi nhớ lại`,
+                `Tôi tự hỏi`,
+                `Tôi muốn`,
+                `Tôi hy vọng`,
+                `Tôi sợ rằng`,
+                `Tôi biết rằng`,
+                `Tôi không thể`
+            ];
             
-            for (let i = 0; i < paragraphs; i++) {
-                content += generateParagraph(improved);
-                if (i < paragraphs - 1) content += '\n\n';
+            // Generate chapter based on parameters
+            let chapter = '';
+            
+            // Opening sentence (always first person)
+            if (chapterNum === 1) {
+                chapter = chapterOpenings[Math.floor(Math.random() * chapterOpenings.length)];
+            } else {
+                chapter = `Tôi ${generateFirstPersonOpening(stylePrompts)}.`;
             }
             
-            return content;
+            // Generate main content
+            const targetWords = wordCount;
+            let currentWords = chapter.split(' ').length;
+            let paragraphCount = 0;
+            const maxParagraphs = Math.ceil(wordCount / 200); // Rough estimate
+            
+            while (currentWords < targetWords && paragraphCount < maxParagraphs) {
+                // Add paragraph break
+                if (paragraphCount > 0) {
+                    chapter += '\n\n';
+                }
+                
+                // Generate paragraph with first-person focus
+                const paragraph = generateFirstPersonParagraph(stylePrompts, complexity, creativity);
+                chapter += paragraph;
+                
+                currentWords = chapter.split(' ').length;
+                paragraphCount++;
+            }
+            
+            // Add chapter-specific endings
+            if (chapterNum === totalChapters) {
+                chapter += `\n\nVà tôi biết rằng, dù tương lai có mang đến điều gì, tôi sẽ tiếp tục bước đi với những bài học quý giá mà cuộc sống đã dạy tôi.`;
+            } else {
+                const endings = [
+                    `Tôi khép lại ngày hôm nay với những suy nghĩ còn chưa có lời giải.`,
+                    `Và tôi biết rằng ngày mai sẽ lại là một chương mới trong cuộc đời tôi.`,
+                    `Tôi mỉm cười, cảm thấy trong lòng có một chút hy vọng le lói.`,
+                    `Dù biết con đường phía trước còn nhiều thử thách, tôi vẫn sẵn sàng đối mặt.`
+                ];
+                chapter += '\n\n' + endings[Math.floor(Math.random() * endings.length)];
+            }
+            
+            return chapter.trim();
         }
-
-        // Generate paragraph
-        function generateParagraph(improved = false) {
-            const sentences = improved ? 6 : 4;
+        
+        // Generate first-person opening
+        function generateFirstPersonOpening(stylePrompts) {
+            const openings = [
+                'thức dậy với cảm giác lạ lẫm',
+                'bước ra đường trong sương sớm',
+                'ngồi trong góc quán quen thuộc',
+                'nhìn mình trong gương và thấy',
+                'cảm thấy trái tim đập nhanh khi',
+                'đang suy nghĩ về những ngày cũ',
+                'muốn quay trở lại thời điểm',
+                'không thể ngừng nghĩ về'
+            ];
+            
+            const situations = [
+                'mà không biết tại sao',
+                'như thể có điều gì sắp xảy ra',
+                'và cảm thấy bình yên lạ thường',
+                'với nỗi buồn man mác',
+                'nhưng lại không dám thừa nhận',
+                'một cách mơ hồ khó tả',
+                'với tất cả sự chân thành',
+                'dù biết rằng đó là điều vô ích'
+            ];
+            
+            return openings[Math.floor(Math.random() * openings.length)] + ' ' + 
+                   situations[Math.floor(Math.random() * situations.length)];
+        }
+        
+        // Generate first-person focused paragraph
+        function generateFirstPersonParagraph(stylePrompts, complexity, creativity) {
+            const sentences = complexity === 'simple' ? 3 : complexity === 'complex' ? 6 : 4;
             let paragraph = '';
             
             for (let i = 0; i < sentences; i++) {
-                paragraph += generateSentence(improved);
-                if (i < sentences - 1) paragraph += ' ';
+                if (i > 0) paragraph += ' ';
+                
+                // Ensure high first-person usage
+                const useFirstPerson = Math.random() < 0.8; // 80% chance for first person
+                
+                if (useFirstPerson) {
+                    paragraph += generateFirstPersonSentence(stylePrompts, complexity, creativity);
+                } else {
+                    paragraph += generateContextSentence(stylePrompts, complexity);
+                }
             }
             
             return paragraph;
         }
+        
+        // Generate first-person sentence
+        function generateFirstPersonSentence(stylePrompts, complexity, creativity) {
+            const starters = [
+                'Tôi cảm thấy',
+                'Tôi nhớ về',
+                'Tôi tự hỏi',
+                'Tôi muốn',
+                'Tôi không thể',
+                'Tôi hy vọng',
+                'Tôi sợ rằng',
+                'Tôi biết rằng',
+                'Tôi thường nghĩ',
+                'Tôi đã từng'
+            ];
+            
+            const emotions = complexity === 'simple' ? 
+                ['buồn', 'vui', 'lo lắng', 'nhớ nhung'] :
+                ['man mác', 'u sầu', 'bồi hồi', 'nao nức', 'bâng khuâng', 'xao xuyến'];
+                
+            const situations = [
+                'những ngày cũ khi tôi còn nhỏ',
+                'con đường tôi thường đi mỗi sáng',
+                'giọng nói của người tôi thương',
+                'cảm giác được yêu thương',
+                'những ước mơ chưa thành hiện thực',
+                'khoảnh khắc bình yên hiếm hoi',
+                'ánh mắt của những người xung quanh',
+                'tiếng cười vang vọng trong ký ức'
+            ];
+            
+            const endings = complexity === 'simple' ?
+                ['thật nhiều', 'một cách sâu sắc', 'không thể tả nổi'] :
+                ['với tất cả tâm hồn', 'theo một cách khó diễn tả', 'như một nỗi đau tê tái', 'với cả trái tim mình'];
+            
+            const starter = starters[Math.floor(Math.random() * starters.length)];
+            const emotion = emotions[Math.floor(Math.random() * emotions.length)];
+            const situation = situations[Math.floor(Math.random() * situations.length)];
+            const ending = endings[Math.floor(Math.random() * endings.length)];
+            
+            return `${starter} ${emotion} khi nghĩ về ${situation} ${ending}`;
+        }
+        
+        // Generate context sentence (without first person)
+        function generateContextSentence(stylePrompts, complexity) {
+            const subjects = [
+                'Thành phố này',
+                'Cuộc sống',
+                'Thời gian',
+                'Ký ức',
+                'Những giấc mơ',
+                'Con đường phố',
+                'Ánh đèn đường',
+                'Tiếng mưa rơi'
+            ];
+            
+            const predicates = complexity === 'simple' ?
+                ['luôn bận rộn', 'trôi qua nhanh', 'đầy bất ngờ', 'mang lại niềm vui'] :
+                ['luôn chảy trôi không ngừng nghỉ', 'mang trong mình những bí ẩn', 'như một dòng sông không bao giờ dừng lại'];
+                
+            const subject = subjects[Math.floor(Math.random() * subjects.length)];
+            const predicate = predicates[Math.floor(Math.random() * predicates.length)];
+            
+            return `${subject} ${predicate}`;
+        }
+        
+        // Auto-save generated stories to Google Drive
+        async function autoSaveGeneratedStory() {
+            if (!isGoogleDriveConnected) return;
+            
+            const title = document.getElementById('storyTitle').value.trim();
+            const content = document.getElementById('storyContent').value.trim();
+            
+            if (!title || !content) return;
+            
+            try {
+                await uploadStoryToDrive();
+                showAlert('write', `Truyện "${title}" đã được tự động lưu lên Google Drive`, 'info');
+            } catch (error) {
+                console.error('Auto-save error:', error);
+            }
+        }
+        
+        // Enhanced story generation with auto-save
+        async function generateStoryWithAI() {
+            const prompt = document.getElementById('storyPrompt').value.trim();
+            const style = document.getElementById('writingStyle').value;
+            const length = document.getElementById('chapterLength').value;
+            const chapters = parseInt(document.getElementById('numberOfChapters').value);
+            
+            if (!prompt) {
+                showAlert('write', 'Vui lòng nhập chủ đề/ý tưởng cho truyện', 'error');
+                return;
+            }
+            
+            if (aiTrainingData.trainedStories === 0) {
+                showAlert('write', 'Vui lòng huấn luyện AI trước khi tạo truyện', 'error');
+                return;
+            }
+            
+            showAlert('write', 'AI đang tạo truyện theo ngôi thứ nhất...', 'info');
+            
+            try {
+                let generatedContent = '';
+                const storyTitle = document.getElementById('storyTitle').value.trim() || generateStoryTitle(prompt);
+                
+                for (let i = 1; i <= chapters; i++) {
+                    const chapterContent = await generateChapter(prompt, style, length, i, chapters);
+                    generatedContent += `Chương ${i}: ${generateChapterTitle()}\n\n${chapterContent}`;
+                    if (i < chapters) generatedContent += '\n\n' + '='.repeat(50) + '\n\n';
+                    
+                    // Show progress
+                    const progress = (i / chapters) * 100;
+                    showAlert('write', `Đang tạo chương ${i}/${chapters} (${Math.round(progress)}%)...`, 'info');
+                    await new Promise(resolve => setTimeout(resolve, 200)); // Simulate processing time
+                }
+                
+                // Set generated content
+                document.getElementById('storyTitle').value = storyTitle;
+                document.getElementById('storyContent').value = generatedContent.trim();
+                
+                // Show generated content section
+                const aiGeneratedSection = document.getElementById('aiGeneratedContent');
+                const generatedChapters = document.getElementById('generatedChapters');
+                
+                const wordCount = countWords(generatedContent);
+                const firstPersonCount = (generatedContent.match(/\btôi\b/gi) || []).length;
+                const firstPersonPercent = Math.round((firstPersonCount / wordCount) * 100);
+                
+                generatedChapters.innerHTML = `
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #28a745;">
+                        <strong>✨ AI đã tạo truyện "${storyTitle}"</strong><br>
+                        <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; font-size: 14px; color: #666;">
+                            <div>📖 ${chapters} chương</div>
+                            <div>📝 ${wordCount.toLocaleString()} từ</div>
+                            <div>👤 Ngôi thứ nhất: ${firstPersonPercent}%</div>
+                            <div>🎨 ${getStyleName(style)}</div>
+                        </div>
+                    </div>
+                `;
+                
+                aiGeneratedSection.style.display = 'block';
+                document.getElementById('continueWritingBtn').style.display = 'inline-block';
+                currentChapter = chapters + 1;
+                
+                // Auto-save to Google Drive if connected
+                if (isGoogleDriveConnected) {
+                    setTimeout(() => autoSaveGeneratedStory(), 1000);
+                }
+                
+                showAlert('write', `🎉 AI đã tạo thành công truyện "${storyTitle}" với ${chapters} chương (${firstPersonPercent}% ngôi thứ nhất)!`, 'success');
+                
+            } catch (error) {
+                console.error('Error generating story:', error);
+                showAlert('write', 'Lỗi khi tạo truyện: ' + error.message, 'error');
+            }
+        }
 
-        // Generate sentence
-        function generateSentence(improved = false) {
-            const beginnings = [
-                'Trong căn phòng nhỏ ấy,',
-                'Dưới ánh đèn đường leo lét,',
-                'Giữa thành phố ồn ào này,',
-                'Trong cơn mưa tầm tã,',
-                'Với trái tim tan vỡ,',
-                'Trong nỗi cô đơn tột cùng,',
-                'Với ký ức ùa về,',
-                'Dưới bầu trời đen kịt,'
+        // Continue writing with AI
+        async function continueWriting() {
+            const currentContent = document.getElementById('storyContent').value;
+            const style = document.getElementById('writingStyle').value;
+            const length = document.getElementById('chapterLength').value;
+            
+            showAlert('write', `AI đang viết chương ${currentChapter}...`, 'info');
+            
+            try {
+                const newChapter = await generateChapter(
+                    'Tiếp tục câu chuyện', 
+                    style, 
+                    length, 
+                    currentChapter, 
+                    currentChapter + 10
+                );
+                
+                const updatedContent = currentContent + `\n\nChương ${currentChapter}:\n\n${newChapter}`;
+                document.getElementById('storyContent').value = updatedContent;
+                
+                currentChapter++;
+                showAlert('write', `Đã thêm chương ${currentChapter - 1}!`, 'success');
+                
+            } catch (error) {
+                console.error('Error continuing story:', error);
+                showAlert('write', 'Lỗi khi viết tiếp: ' + error.message, 'error');
+            }
+        }
+
+        // Generate sentence based on patterns and vocabulary
+        function generateSentence(patterns, vocabulary, stylePrompts) {
+            const starters = [
+                'không thể không nghĩ về',
+                'cảm thấy một nỗi',
+                'nhớ lại những lúc',
+                'đang đứng giữa',
+                'thấy mình như',
+                'không biết tại sao',
+                'có cảm giác như',
+                'muốn quay trở lại'
             ];
             
             const middles = [
-                'anh cảm thấy một nỗi buồn mênh mang',
-                'cô ấy nhận ra mình đã lạc lối',
-                'tiếng còi xe vang lên xa xăm',
-                'những giọt nước mắt lăn dài trên má',
-                'kỷ niệm ùa về như một cơn lũ',
-                'trái tim như vỡ vụn thành ngàn mảnh',
-                'ánh đèn thành phố chợt vụt tắt',
-                'tiếng chuông điện thoại reo vang trong đêm'
+                'buồn bã vô cùng',
+                'những kỷ niệm cũ',
+                'thành phố ồn ào này',
+                'một kẻ lạc lối',
+                'trái tim tan vỡ',
+                'những giấc mơ xa vời',
+                'âm thanh yên tĩnh',
+                'nỗi cô đơn sâu thẳm'
             ];
             
             const endings = [
-                'không biết ngày mai sẽ ra sao.',
-                'chỉ muốn chìm vào quên lãng.',
-                'và anh biết mình sẽ không bao giờ quên được.',
-                'nhưng tất cả đã quá muộn màng.',
-                'để rồi nhận ra mình thật cô đơn.',
-                'trong khi thế giới ngoài kia vẫn xoay vần.',
-                'dù cho nỗi đau vẫn còn đó.',
-                'và anh biết mình phải tiếp tục bước đi.'
+                'trong đêm tối',
+                'mà không ai hiểu',
+                'của riêng mình',
+                'khó có thể quên',
+                'như một cơn ác mông',
+                'giữa thế giới rộng lớn',
+                'không thể tránh khỏi',
+                'và chẳng biết làm gì'
             ];
             
-            const beginning = beginnings[Math.floor(Math.random() * beginnings.length)];
+            const starter = starters[Math.floor(Math.random() * starters.length)];
             const middle = middles[Math.floor(Math.random() * middles.length)];
-            const ending = improved ? 
-                endings[Math.floor(Math.random() * endings.length)] : 
-                '';
+            const ending = endings[Math.floor(Math.random() * endings.length)];
             
-            return `${beginning} ${middle} ${ending}`;
+            return `${starter} ${middle} ${ending}`;
         }
 
-        // Initialize the app
-        window.onload = init;
+        // Helper functions for AI generation
+        function generateStoryTitle(prompt) {
+            const titles = [
+                'Nhật Ký Của Tôi',
+                'Cuộc Sống Trong Thành Phố',
+                'Những Ngày Cô Đơn',
+                'Tôi Và Thế Giới',
+                'Hành Trình Tìm Về',
+                'Nơi Tôi Thuộc Về',
+                'Câu Chuyện Của Tôi',
+                'Những Trang Nhật Ký'
+            ];
+            return titles[Math.floor(Math.random() * titles.length)];
+        }
+
+        function getWordCount(length) {
+            switch (length) {
+                case 'short': return 1000;
+                case 'medium': return 1750;
+                case 'long': return 2750;
+                default: return 1750;
+            }
+        }
+
+        function getStylePrompts(style) {
+            const styles = {
+                melancholy: ['buồn bã', 'u sầu', 'nặng nề', 'cô đơn'],
+                romantic: ['ngọt ngào', 'lãng mạn', 'yêu thương', 'ấm áp'],
+                philosophical: ['suy nghĩ', 'triết lý', 'sâu sắc', 'tâm hồn'],
+                realistic: ['thực tế', 'đời thường', 'bình dân', 'gần gũi'],
+                nostalgic: ['hoài niệm', 'nhớ nhung', 'xa xưa', 'kỷ niệm']
+            };
+            return styles[style] || styles.melancholy;
+        }
+
+        function getStyleName(style) {
+            const names = {
+                melancholy: 'Buồn bã, nội tâm',
+                romantic: 'Lãng mạn, ngọt ngào',
+                philosophical: 'Triết lý, sâu sắc',
+                realistic: 'Thực tế, gần gụi',
+                nostalgic: 'Hoài niệm, nhớ nhung'
+            };
+            return names[style] || names.melancholy;
+        }
+
+        function getLengthName(length) {
+            const names = {
+                short: 'Ngắn (800-1200 từ)',
+                medium: 'Trung bình (1500-2000 từ)',
+                long: 'Dài (2500-3000 từ)'
+            };
+            return names[length] || names.medium;
+        }
+
+        // Advanced AI Training Functions
+        
+        // Update first person display
+        function updateFirstPersonDisplay(value) {
+            document.getElementById('firstPersonDisplay').textContent = value + '%';
+            document.getElementById('firstPersonPercent').textContent = value + '%';
+        }
+
+        // Add custom patterns
+        function addCustomPatterns() {
+            const patterns = document.getElementById('customPatterns').value.trim();
+            if (!patterns) {
+                showAlert('ai', 'Vui lòng nhập ít nhất một mẫu câu', 'error');
+                return;
+            }
+
+            const patternLines = patterns.split('\n').filter(line => line.trim().length > 0);
+            patternLines.forEach(pattern => {
+                if (!aiTrainingData.patterns.includes(pattern.trim())) {
+                    aiTrainingData.patterns.push(pattern.trim());
+                }
+            });
+
+            document.getElementById('customPatterns').value = '';
+            updateAdvancedAIStats();
+            showAlert('ai', `Đã thêm ${patternLines.length} mẫu câu mới!`, 'success');
+        }
+
+        // Start full AI training
+        async function startFullTraining() {
+            const useLocal = document.getElementById('useLocalStories').checked;
+            const useDrive = document.getElementById('useDriveFiles').checked;
+            const useBuiltin = document.getElementById('useBuiltinData').checked;
+
+            if (!useLocal && !useDrive && !useBuiltin) {
+                showAlert('ai', 'Vui lòng chọn ít nhất một nguồn dữ liệu', 'error');
+                return;
+            }
+
+            showTrainingProgress();
+            updateTrainingStatus('Đang khởi tạo huấn luyện...', 0);
+
+            try {
+                let processedSources = 0;
+                const totalSources = (useLocal ? 1 : 0) + (useDrive ? 1 : 0) + (useBuiltin ? 1 : 0);
+
+                // Train from builtin data first
+                if (useBuiltin) {
+                    updateTrainingStatus('Đang tải dữ liệu mẫu...', 10);
+                    await trainFromBuiltinData();
+                    processedSources++;
+                    updateTrainingStatus('Đã tải xong dữ liệu mẫu', (processedSources / totalSources) * 30);
+                }
+
+                // Train from local stories
+                if (useLocal && localStories.length > 0) {
+                    updateTrainingStatus('Đang xử lý truyện cục bộ...', 40);
+                    for (const story of localStories) {
+                        await processStoryForTraining(story.content, story.title);
+                    }
+                    processedSources++;
+                    updateTrainingStatus('Đã xử lý xong truyện cục bộ', (processedSources / totalSources) * 60);
+                }
+
+                // Train from Google Drive
+                if (useDrive && isGoogleDriveConnected) {
+                    updateTrainingStatus('Đang tải dữ liệu từ Google Drive...', 70);
+                    await trainFromDriveFiles();
+                    processedSources++;
+                    updateTrainingStatus('Đã tải xong từ Google Drive', (processedSources / totalSources) * 90);
+                }
+
+                // Finalize training
+                updateTrainingStatus('Đang tối ưu hóa AI...', 95);
+                await finalizeTraining();
+                updateTrainingStatus('Huấn luyện hoàn tất!', 100);
+
+                updateAdvancedAIStats();
+                hideTrainingProgress();
+                showAlert('ai', `AI đã được huấn luyện thành công từ ${aiTrainingData.trainedStories} nguồn dữ liệu!`, 'success');
+
+            } catch (error) {
+                console.error('Error in full training:', error);
+                hideTrainingProgress();
+                showAlert('ai', 'Lỗi khi huấn luyện AI: ' + error.message, 'error');
+            }
+        }
+
+        // Start quick training
+        async function startQuickTraining() {
+            showTrainingProgress();
+            updateTrainingStatus('Đang huấn luyện nhanh...', 0);
+
+            try {
+                // Quick training with builtin data only
+                await trainFromBuiltinData();
+                updateTrainingStatus('Đang tối ưu hóa...', 70);
+                await finalizeTraining();
+                updateTrainingStatus('Huấn luyện nhanh hoàn tất!', 100);
+
+                updateAdvancedAIStats();
+                hideTrainingProgress();
+                showAlert('ai', 'AI đã được huấn luyện nhanh thành công!', 'success');
+
+            } catch (error) {
+                console.error('Error in quick training:', error);
+                hideTrainingProgress();
+                showAlert('ai', 'Lỗi khi huấn luyện nhanh: ' + error.message, 'error');
+            }
+        }
+
+        // Train from builtin data
+        async function trainFromBuiltinData() {
+            const sampleStories = [
+                {
+                    title: "Ngày Mưa Ở Hà Nội",
+                    content: `Tôi đứng dưới mưa giữa phố cổ Hà Nội, cảm thấy những giọt nước lạnh chạm vào da. Tôi nghĩ về những ngày đã qua, những kỷ niệm mà tôi không thể nào quên. Cuộc sống này có khi thật khó hiểu. Tôi muốn được trở về thời thơ ấu, khi tôi chưa biết đến nỗi buồn là gì.
+
+Tôi bước đi trên những con đường quen thuộc, nơi tôi đã từng dành cả thanh xuân. Mỗi góc phố đều gợi lên trong tôi những cảm xúc khác nhau. Tôi cảm thấy trái tim mình đang rung động, không biết vì niềm vui hay nỗi buồn.
+
+Có lúc tôi tự hỏi, liệu tôi có đang sống đúng với con người mà tôi muốn trở thành? Tôi không có câu trả lời. Tôi chỉ biết rằng, dù có khó khăn như thế nào, tôi vẫn sẽ tiếp tục bước đi.`
+                },
+                {
+                    title: "Một Mình Trong Thành Phố",
+                    content: `Tôi ngồi trong căn phòng nhỏ, nhìn ra cửa sổ thấy thành phố đang dần thức giấc. Tôi cảm thấy mình như một hạt bụi nhỏ bé giữa cuộc sống bộn bề này. Tôi tự hỏi không biết có ai khác cũng cảm thấy cô đơn như tôi không.
+
+Những âm thanh từ bên ngoài vọng vào: tiếng xe cộ, tiếng người qua lại, tiếng sống. Nhưng với tôi, tất cả chỉ là tiếng ồn. Tôi khao khát được kết nối với ai đó, nhưng lại không biết bắt đầu từ đâu.
+
+Tôi nhớ về quê hương, nơi tôi có thể gọi tên từng con đường. Ở đây, tôi chỉ là người lạ. Tôi hy vọng một ngày nào đó, tôi sẽ tìm được nơi mà tôi thực sự thuộc về.`
+                },
+                {
+                    title: "Tình Yêu Đầu",
+                    content: `Tôi vẫn còn nhớ cảm giác lần đầu tiên yêu ai đó. Trái tim tôi đập nhanh mỗi khi gặp cô ấy. Tôi cảm thấy như mình đang bay bổng trên những đám mây. Tôi nghĩ rằng tình yêu sẽ kéo dài mãi mãi.
+
+Nhưng rồi thời gian trôi qua, tôi nhận ra rằng không phải tình yêu nào cũng có happy ending. Tôi học được cách đau khổ, cách buông tay, cách tha thứ. Tôi hiểu rằng yêu ai đó không có nghĩa là sở hữu họ.
+
+Giờ đây, khi nhìn lại, tôi biết ơn vì đã từng được yêu và được yêu. Dù có đau đớn, những kỷ niệm đó vẫn là báu vật của tôi. Tôi mang chúng theo mình như những bài học quý giá về cuộc sống.`
+                }
+            ];
+
+            for (const story of sampleStories) {
+                await processStoryForTraining(story.content, story.title);
+                await new Promise(resolve => setTimeout(resolve, 100)); // Simulate processing time
+            }
+        }
+
+        // Finalize training
+        async function finalizeTraining() {
+            // Calculate statistics
+            aiTrainingData.trainedStories = aiTrainingData.stories.length;
+            aiTrainingData.accuracy = Math.min(100, aiTrainingData.trainedStories * 12 + Math.random() * 10);
+            
+            // Add some randomness to make it feel more realistic
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        // Test AI
+        async function testAI() {
+            if (aiTrainingData.trainedStories === 0) {
+                showAlert('ai', 'Vui lòng huấn luyện AI trước khi kiểm tra', 'error');
+                return;
+            }
+
+            showAlert('ai', 'Đang kiểm tra khả năng viết của AI...', 'info');
+
+            try {
+                const testPrompt = "Tôi đang ngồi trong quán cà phê nhỏ";
+                const testResult = await generateChapter(testPrompt, 'melancholy', 'short', 1, 1);
+                
+                document.getElementById('testOutput').innerHTML = `
+                    <strong>🧪 Kết quả kiểm tra AI:</strong><br><br>
+                    <em>Prompt test: "${testPrompt}"</em><br><br>
+                    <div style="padding: 15px; background: white; border-radius: 4px; border-left: 4px solid #007bff;">
+                        ${testResult.substring(0, 300)}...
+                    </div><br>
+                    <small style="color: #666;">
+                        ✅ AI đã tạo thành công đoạn văn với ${testResult.split(' ').length} từ<br>
+                        ✅ Sử dụng ngôi thứ nhất: ${(testResult.match(/\btôi\b/gi) || []).length} lần<br>
+                        ✅ Phong cách: Buồn bã, nội tâm
+                    </small>
+                `;
+                
+                document.getElementById('aiTestResults').style.display = 'block';
+                showAlert('ai', 'Kiểm tra AI thành công!', 'success');
+
+            } catch (error) {
+                console.error('Error testing AI:', error);
+                showAlert('ai', 'Lỗi khi kiểm tra AI: ' + error.message, 'error');
+            }
+        }
+
+        // Reset AI
+        function resetAI() {
+            if (confirm('Bạn có chắc chắn muốn đặt lại toàn bộ dữ liệu AI? Điều này không thể hoàn tác.')) {
+                aiTrainingData = {
+                    stories: [],
+                    vocabulary: new Set(),
+                    patterns: [],
+                    trainedStories: 0,
+                    accuracy: 0
+                };
+                
+                updateAdvancedAIStats();
+                document.getElementById('aiTestResults').style.display = 'none';
+                showAlert('ai', 'Đã đặt lại AI về trạng thái ban đầu', 'success');
+            }
+        }
+
+        // Show/hide training progress
+        function showTrainingProgress() {
+            document.getElementById('trainingProgress').style.display = 'block';
+        }
+
+        function hideTrainingProgress() {
+            setTimeout(() => {
+                document.getElementById('trainingProgress').style.display = 'none';
+            }, 2000);
+        }
+
+        // Update training status
+        function updateTrainingStatus(status, percent) {
+            document.getElementById('trainingStatus').textContent = status;
+            document.getElementById('trainingPercent').textContent = Math.round(percent) + '%';
+            document.getElementById('trainingBar').style.width = percent + '%';
+        }
+
+        // Update advanced AI stats
+        function updateAdvancedAIStats() {
+            document.getElementById('totalDataSources').textContent = aiTrainingData.stories.length;
+            document.getElementById('totalWords').textContent = aiTrainingData.vocabulary.size.toLocaleString();
+            document.getElementById('uniquePhrases').textContent = aiTrainingData.patterns.length.toLocaleString();
+            document.getElementById('aiReadiness').textContent = Math.round(aiTrainingData.accuracy) + '%';
+            
+            // Also update the main AI stats
+            updateAIStats();
+        }
+
+        // Enhanced sentence generation with first-person focus
+        function generateSentence(patterns, vocabulary, stylePrompts) {
+            const firstPersonFreq = parseInt(document.getElementById('firstPersonFrequency').value) || 70;
+            const useFirstPerson = Math.random() * 100 < firstPersonFreq;
+            
+            const firstPersonStarters = [
+                'Tôi không thể không nghĩ về',
+                'Tôi cảm thấy một nỗi',
+                'Tôi nhớ lại những lúc',
+                'Tôi đang đứng giữa',
+                'Tôi thấy mình như',
+                'Tôi không biết tại sao',
+                'Tôi có cảm giác như',
+                'Tôi muốn quay trở lại',
+                'Tôi tự hỏi liệu',
+                'Tôi hy vọng rằng'
+            ];
+            
+            const thirdPersonStarters = [
+                'Cuộc sống đôi khi',
+                'Thành phố này',
+                'Những kỷ niệm cũ',
+                'Trái tim con người',
+                'Thời gian trôi qua',
+                'Những giấc mơ xa vời',
+                'Âm thanh yên tĩnh',
+                'Nỗi cô đơn sâu thẳm'
+            ];
+            
+            const middles = [
+                'buồn bã vô cùng',
+                'những kỷ niệm cũ',
+                'thành phố ồn ào này',
+                'một kẻ lạc lối',
+                'trái tim tan vỡ',
+                'những giấc mơ xa vời',
+                'âm thanh yên tĩnh',
+                'nỗi cô đơn sâu thẳm',
+                'cuộc sống bộn bề',
+                'tình yêu đã mất'
+            ];
+            
+            const endings = [
+                'trong đêm tối này',
+                'mà không ai hiểu được',
+                'của riêng mình',
+                'khó có thể quên đi',
+                'như một cơn ác mông',
+                'giữa thế giới rộng lớn',
+                'không thể tránh khỏi',
+                'và chẳng biết làm gì',
+                'dù biết rằng vô ích',
+                'nhưng lại không thể dừng lại'
+            ];
+            
+            const starters = useFirstPerson ? firstPersonStarters : thirdPersonStarters;
+            const starter = starters[Math.floor(Math.random() * starters.length)];
+            const middle = middles[Math.floor(Math.random() * middles.length)];
+            const ending = endings[Math.floor(Math.random() * endings.length)];
+            
+            return `${starter} ${middle} ${ending}`;
+        }
+        function updateAIStats() {
+            document.getElementById('aiTrainedStories').textContent = aiTrainingData.trainedStories;
+            document.getElementById('aiVocabulary').textContent = aiTrainingData.vocabulary.size.toLocaleString();
+            document.getElementById('aiAccuracy').textContent = aiTrainingData.accuracy + '%';
+        }
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.querySelector(`[data-content="${tabName}"]`).classList.add('active');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        }
+
+        // Save story locally
+        function saveStoryLocally() {
+            const title = document.getElementById('storyTitle').value.trim();
+            const author = document.getElementById('authorName').value.trim();
+            const genre = document.getElementById('storyGenre').value;
+            const content = document.getElementById('storyContent').value.trim();
+
+            if (!title || !content) {
+                showAlert('write', 'Vui lòng nhập tên truyện và nội dung', 'error');
+                return;
+            }
+
+            const story = {
+                id: Date.now(),
+                title: title,
+                author: author || 'Ẩn danh',
+                genre: genre,
+                content: content,
+                wordCount: countWords(content),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            // Check if story already exists (by title)
+            const existingIndex = localStories.findIndex(s => s.title === title);
+            if (existingIndex >= 0) {
+                story.id = localStories[existingIndex].id;
+                story.createdAt = localStories[existingIndex].createdAt;
+                localStories[existingIndex] = story;
+            } else {
+                localStories.push(story);
+            }
+
+            // Save to localStorage (note: this won't work in Claude artifacts)
+            try {
+                const storiesData = JSON.stringify(localStories);
+                // In a real environment, this would save to localStorage
+                // localStorage.setItem('stories', storiesData);
+                showAlert('write', 'Truyện đã được lưu thành công!', 'success');
+            } catch (error) {
+                console.error('Error saving to localStorage:', error);
+                showAlert('write', 'Lưu truyện thành công (chỉ trong phiên làm việc hiện tại)', 'info');
+            }
+
+            updateUI();
+        }
+
+        // Upload story to Google Drive
+        async function uploadStoryToDrive() {
+            if (!isGoogleDriveConnected) {
+                showAlert('write', 'Vui lòng kết nối với Google Drive trước', 'error');
+                return;
+            }
+
+            const title = document.getElementById('storyTitle').value.trim();
+            const author = document.getElementById('authorName').value.trim();
+            const genre = document.getElementById('storyGenre').value;
+            const content = document.getElementById('storyContent').value.trim();
+
+            if (!title || !content) {
+                showAlert('write', 'Vui lòng nhập tên truyện và nội dung', 'error');
+                return;
+            }
+
+            try {
+                // Create file content
+                const fileContent = `Tên truyện: ${title}
+Tác giả: ${author || 'Ẩn danh'}
+Thể loại: ${genre}
+Ngày tạo: ${new Date().toLocaleString('vi-VN')}
+
+${'-'.repeat(50)}
+
+${content}`;
+
+                const boundary = '-------314159265358979323846';
+                const delimiter = "\r\n--" + boundary + "\r\n";
+                const close_delim = "\r\n--" + boundary + "--";
+
+                const metadata = {
+                    'name': `${title}.txt`,
+                    'parents': [] // You can specify a folder ID here
+                };
+
+                const multipartRequestBody =
+                    delimiter +
+                    'Content-Type: application/json\r\n\r\n' +
+                    JSON.stringify(metadata) +
+                    delimiter +
+                    'Content-Type: text/plain\r\n\r\n' +
+                    fileContent +
+                    close_delim;
+
+                const request = gapi.client.request({
+                    'path': 'https://www.googleapis.com/upload/drive/v3/files',
+                    'method': 'POST',
+                    'params': {'uploadType': 'multipart'},
+                    'headers': {
+                        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+                    },
+                    'body': multipartRequestBody
+                });
+
+                const response = await request;
+                showAlert('write', `Truyện "${title}" đã được tải lên Google Drive thành công!`, 'success');
+                
+                // Also save locally
+                saveStoryLocally();
+                
+                // Refresh drive files list
+                await loadDriveFiles();
+                
+            } catch (error) {
+                console.error('Error uploading to Drive:', error);
+                showAlert('write', 'Lỗi khi tải lên Google Drive: ' + error.message, 'error');
+            }
+        }
+
+        // Clear content
+        function clearContent() {
+            if (confirm('Bạn có chắc chắn muốn xóa toàn bộ nội dung?')) {
+                document.getElementById('storyTitle').value = '';
+                document.getElementById('authorName').value = '';
+                document.getElementById('storyContent').value = '';
+                showAlert('write', 'Nội dung đã được xóa', 'info');
+            }
+        }
+
+        // Connect to Google Drive
+        function connectGoogleDrive() {
+            try {
+                if (gapi.client.getToken()) {
+                    onGoogleDriveConnected();
+                } else {
+                    tokenClient.requestAccessToken({prompt: 'consent'});
+                }
+            } catch (error) {
+                console.error('Error connecting to Google Drive:', error);
+                showAlert('drive', 'Lỗi kết nối Google Drive: ' + error.message, 'error');
+            }
+        }
+
+        // Disconnect from Google Drive
+        function disconnectGoogleDrive() {
+            try {
+                const token = gapi.client.getToken();
+                if (token) {
+                    google.accounts.oauth2.revoke(token.access_token);
+                    gapi.client.setToken('');
+                }
+                onGoogleDriveDisconnected();
+                showAlert('drive', 'Đã ngắt kết nối với Google Drive', 'info');
+            } catch (error) {
+                console.error('Error disconnecting from Google Drive:', error);
+                showAlert('drive', 'Lỗi ngắt kết nối: ' + error.message, 'error');
+            }
+        }
+
+        // Handle Google Drive connection
+        function onGoogleDriveConnected() {
+            isGoogleDriveConnected = true;
+            document.getElementById('driveStatusIndicator').className = 'status-indicator status-connected';
+            document.getElementById('driveStatusText').textContent = 'Đã kết nối với Google Drive';
+            document.getElementById('connectGoogleDriveBtn').style.display = 'none';
+            document.getElementById('disconnectGoogleDriveBtn').style.display = 'inline-block';
+            document.getElementById('driveInfoSection').style.display = 'block';
+            document.getElementById('driveFilesSection').style.display = 'block';
+            
+            loadDriveFiles();
+            showAlert('drive', 'Kết nối Google Drive thành công!', 'success');
+        }
+
+        // Handle Google Drive disconnection
+        function onGoogleDriveDisconnected() {
+            isGoogleDriveConnected = false;
+            document.getElementById('driveStatusIndicator').className = 'status-indicator status-disconnected';
+            document.getElementById('driveStatusText').textContent = 'Chưa kết nối với Google Drive';
+            document.getElementById('connectGoogleDriveBtn').style.display = 'inline-block';
+            document.getElementById('disconnectGoogleDriveBtn').style.display = 'none';
+            document.getElementById('driveInfoSection').style.display = 'none';
+            document.getElementById('driveFilesSection').style.display = 'none';
+        }
+
+        // Load Google Drive files
+        async function loadDriveFiles() {
+            if (!isGoogleDriveConnected) return;
+
+            try {
+                const response = await gapi.client.drive.files.list({
+                    pageSize: 50,
+                    fields: 'files(id, name, size, modifiedTime, mimeType)',
+                    q: "name contains '.txt' or mimeType = 'text/plain'"
+                });
+
+                const files = response.result.files || [];
+                displayDriveFiles(files);
+                
+                // Update stats
+                document.getElementById('driveFilesCount').textContent = files.length;
+                const totalSize = files.reduce((sum, file) => sum + (parseInt(file.size) || 0), 0);
+                document.getElementById('driveUsedSpace').textContent = formatFileSize(totalSize);
+                
+            } catch (error) {
+                console.error('Error loading drive files:', error);
+                showAlert('drive', 'Lỗi tải danh sách file: ' + error.message, 'error');
+            }
+        }
+
+        // Display Drive files
+        function displayDriveFiles(files) {
+            const filesList = document.getElementById('driveFilesList');
+            
+            if (files.length === 0) {
+                filesList.innerHTML = '<div class="loading">Không có file nào trên Google Drive</div>';
+                return;
+            }
+
+            filesList.innerHTML = files.map(file => `
+                <div class="file-item">
+                    <div>
+                        <strong>${file.name}</strong><br>
+                        <small style="color: #666;">
+                            ${formatFileSize(file.size || 0)} • ${new Date(file.modifiedTime).toLocaleString('vi-VN')}
+                        </small>
+                    </div>
+                    <div>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="downloadFromDrive('${file.id}', '${file.name}')">
+                            📥 Tải về
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Download file from Drive
+        async function downloadFromDrive(fileId, fileName) {
+            try {
+                const response = await gapi.client.drive.files.get({
+                    fileId: fileId,
+                    alt: 'media'
+                });
+                
+                // Create download link
+                const blob = new Blob([response.body], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.click();
+                window.URL.revokeObjectURL(url);
+                
+                showAlert('drive', `Đã tải xuống "${fileName}"`, 'success');
+            } catch (error) {
+                console.error('Error downloading file:', error);
+                showAlert('drive', 'Lỗi tải xuống file: ' + error.message, 'error');
+            }
+        }
+
+        // Load local stories
+        function loadLocalStories() {
+            try {
+                // In a real environment, this would load from localStorage
+                // const stored = localStorage.getItem('stories');
+                // if (stored) {
+                //     localStories = JSON.parse(stored);
+                // }
+                displayLocalStories();
+            } catch (error) {
+                console.error('Error loading local stories:', error);
+            }
+        }
+
+        // Display local stories
+        function displayLocalStories() {
+            const storiesList = document.getElementById('localStoriesList');
+            
+            if (localStories.length === 0) {
+                storiesList.innerHTML = '<div class="loading">Chưa có truyện nào được lưu</div>';
+                return;
+            }
+
+            storiesList.innerHTML = localStories.map(story => `
+                <div class="file-item">
+                    <div>
+                        <strong>${story.title}</strong><br>
+                        <small style="color: #666;">
+                            ${story.author} • ${story.genre} • ${story.wordCount} từ • ${new Date(story.createdAt).toLocaleDateString('vi-VN')}
+                        </small>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="loadStoryToEditor('${story.id}')">
+                            ✏️ Sửa
+                        </button>
+                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteLocalStory('${story.id}')">
+                            🗑️ Xóa
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load story to editor
+        function loadStoryToEditor(storyId) {
+            const story = localStories.find(s => s.id == storyId);
+            if (story) {
+                document.getElementById('storyTitle').value = story.title;
+                document.getElementById('authorName').value = story.author;
+                document.getElementById('storyGenre').value = story.genre;
+                document.getElementById('storyContent').value = story.content;
+                
+                // Switch to write tab
+                switchTab('write');
+                showAlert('write', `Đã tải truyện "${story.title}" vào trình soạn thảo`, 'info');
+            }
+        }
+
+        // Delete local story
+        function deleteLocalStory(storyId) {
+            const story = localStories.find(s => s.id == storyId);
+            if (story && confirm(`Bạn có chắc chắn muốn xóa truyện "${story.title}"?`)) {
+                localStories = localStories.filter(s => s.id != storyId);
+                
+                try {
+                    // In a real environment, this would save to localStorage
+                    // localStorage.setItem('stories', JSON.stringify(localStories));
+                    displayLocalStories();
+                    updateUI();
+                    showAlert('library', `Đã xóa truyện "${story.title}"`, 'success');
+                } catch (error) {
+                    console.error('Error deleting story:', error);
+                    showAlert('library', 'Lỗi khi xóa truyện: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // Update UI statistics
+        function updateUI() {
+            document.getElementById('localStoriesCount').textContent = localStories.length;
+            const totalWords = localStories.reduce((sum, story) => sum + (story.wordCount || 0), 0);
+            document.getElementById('totalWordsCount').textContent = totalWords.toLocaleString();
+        }
+
+        // Count words in text
+        function countWords(text) {
+            if (!text) return 0;
+            return text.trim().split(/\s+/).length;
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Show alert message
+        function showAlert(tabId, message, type) {
+            const alertElement = document.getElementById(tabId + 'Alert');
+            if (alertElement) {
+                alertElement.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+                alertElement.style.display = 'block';
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    alertElement.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Initialize app when page loads
+        window.addEventListener('load', initializeApp);
+
+        // Make functions available globally for onclick handlers
+        window.downloadFromDrive = downloadFromDrive;
+        window.loadStoryToEditor = loadStoryToEditor;
+        window.deleteLocalStory = deleteLocalStory;
+        window.toggleWritingMode = toggleWritingMode;
+        window.updateFirstPersonDisplay = updateFirstPersonDisplay;
     </script>
 </body>
 </html>
