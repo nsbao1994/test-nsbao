@@ -460,7 +460,7 @@
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+           100% { transform: rotate(360deg); }
         }
 
         .toast {
@@ -803,9 +803,6 @@
                     <button class="btn btn-success" id="trainAIFromDrive">
                         🧠 Huấn luyện AI từ Drive
                     </button>
-                    <button class="btn btn-warning" id="analyzeStories">
-                        📊 Phân tích thống kê
-                    </button>
                 </div>
             </div>
 
@@ -840,7 +837,7 @@
                         <select id="writingSpeed">
                             <option value="slow">Chậm - Chất lượng cao</option>
                             <option value="normal" selected>Bình thường</option>
-                            <option value="fast">Nhanq - Hiệu suất cao</option>
+                            <option value="fast">Nhanh - Hiệu suất cao</option>
                         </select>
                     </div>
                     <div class="info-group">
@@ -893,23 +890,39 @@
             <div class="tab-content" data-content="drive">
                 <div class="google-drive-section">
                     <h3 style="color: #27ae60; margin-bottom: 15px;">☁️ Kết nối Google Drive</h3>
-                    <p style="color: #2c3e50; margin-bottom: 20px;">Kết nối với Google Drive để lưu trữ truyện và cho AI học hỏi từ thư viện của bạn</p>
+                    <p style="color: #2c3e50;">Kết nối với Google Drive để lưu trữ truyện và cho AI học hỏi</p>
                     
                     <div class="drive-status">
-                        <div class="status-indicator" id="driveStatusIndicator"></div>
+                        <div class="status-indicator" id="driveStatus"></div>
                         <span id="driveStatusText">Chưa kết nối với Google Drive</span>
                     </div>
-
+                    
                     <div class="controls">
                         <button class="btn btn-google" id="connectGoogleDrive">
                             🔗 Kết nối Google Drive
                         </button>
-                        <button class="btn btn-success" id="backupToDrive">
-                            💾 Sao lưu lên Drive
+                        <button class="btn btn-success" id="createDriveFolder">
+                            📁 Tạo thư mục AI Story Writer
                         </button>
-                        <button class="btn btn-secondary" id="disconnectDrive">
-                            ❌ Ngắt kết nối
+                        <button class="btn btn-primary" id="listDriveFiles">
+                            🔍 Xem file trên Drive
                         </button>
+                    </div>
+                </div>
+
+                <div class="story-info">
+                    <div class="info-group">
+                        <label>📂 Thư mục lưu trữ</label>
+                        <input type="text" id="driveFolderPath" placeholder="Chưa chọn thư mục..." readonly>
+                    </div>
+                    <div class="info-group">
+                        <label>📊 Dung lượng sử dụng</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="flex: 1; background: #ecf0f1; border-radius: 10px; overflow: hidden; height: 8px;">
+                                <div id="driveUsageBar" style="background: linear-gradient(45deg, #27ae60, #2ecc71); height: 100%; width: 0%"></div>
+                            </div>
+                            <span id="driveUsageText">0 MB/15 GB</span>
+                        </div>
                     </div>
                 </div>
 
@@ -923,8 +936,8 @@
                         <div class="stat-label">Chương trên Drive</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number" id="driveSpace">0 MB</div>
-                        <div class="stat-label">Dung lượng đã dùng</div>
+                        <div class="stat-number" id="driveAI">0</div>
+                        <div class="stat-label">File dữ liệu AI</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="driveLastSync">--</div>
@@ -932,14 +945,11 @@
                     </div>
                 </div>
 
-                <div class="ai-learning-section">
-                    <h4 style="color: #27ae60; margin-bottom: 15px;">📊 Tình trạng đồng bộ</h4>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="syncProgress" style="width: 0%"></div>
+                <div class="chapter-list" id="driveFileList" style="margin-top: 25px;">
+                    <div class="empty-state">
+                        <h3>📁 Chưa kết nối với Google Drive</h3>
+                        <p>Kết nối để xem các file truyện và dữ liệu AI</p>
                     </div>
-                    <p style="color: #2c3e50; margin-top: 15px; text-align: center;" id="syncStatus">
-                        Chưa bắt đầu đồng bộ
-                    </p>
                 </div>
             </div>
         </div>
@@ -948,24 +958,29 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        // Khởi tạo các biến toàn cục
+        // API keys
+        const API_KEY = 'AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o';
+        const CLIENT_ID = '398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly';
+
+        // Global variables
+        let isGoogleDriveConnected = false;
+        let driveFolderId = null;
         let currentChapter = 1;
         let totalChapters = 150;
         let wordCount = 0;
-        let isProcessing = false;
-        let isConnectedToDrive = false;
         let learningProgress = 0;
+        let aiStoriesLearned = 0;
 
-        // DOM Elements
+        // DOM elements
         const fileInput = document.getElementById('fileInput');
         const fileNames = document.getElementById('fileNames');
         const processBtn = document.getElementById('processBtn');
-        const quickStartBtn = document.getElementById('quickStartBtn');
         const loading = document.getElementById('loading');
         const chapterContent = document.getElementById('chapterContent');
+        const storyText = document.getElementById('storyText');
         const chapterTitle = document.getElementById('chapterTitle');
         const chapterNumber = document.getElementById('chapterNumber');
-        const storyText = document.getElementById('storyText');
         const progressFill = document.getElementById('progressFill');
         const chapterCount = document.getElementById('chapterCount');
         const wordCountElement = document.getElementById('wordCount');
@@ -974,88 +989,84 @@
         const learningFill = document.getElementById('learningFill');
         const learningPercent = document.getElementById('learningPercent');
         const learnedStories = document.getElementById('learnedStories');
+        const driveStatus = document.getElementById('driveStatus');
+        const driveStatusText = document.getElementById('driveStatusText');
+        const connectGoogleDriveBtn = document.getElementById('connectGoogleDrive');
+        const createDriveFolderBtn = document.getElementById('createDriveFolder');
+        const listDriveFilesBtn = document.getElementById('listDriveFiles');
+        const driveFolderPath = document.getElementById('driveFolderPath');
+        const driveUsageBar = document.getElementById('driveUsageBar');
+        const driveUsageText = document.getElementById('driveUsageText');
+        const driveStories = document.getElementById('driveStories');
+        const driveChapters = document.getElementById('driveChapters');
+        const driveAI = document.getElementById('driveAI');
+        const driveLastSync = document.getElementById('driveLastSync');
+        const driveFileList = document.getElementById('driveFileList');
         const toast = document.getElementById('toast');
-        const createFromIdea = document.getElementById('createFromIdea');
         const creativeMode = document.getElementById('creativeMode');
-        const cancelCreative = document.getElementById('cancelCreative');
-        const generateFromIdea = document.getElementById('generateFromIdea');
-        const tabs = document.querySelectorAll('.tab');
-        const tabContents = document.querySelectorAll('.tab-content');
+        const createFromIdeaBtn = document.getElementById('createFromIdea');
+        const cancelCreativeBtn = document.getElementById('cancelCreative');
+        const generateFromIdeaBtn = document.getElementById('generateFromIdea');
+        const quickStartBtn = document.getElementById('quickStartBtn');
+        const syncWithDriveBtn = document.getElementById('syncWithDrive');
+        const trainAIFromDriveBtn = document.getElementById('trainAIFromDrive');
+        const uploadToGoogleDriveBtn = document.getElementById('uploadToGoogleDrive');
 
-        // Xử lý sự kiện khi trang được tải
-        document.addEventListener('DOMContentLoaded', function() {
-            // Khởi tạo các giá trị
-            updateProgress();
-            simulateLearningProgress();
-            
-            // Xử lý sự kiện cho các tab
-            tabs.forEach(tab => {
+        // Initialize the app
+        function init() {
+            setupEventListeners();
+            checkGoogleDriveConnection();
+            updateUI();
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', () => {
                     const tabName = tab.getAttribute('data-tab');
-                    activateTab(tabName);
+                    switchTab(tabName);
                 });
             });
 
-            // Xử lý sự kiện upload file
-            fileInput.addEventListener('change', handleFileUpload);
+            // File input change
+            fileInput.addEventListener('change', handleFileSelection);
 
-            // Xử lý sự kiện nút xử lý
-            processBtn.addEventListener('click', startProcessing);
+            // Process button
+            processBtn.addEventListener('click', processFiles);
 
-            // Xử lý sự kiện nút tạo nhanh
-            quickStartBtn.addEventListener('click', quickStart);
+            // Continue writing button
+            document.getElementById('continueBtn').addEventListener('click', writeNextChapter);
 
-            // Xử lý sự kiện nút tiếp tục
-            document.getElementById('continueBtn').addEventListener('click', generateNextChapter);
-
-            // Xử lý sự kiện nút viết lại
+            // Rewrite button
             document.getElementById('rewriteBtn').addEventListener('click', rewriteChapter);
 
-            // Xử lý sự kiện nút lưu chương
+            // Save chapter button
             document.getElementById('saveChapterBtn').addEventListener('click', saveChapter);
 
-            // Xử lý sự kiện nút kết nối Google Drive
-            document.getElementById('connectGoogleDrive').addEventListener('click', connectGoogleDrive);
+            // Google Drive buttons
+            connectGoogleDriveBtn.addEventListener('click', connectGoogleDrive);
+            createDriveFolderBtn.addEventListener('click', createDriveFolder);
+            listDriveFilesBtn.addEventListener('click', listDriveFiles);
+            uploadToGoogleDriveBtn.addEventListener('click', uploadToGoogleDrive);
 
-            // Xử lý sự kiện tạo từ ý tưởng
-            createFromIdea.addEventListener('click', showCreativeMode);
-            cancelCreative.addEventListener('click', hideCreativeMode);
-            generateFromIdea.addEventListener('click', generateFromIdeaHandler);
-        });
+            // Creative mode buttons
+            createFromIdeaBtn.addEventListener('click', showCreativeMode);
+            cancelCreativeBtn.addEventListener('click', hideCreativeMode);
+            generateFromIdeaBtn.addEventListener('click', generateFromIdea);
 
-        // Hàm hiển thị thông báo
-        function showToast(message, type = 'success') {
-            toast.textContent = message;
-            toast.className = 'toast';
-            toast.classList.add(type);
-            toast.classList.add('show');
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            // Quick start button
+            quickStartBtn.addEventListener('click', quickStart);
+
+            // Sync with Drive button
+            syncWithDriveBtn.addEventListener('click', syncWithDrive);
+
+            // Train AI from Drive button
+            trainAIFromDriveBtn.addEventListener('click', trainAIFromDrive);
         }
 
-        // Hàm kích hoạt tab
-        function activateTab(tabName) {
-            tabs.forEach(tab => {
-                if (tab.getAttribute('data-tab') === tabName) {
-                    tab.classList.add('active');
-                } else {
-                    tab.classList.remove('active');
-                }
-            });
-            
-            tabContents.forEach(content => {
-                if (content.getAttribute('data-content') === tabName) {
-                    content.classList.add('active');
-                } else {
-                    content.classList.remove('active');
-                }
-            });
-        }
-
-        // Xử lý upload file
-        function handleFileUpload(event) {
+        // Handle file selection
+        function handleFileSelection(event) {
             const files = event.target.files;
             if (files.length > 0) {
                 let names = '';
@@ -1064,298 +1075,525 @@
                     if (i < files.length - 1) names += ', ';
                 }
                 fileNames.textContent = names;
-                processBtn.style.display = 'flex';
-                showToast('Đã chọn ' + files.length + ' file. Nhấn "Xử lý" để AI học hỏi.', 'success');
+                processBtn.style.display = 'block';
             } else {
                 fileNames.textContent = 'Chưa chọn file nào';
                 processBtn.style.display = 'none';
             }
         }
 
-        // Hiển thị/ẩn chế độ sáng tạo
+        // Process selected files
+        function processFiles() {
+            showLoading();
+            
+            // Simulate processing
+            setTimeout(() => {
+                // Update learning progress
+                learningProgress = 85;
+                learningFill.style.width = `${learningProgress}%`;
+                learningPercent.textContent = `${learningProgress}%`;
+                aiStoriesLearned += 3;
+                learnedStories.textContent = aiStoriesLearned;
+                
+                // Generate a story title
+                document.getElementById('storyTitle').value = generateStoryTitle();
+                
+                // Show chapter content
+                hideLoading();
+                chapterContent.style.display = 'block';
+                
+                // Write first chapter
+                writeNextChapter();
+                
+                // Show success message
+                showToast('Đã xử lý xong file và tạo truyện mới!', 'success');
+            }, 2000);
+        }
+
+        // Write next chapter
+        function writeNextChapter() {
+            showLoading();
+            
+            // Simulate writing
+            setTimeout(() => {
+                // Update progress
+                currentChapter++;
+                const progress = (currentChapter / totalChapters) * 100;
+                progressFill.style.width = `${progress}%`;
+                chapterCount.textContent = currentChapter;
+                
+                // Generate chapter content
+                const chapterWords = Math.floor(Math.random() * 500) + 1500;
+                wordCount += chapterWords;
+                wordCountElement.textContent = wordCount.toLocaleString();
+                avgWordsPerChapter.textContent = Math.round(wordCount / currentChapter).toLocaleString();
+                
+                // Update chapter info
+                chapterTitle.textContent = `Chương ${currentChapter}: ${generateChapterTitle()}`;
+                chapterNumber.textContent = `Chương ${currentChapter}/${totalChapters}`;
+                
+                // Generate chapter content
+                storyText.textContent = generateChapterContent();
+                
+                hideLoading();
+                
+                // Show success message
+                showToast(`Đã viết xong chương ${currentChapter}!`, 'success');
+            }, 1500);
+        }
+
+        // Rewrite current chapter
+        function rewriteChapter() {
+            showLoading();
+            
+            // Simulate rewriting
+            setTimeout(() => {
+                // Generate improved chapter content
+                storyText.textContent = generateChapterContent(true);
+                
+                hideLoading();
+                
+                // Show success message
+                showToast('Đã viết lại chương với chất lượng cao hơn!', 'success');
+            }, 1000);
+        }
+
+        // Save current chapter
+        function saveChapter() {
+            showToast('Đã lưu chương thành công!', 'success');
+        }
+
+        // Connect to Google Drive
+        function connectGoogleDrive() {
+            showLoading();
+            
+            // Simulate connection
+            setTimeout(() => {
+                isGoogleDriveConnected = true;
+                driveStatus.classList.add('connected');
+                driveStatusText.textContent = 'Đã kết nối với Google Drive';
+                
+                // Update UI
+                updateDriveStats();
+                
+                hideLoading();
+                
+                // Show success message
+                showToast('Đã kết nối thành công với Google Drive!', 'success');
+            }, 1500);
+        }
+
+        // Create Drive folder
+        function createDriveFolder() {
+            if (!isGoogleDriveConnected) {
+                showToast('Vui lòng kết nối với Google Drive trước!', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            // Simulate folder creation
+            setTimeout(() => {
+                driveFolderId = 'folder_' + Math.random().toString(36).substr(2, 9);
+                driveFolderPath.value = 'AI Story Writer/' + new Date().getFullYear();
+                
+                hideLoading();
+                
+                // Show success message
+                showToast('Đã tạo thư mục thành công trên Google Drive!', 'success');
+            }, 1000);
+        }
+
+        // List Drive files
+        function listDriveFiles() {
+            if (!isGoogleDriveConnected) {
+                showToast('Vui lòng kết nối với Google Drive trước!', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            // Simulate file listing
+            setTimeout(() => {
+                // Clear current list
+                driveFileList.innerHTML = '';
+                
+                // Add sample files
+                const files = [
+                    { name: 'Truyện Đô Thị Bi Thương - Chương 1-20.txt', type: 'document', size: '2.4 MB', modified: '2 giờ trước' },
+                    { name: 'Dữ liệu AI học tập.json', type: 'data', size: '1.2 MB', modified: '6 giờ trước' },
+                    { name: 'Truyện Ngắn - Mưa Đêm Thành Phố.txt', type: 'document', size: '0.8 MB', modified: '1 ngày trước' },
+                    { name: 'Từ điển cảm xúc AI.csv', type: 'data', size: '0.5 MB', modified: '2 ngày trước' },
+                    { name: 'Truyện Dài - Bóng Tối và Ánh Sáng.txt', type: 'document', size: '5.1 MB', modified: '3 ngày trước' }
+                ];
+                
+                files.forEach(file => {
+                    const item = document.createElement('div');
+                    item.className = 'chapter-item';
+                    item.innerHTML = `
+                        <div>
+                            <div style="font-weight: 600; color: #2c3e50;">${file.name}</div>
+                            <div style="font-size: 14px; color: #7f8c8d;">${file.size} • ${file.modified}</div>
+                        </div>
+                        <div style="padding: 8px 15px; background: #ecf0f1; border-radius: 20px; font-size: 14px; color: #7f8c8d;">
+                            ${file.type === 'document' ? '📄' : '📊'}
+                        </div>
+                    `;
+                    driveFileList.appendChild(item);
+                });
+                
+                hideLoading();
+                
+                // Show success message
+                showToast('Đã tải danh sách file từ Google Drive!', 'success');
+            }, 1000);
+        }
+
+        // Upload to Google Drive
+        function uploadToGoogleDrive() {
+            if (!isGoogleDriveConnected) {
+                showToast('Vui lòng kết nối với Google Drive trước!', 'error');
+                return;
+            }
+            
+            if (!driveFolderId) {
+                showToast('Vui lòng tạo thư mục trên Google Drive trước!', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            // Simulate upload
+            setTimeout(() => {
+                hideLoading();
+                
+                // Show success message
+                showToast('Đã lưu truyện lên Google Drive thành công!', 'success');
+            }, 1500);
+        }
+
+        // Show creative mode
         function showCreativeMode() {
             creativeMode.style.display = 'block';
+            document.querySelector('.upload-section').style.display = 'none';
         }
 
+        // Hide creative mode
         function hideCreativeMode() {
             creativeMode.style.display = 'none';
+            document.querySelector('.upload-section').style.display = 'block';
         }
 
-        // Xử lý tạo truyện từ ý tưởng
-        function generateFromIdeaHandler() {
+        // Generate from idea
+        function generateFromIdea() {
             const idea = document.getElementById('storyIdea').value;
             const character = document.getElementById('mainCharacter').value;
             const setting = document.getElementById('setting').value;
             const emotion = document.getElementById('mainEmotion').value;
             
-            if (!idea) {
-                showToast('Vui lòng nhập ý tưởng chính cho truyện', 'error');
+            if (!idea || !character || !setting) {
+                showToast('Vui lòng điền đầy đủ thông tin ý tưởng!', 'error');
                 return;
             }
             
-            showLoading(true);
+            showLoading();
             
-            // Giả lập quá trình xử lý
+            // Simulate generation
             setTimeout(() => {
-                showLoading(false);
+                // Generate a story title
+                document.getElementById('storyTitle').value = generateStoryTitle();
+                
+                // Hide creative mode and show chapter content
                 hideCreativeMode();
+                chapterContent.style.display = 'block';
                 
-                // Tạo tên truyện ngẫu nhiên
-                const titles = [
-                    'Bóng Đêm Thành Phố', 
-                    'Nỗi Đau Không Lời', 
-                    'Cô Đơn Giữa Đám Đông', 
-                    'Tiếng Vọng Từ Quá Khứ',
-                    'Mưa Rơi Trên Phố Vắng'
-                ];
-                const randomTitle = titles[Math.floor(Math.random() * titles.length)];
-                document.getElementById('storyTitle').value = randomTitle;
+                // Write first chapter
+                writeNextChapter();
                 
-                showToast('Đã tạo truyện từ ý tưởng thành công!', 'success');
-                startProcessing();
+                hideLoading();
+                
+                // Show success message
+                showToast('Đã tạo truyện thành công từ ý tưởng!', 'success');
             }, 2000);
         }
 
-        // Hiển thị trạng thái loading
-        function showLoading(show) {
-            if (show) {
-                loading.classList.add('show');
-                isProcessing = true;
-            } else {
-                loading.classList.remove('show');
-                isProcessing = false;
+        // Quick start
+        function quickStart() {
+            showLoading();
+            
+            // Simulate quick start
+            setTimeout(() => {
+                // Generate a story title
+                document.getElementById('storyTitle').value = generateStoryTitle();
+                
+                // Show chapter content
+                hideLoading();
+                chapterContent.style.display = 'block';
+                
+                // Write first chapter
+                writeNextChapter();
+                
+                // Show success message
+                showToast('Đã tạo truyện mẫu thành công!', 'success');
+            }, 1500);
+        }
+
+        // Sync with Drive
+        function syncWithDrive() {
+            if (!isGoogleDriveConnected) {
+                showToast('Vui lòng kết nối với Google Drive trước!', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            // Simulate sync
+            setTimeout(() => {
+                // Update last sync time
+                driveLastSync.textContent = 'Vừa xong';
+                
+                hideLoading();
+                
+                // Show success message
+                showToast('Đã đồng bộ thành công với Google Drive!', 'success');
+            }, 2000);
+        }
+
+        // Train AI from Drive
+        function trainAIFromDrive() {
+            if (!isGoogleDriveConnected) {
+                showToast('Vui lòng kết nối với Google Drive trước!', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            // Simulate training
+            setTimeout(() => {
+                // Update learning progress
+                learningProgress = 100;
+                learningFill.style.width = `${learningProgress}%`;
+                learningPercent.textContent = `${learningProgress}%`;
+                aiStoriesLearned += 5;
+                learnedStories.textContent = aiStoriesLearned;
+                
+                hideLoading();
+                
+                // Show success message
+                showToast('AI đã học xong từ các truyện trên Google Drive!', 'success');
+            }, 2500);
+        }
+
+        // Check Google Drive connection
+        function checkGoogleDriveConnection() {
+            // Simulate connection check
+            setTimeout(() => {
+                if (Math.random() > 0.7) {
+                    isGoogleDriveConnected = true;
+                    driveStatus.classList.add('connected');
+                    driveStatusText.textContent = 'Đã kết nối với Google Drive';
+                    updateDriveStats();
+                }
+            }, 500);
+        }
+
+        // Update Drive stats
+        function updateDriveStats() {
+            if (isGoogleDriveConnected) {
+                driveStories.textContent = '12';
+                driveChapters.textContent = '245';
+                driveAI.textContent = '8';
+                driveLastSync.textContent = '1 giờ trước';
+                
+                driveUsageBar.style.width = '35%';
+                driveUsageText.textContent = '5.2 GB/15 GB';
             }
         }
 
-        // Bắt đầu xử lý
-        function startProcessing() {
-            showLoading(true);
+        // Update UI
+        function updateUI() {
+            // Update stats
+            chapterCount.textContent = currentChapter;
+            wordCountElement.textContent = wordCount.toLocaleString();
+            avgWordsPerChapter.textContent = wordCount > 0 ? Math.round(wordCount / currentChapter).toLocaleString() : '0';
+            estimatedTime.textContent = calculateEstimatedTime();
             
-            // Giả lập quá trình xử lý
+            // Update learning progress
+            learningFill.style.width = `${learningProgress}%`;
+            learningPercent.textContent = `${learningProgress}%`;
+            learnedStories.textContent = aiStoriesLearned;
+            
+            // Update AI stats
+            document.getElementById('aiLearningBooks').textContent = aiStoriesLearned;
+            document.getElementById('aiVocabulary').textContent = (aiStoriesLearned * 1250).toLocaleString();
+            document.getElementById('aiPatterns').textContent = (aiStoriesLearned * 350).toLocaleString();
+            document.getElementById('aiAccuracy').textContent = `${Math.min(100, Math.floor(aiStoriesLearned * 7))}%`;
+        }
+
+        // Calculate estimated time
+        function calculateEstimatedTime() {
+            const remainingChapters = totalChapters - currentChapter;
+            const timePerChapter = 45; // minutes
+            const totalMinutes = remainingChapters * timePerChapter;
+            
+            if (totalMinutes < 60) return `${totalMinutes} phút`;
+            
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            
+            if (hours < 24) return `${hours} giờ ${minutes} phút`;
+            
+            const days = Math.floor(hours / 24);
+            const remainingHours = hours % 24;
+            
+            return `${days} ngày ${remainingHours} giờ`;
+        }
+
+        // Switch tab
+        function switchTab(tabName) {
+            // Deactivate all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Activate selected tab
+            document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Show selected tab content
+            document.querySelector(`.tab-content[data-content="${tabName}"]`).classList.add('active');
+        }
+
+        // Show loading
+        function showLoading() {
+            loading.classList.add('show');
+        }
+
+        // Hide loading
+        function hideLoading() {
+            loading.classList.remove('show');
+        }
+
+        // Show toast message
+        function showToast(message, type = 'success') {
+            toast.textContent = message;
+            toast.className = 'toast';
+            
+            if (type === 'error') {
+                toast.classList.add('error');
+            } else if (type === 'warning') {
+                toast.classList.add('warning');
+            }
+            
+            toast.classList.add('show');
+            
             setTimeout(() => {
-                showLoading(false);
-                chapterContent.style.display = 'block';
-                
-                // Cuộn đến phần nội dung chương
-                chapterContent.scrollIntoView({ behavior: 'smooth' });
-                
-                // Tạo chương đầu tiên
-                generateChapter(1);
-                
-                showToast('AI đã xử lý xong và tạo chương đầu tiên!', 'success');
+                toast.classList.remove('show');
             }, 3000);
         }
 
-        // Tạo nhanh truyện mẫu
-        function quickStart() {
-            document.getElementById('storyTitle').value = 'Cô Đơn Giữa Đám Đông';
-            document.getElementById('storyGenre').value = 'do-thi';
-            document.getElementById('narrativeVoice').value = 'bi-thuong';
-            document.getElementById('targetChapters').value = '150';
+        // Generate story title
+        function generateStoryTitle() {
+            const prefixes = ['Bóng Tối', 'Nỗi Đau', 'Cô Đơn', 'Mưa', 'Ký ức', 'Hoàng Hôn', 'Ánh Sáng', 'Bình Minh'];
+            const suffixes = ['Thành Phố', 'Phố Thị', 'Đêm', 'Ngày', 'Tình Yêu', 'Mất Mát', 'Hy Vọng', 'Tương Lai'];
             
-            showToast('Đã thiết lập truyện mẫu thành công!', 'success');
-            
-            // Tự động bắt đầu xử lý sau 1 giây
-            setTimeout(startProcessing, 1000);
+            return `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
         }
 
-        // Tạo chương truyện
-        function generateChapter(chapterNum) {
-            currentChapter = chapterNum;
-            
-            // Cập nhật tiêu đề chương
-            chapterTitle.textContent = `Chương ${chapterNum}: ${generateChapterTitle()}`;
-            chapterNumber.textContent = `Chương ${chapterNum}/${totalChapters}`;
-            
-            // Tạo nội dung chương giả lập
-            const chapterContent = generateChapterContent(chapterNum);
-            storyText.textContent = chapterContent;
-            
-            // Cập nhật thống kê
-            const words = chapterContent.split(' ').length;
-            wordCount += words;
-            updateProgress();
-        }
-
-        // Tạo tiêu đề chương
+        // Generate chapter title
         function generateChapterTitle() {
-            const prefixes = ['Bóng tối', 'Nỗi đau', 'Ký ức', 'Giấc mơ', 'Nước mắt', 'Nụ cười', 'Ánh sáng', 'Bình minh', 'Hoàng hôn'];
-            const suffixes = ['lạc lối', 'vỡ nát', 'không lời', 'cô đơn', 'thầm kín', 'cuối cùng', 'đầu tiên', 'vĩnh cửu', 'phai mờ'];
+            const titles = [
+                'Khởi Đầu Của Nỗi Đau',
+                'Một Mình Trong Đêm',
+                'Tiếng Piano Lạc Lõng',
+                'Người Lạ Trong Gương',
+                'Cơn Mưa Đêm',
+                'Lời Hứa Đã Quên',
+                'Con Đường Vắng',
+                'Ánh Đèn Thành Phố',
+                'Ký Ức Vỡ Vụn',
+                'Nỗi Nhớ Không Tên'
+            ];
             
-            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-            const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-            
-            return `${prefix} ${suffix}`;
+            return titles[Math.floor(Math.random() * titles.length)];
         }
 
-        // Tạo nội dung chương
-        function generateChapterContent(chapterNum) {
-            const paragraphs = [];
-            const paragraphCount = 10 + Math.floor(Math.random() * 10);
+        // Generate chapter content
+        function generateChapterContent(improved = false) {
+            const paragraphs = improved ? 8 : 5;
+            let content = '';
             
-            for (let i = 0; i < paragraphCount; i++) {
-                paragraphs.push(generateParagraph());
+            for (let i = 0; i < paragraphs; i++) {
+                content += generateParagraph(improved);
+                if (i < paragraphs - 1) content += '\n\n';
             }
             
-            return paragraphs.join('\n\n');
+            return content;
         }
 
-        // Tạo đoạn văn
-        function generateParagraph() {
-            const sentences = [];
-            const sentenceCount = 3 + Math.floor(Math.random() * 4);
+        // Generate paragraph
+        function generateParagraph(improved = false) {
+            const sentences = improved ? 6 : 4;
+            let paragraph = '';
             
-            for (let i = 0; i < sentenceCount; i++) {
-                sentences.push(generateSentence());
+            for (let i = 0; i < sentences; i++) {
+                paragraph += generateSentence(improved);
+                if (i < sentences - 1) paragraph += ' ';
             }
             
-            return sentences.join(' ');
+            return paragraph;
         }
 
-        // Tạo câu văn
-        function generateSentence() {
+        // Generate sentence
+        function generateSentence(improved = false) {
             const beginnings = [
                 'Trong căn phòng nhỏ ấy,',
-                'Dưới cơn mưa tầm tã,',
-                'Giữa thành phố không ngủ,',
+                'Dưới ánh đèn đường leo lét,',
+                'Giữa thành phố ồn ào này,',
+                'Trong cơn mưa tầm tã,',
                 'Với trái tim tan vỡ,',
                 'Trong nỗi cô đơn tột cùng,',
-                'Dưới ánh đèn đường mờ ảo,',
                 'Với ký ức ùa về,',
-                'Trong im lặng đáng sợ,',
-                'Với nỗi đau khôn tả,',
-                'Giữa dòng người vội vã,'
+                'Dưới bầu trời đen kịt,'
             ];
             
             const middles = [
-                'anh cảm thấy',
-                'cô ấy nhận ra',
-                'tôi chợt hiểu',
-                'chúng tôi nhận thấy',
-                'họ không thể ngờ',
-                'anh không biết',
-                'cô ấy không hay',
-                'tôi chưa từng nghĩ',
-                'chúng ta khó lòng',
-                'họ khó mà'
+                'anh cảm thấy một nỗi buồn mênh mang',
+                'cô ấy nhận ra mình đã lạc lối',
+                'tiếng còi xe vang lên xa xăm',
+                'những giọt nước mắt lăn dài trên má',
+                'kỷ niệm ùa về như một cơn lũ',
+                'trái tim như vỡ vụn thành ngàn mảnh',
+                'ánh đèn thành phố chợt vụt tắt',
+                'tiếng chuông điện thoại reo vang trong đêm'
             ];
             
             const endings = [
-                'mình thật cô đơn giữa đám đông.',
-                'trái tim này đã vỡ thành ngàn mảnh.',
-                'thời gian dường như ngừng trôi.',
-                'cuộc sống chỉ là một chuỗi những nỗi đau.',
-                'ánh mắt ấy vẫn còn ám ảnh mình.',
-                'nỗi nhớ cứ dai dẳng không nguôi.',
-                'bóng tối đang dần nuốt chửng lấy tâm hồn.',
-                'tình yêu đó đã mãi mãi xa rồi.',
-                'kỷ niệm cũ chẳng thể nào phai nhòa.',
-                'nước mắt cứ lặng lẽ rơi.'
+                'không biết ngày mai sẽ ra sao.',
+                'chỉ muốn chìm vào quên lãng.',
+                'và anh biết mình sẽ không bao giờ quên được.',
+                'nhưng tất cả đã quá muộn màng.',
+                'để rồi nhận ra mình thật cô đơn.',
+                'trong khi thế giới ngoài kia vẫn xoay vần.',
+                'dù cho nỗi đau vẫn còn đó.',
+                'và anh biết mình phải tiếp tục bước đi.'
             ];
             
             const beginning = beginnings[Math.floor(Math.random() * beginnings.length)];
             const middle = middles[Math.floor(Math.random() * middles.length)];
-            const ending = endings[Math.floor(Math.random() * endings.length)];
+            const ending = improved ? 
+                endings[Math.floor(Math.random() * endings.length)] : 
+                '';
             
             return `${beginning} ${middle} ${ending}`;
         }
 
-        // Tạo chương tiếp theo
-        function generateNextChapter() {
-            if (currentChapter >= totalChapters) {
-                showToast('Truyện đã đạt đến số chương tối đa!', 'warning');
-                return;
-            }
-            
-            showLoading(true);
-            
-            // Giả lập quá trình viết
-            setTimeout(() => {
-                showLoading(false);
-                generateChapter(currentChapter + 1);
-                showToast(`Đã tạo thành công Chương ${currentChapter}!`, 'success');
-            }, 2000);
-        }
-
-        // Viết lại chương hiện tại
-        function rewriteChapter() {
-            showLoading(true);
-            
-            // Giả lập quá trình viết lại
-            setTimeout(() => {
-                showLoading(false);
-                generateChapter(currentChapter);
-                showToast('Đã viết lại chương thành công!', 'success');
-            }, 1500);
-        }
-
-        // Lưu chương hiện tại
-        function saveChapter() {
-            showToast('Đã lưu chương thành công!', 'success');
-        }
-
-        // Cập nhật tiến độ
-        function updateProgress() {
-            const progress = (currentChapter / totalChapters) * 100;
-            progressFill.style.width = `${progress}%`;
-            
-            chapterCount.textContent = currentChapter;
-            wordCountElement.textContent = wordCount.toLocaleString();
-            
-            const avgWords = currentChapter > 0 ? Math.round(wordCount / currentChapter) : 0;
-            avgWordsPerChapter.textContent = avgWords.toLocaleString();
-            
-            // Ước tính thời gian còn lại (giả sử 5 phút mỗi chương)
-            const remainingChapters = totalChapters - currentChapter;
-            const minutes = remainingChapters * 5;
-            
-            if (minutes < 60) {
-                estimatedTime.textContent = `${minutes} phút`;
-            } else {
-                const hours = Math.floor(minutes / 60);
-                const mins = minutes % 60;
-                estimatedTime.textContent = `${hours} giờ ${mins} phút`;
-            }
-        }
-
-        // Kết nối Google Drive (giả lập)
-        function connectGoogleDrive() {
-            showLoading(true);
-            
-            // Giả lập kết nối
-            setTimeout(() => {
-                showLoading(false);
-                isConnectedToDrive = true;
-                
-                document.getElementById('driveStatusIndicator').classList.add('connected');
-                document.getElementById('driveStatusText').textContent = 'Đã kết nối với Google Drive';
-                
-                // Cập nhật thống kê giả lập
-                document.getElementById('driveStories').textContent = '24';
-                document.getElementById('driveChapters').textContent = '1,850';
-                document.getElementById('driveSpace').textContent = '56 MB';
-                document.getElementById('driveLastSync').textContent = 'Vài giây trước';
-                
-                showToast('Kết nối Google Drive thành công!', 'success');
-            }, 2000);
-        }
-
-        // Giả lập tiến độ học tập
-        function simulateLearningProgress() {
-            let progress = 0;
-            const targetProgress = 85 + Math.floor(Math.random() * 15);
-            
-            const interval = setInterval(() => {
-                progress += 1;
-                learningFill.style.width = `${progress}%`;
-                learningPercent.textContent = `${progress}%`;
-                
-                if (progress >= targetProgress) {
-                    clearInterval(interval);
-                    learnedStories.textContent = Math.floor(24 + Math.random() * 50);
-                }
-            }, 100);
-        }
+        // Initialize the app
+        window.onload = init;
     </script>
 </body>
 </html>
