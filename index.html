@@ -1,312 +1,644 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Quản lý Truyện - Google Drive</title>
-  <style>
-    :root { --bg:#0b1020; --card:#121a33; --muted:#93a3b8; --accent:#7aa2ff; --line:#233059; }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: #e7efff; }
-    header { padding: 20px; border-bottom: 1px solid var(--line); backdrop-filter: blur(4px); position: sticky; top: 0; background: #0b1020cc; }
-    h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: .3px; }
-    .sub { color: var(--muted); font-size: 13px; }
-    main { max-width: 980px; margin: 24px auto; padding: 0 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: 0 10px 24px rgba(0,0,0,.2); }
-    label { font-size: 13px; color: var(--muted); }
-    input, textarea, select { width: 100%; margin-top: 6px; margin-bottom: 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: #0f162c; color: #e7efff; outline: none; }
-    textarea { min-height: 160px; resize: vertical; }
-    button { appearance: none; border: 1px solid var(--line); background: #111c3a; color: #e7efff; padding: 10px 14px; border-radius: 12px; cursor: pointer; }
-    button.primary { background: linear-gradient(180deg, #7aa2ff, #5b8dff); color: #0b1020; border-color: #7aa2ff; font-weight: 600; }
-    button.ghost { background: transparent; }
-    button:disabled { opacity: .6; cursor: not-allowed; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .list { display: grid; gap: 8px; }
-    .story-item { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #0f162c; }
-    .story-head { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .story-name { font-weight: 600; }
-    .chapters { margin-top: 8px; display: none; }
-    .chip { display: inline-block; padding: 6px 10px; margin: 4px 6px 0 0; border-radius: 999px; background: #111c3a; border: 1px solid var(--line); font-size: 12px; }
-    .muted { color: var(--muted); font-size: 12px; }
-    .hr { height: 1px; background: var(--line); margin: 12px 0; border: 0; }
-    .hint { font-size: 12px; color: var(--muted); }
-    .ok { color: #9ef5a6; }
-    .warn { color: #ffd17a; }
-    .err { color: #ff9e9e; }
-    @media (max-width: 860px){ main{ grid-template-columns: 1fr; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Truyện</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .auth-section {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 10px;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .main-content {
+            display: none;
+        }
+
+        .story-form {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+
+        .story-list {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .story-item {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .story-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .story-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .story-chapters {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .chapter-list {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .chapter-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #e1e1e1;
+        }
+
+        .chapter-title {
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 5px;
+        }
+
+        .chapter-content {
+            color: #666;
+            font-size: 14px;
+            max-height: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .toggle-chapters {
+            background: transparent;
+            border: 1px solid #667eea;
+            color: #667eea;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-chapters:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .story-form, .story-list {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>📚 Quản lý Truyện · Google Drive</h1>
-    <div class="sub">Tạo thư mục cha <b>TruyenApp</b> · Mỗi truyện là 1 thư mục con · Mỗi chương là 1 file .txt</div>
-  </header>
-
-  <main>
-    <section class="card">
-      <div class="row" style="justify-content: space-between; align-items:center;">
-        <div>
-          <div class="hint">Trạng thái</div>
-          <div id="status" class="muted">Chưa đăng nhập</div>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Quản lý Truyện</h1>
+            <p style="color: rgba(255,255,255,0.8); font-size: 1.1em;">Lưu trữ và quản lý truyện của bạn trên Google Drive</p>
         </div>
-        <div class="row">
-          <button id="signinBtn" onclick="handleSignIn()" class="primary">🔑 Đăng nhập Google</button>
-          <button id="signoutBtn" onclick="handleSignOut()" class="ghost" disabled>Đăng xuất</button>
-        </div>
-      </div>
-      <div class="hr"></div>
 
-      <div class="row">
-        <div style="flex:1">
-          <label for="storyName">Tên truyện</label>
-          <input id="storyName" placeholder="Ví dụ: Vùng Đất Ký Ức" />
-        </div>
-        <div style="width: 190px">
-          <label for="chapterName">Tên chương</label>
-          <input id="chapterName" placeholder="Chương 1" />
-        </div>
-      </div>
-      <label for="chapterContent">Nội dung chương</label>
-      <textarea id="chapterContent" placeholder="Viết nội dung chương tại đây..."></textarea>
-
-      <div class="row">
-        <button id="saveBtn" class="primary" onclick="saveChapter()" disabled>💾 Lưu chương</button>
-        <button class="ghost" onclick="clearForm()">🧹 Xóa nội dung</button>
-      </div>
-
-      <div class="hr"></div>
-      <div class="hint">
-        Dữ liệu được lưu vào Google Drive của bạn (phạm vi <code>drive.file</code> – chỉ các file do ứng dụng tạo).
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="row" style="justify-content: space-between; align-items:center;">
-        <h3 style="margin:0">📜 Lịch sử truyện</h3>
-        <button class="ghost" onclick="refreshStories()">🔄 Tải lại</button>
-      </div>
-      <div id="storyList" class="list" style="margin-top:10px"></div>
-      <div id="emptyState" class="muted" style="display:none">Chưa có truyện nào. Hãy lưu chương đầu tiên!</div>
-    </section>
-  </main>
-
-  <!-- Google API -->
-  <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()" onerror="apiLoadError()"></script>
-
-  <script>
-    // ====== CẤU HÌNH CỦA BẠN ======
-    const API_KEY   = "AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o";
-    const CLIENT_ID = "398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com";
-    const SCOPES    = "https://www.googleapis.com/auth/drive.file";
-    const DISCOVERY = "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest";
-    // Tên thư mục cha
-    const ROOT_FOLDER_NAME = "TruyenApp";
-
-    let rootFolderId = null;
-
-    function qs(id){ return document.getElementById(id); }
-    function setStatus(text, cls="muted"){ const el=qs("status"); el.className=cls; el.textContent=text; }
-    function enableSignedInUI(signedIn){
-      qs("signinBtn").disabled = signedIn;
-      qs("signoutBtn").disabled = !signedIn;
-      qs("saveBtn").disabled = !signedIn;
-    }
-
-    function apiLoadError(){
-      setStatus("Không tải được Google API (api.js). Kiểm tra kết nối mạng hoặc chặn script.", "err");
-    }
-
-    function gapiLoaded(){
-      gapi.load("client:auth2", initClient);
-    }
-
-    async function initClient(){
-      try{
-        await gapi.client.init({
-          apiKey: API_KEY,
-          clientId: CLIENT_ID,
-          scope: SCOPES,
-          discoveryDocs: [DISCOVERY],
-        });
-
-        const auth = gapi.auth2.getAuthInstance();
-        auth.isSignedIn.listen(updateSigninStatus);
-        updateSigninStatus(auth.isSignedIn.get());
-      }catch(err){
-        console.error(err);
-        setStatus("Lỗi khởi tạo Google API: " + (err?.details || err?.error || "Không rõ"), "err");
-      }
-    }
-
-    function updateSigninStatus(isSignedIn){
-      if(isSignedIn){
-        setStatus("Đã đăng nhập ✓", "ok");
-        enableSignedInUI(true);
-        ensureRootFolder().then(refreshStories).catch(e => {
-          console.error(e);
-          setStatus("Lỗi tạo/tìm thư mục gốc: " + e.message, "err");
-        });
-      }else{
-        setStatus("Chưa đăng nhập", "muted");
-        enableSignedInUI(false);
-        qs("storyList").innerHTML = "";
-      }
-    }
-
-    function handleSignIn(){ gapi.auth2.getAuthInstance().signIn(); }
-    function handleSignOut(){ gapi.auth2.getAuthInstance().signOut(); }
-
-    async function ensureRootFolder(){
-      // tìm thư mục cha
-      const list = await gapi.client.drive.files.list({
-        q: "name = '" + ROOT_FOLDER_NAME.replace(/'/g, "\'") + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
-        fields: "files(id, name)",
-        pageSize: 1
-      });
-      if(list.result.files && list.result.files.length){
-        rootFolderId = list.result.files[0].id;
-        return rootFolderId;
-      }
-      // tạo mới nếu chưa có
-      const created = await gapi.client.drive.files.create({
-        resource: {
-          name: ROOT_FOLDER_NAME,
-          mimeType: "application/vnd.google-apps.folder"
-        },
-        fields: "id"
-      });
-      rootFolderId = created.result.id;
-      return rootFolderId;
-    }
-
-    async function getOrCreateStoryFolder(storyName){
-      const safeName = storyName.trim();
-      const res = await gapi.client.drive.files.list({
-        q: "'" + rootFolderId + "' in parents and name = '" + safeName.replace(/'/g, "\'") + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
-        fields: "files(id, name)",
-        pageSize: 1
-      });
-      if(res.result.files && res.result.files.length){
-        return res.result.files[0].id;
-      }
-      const created = await gapi.client.drive.files.create({
-        resource: {
-          name: safeName,
-          mimeType: "application/vnd.google-apps.folder",
-          parents: [rootFolderId]
-        },
-        fields: "id"
-      });
-      return created.result.id;
-    }
-
-    async function saveChapter(){
-      const storyName = qs("storyName").value.trim();
-      const chapterName = qs("chapterName").value.trim();
-      const content = qs("chapterContent").value.trim();
-
-      if(!storyName){ alert("Vui lòng nhập Tên truyện"); return; }
-      if(!chapterName){ alert("Vui lòng nhập Tên chương"); return; }
-      if(!content){ alert("Vui lòng nhập Nội dung chương"); return; }
-
-      setStatus("Đang lưu chương...", "warn");
-      try{
-        const storyFolderId = await getOrCreateStoryFolder(storyName);
-
-        // Tạo file chương .txt bằng media upload
-        const fileMetadata = { name: chapterName + ".txt", parents: [storyFolderId] };
-        const media = { mimeType: "text/plain", body: content };
-
-        await gapi.client.drive.files.create({
-          resource: fileMetadata,
-          media: media,
-          fields: "id"
-        });
-
-        setStatus("Đã lưu chương ✓", "ok");
-        clearForm(false);
-        await refreshStories();
-      }catch(err){
-        console.error(err);
-        setStatus("Lỗi khi lưu chương: " + (err?.message || "Không rõ"), "err");
-      }
-    }
-
-    function clearForm(clearStory=true){
-      if(clearStory) qs("storyName").value = "";
-      qs("chapterName").value = "";
-      qs("chapterContent").value = "";
-    }
-
-    async function refreshStories(){
-      if(!rootFolderId){ return; }
-      const listEl = qs("storyList");
-      listEl.innerHTML = "";
-      qs("emptyState").style.display = "none";
-
-      try{
-        const res = await gapi.client.drive.files.list({
-          q: "'" + rootFolderId + "' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
-          fields: "files(id, name)",
-          pageSize: 1000
-        });
-
-        const folders = (res.result.files || []).sort((a,b)=> a.name.localeCompare(b.name,'vi'));
-        if(!folders.length){
-          qs("emptyState").style.display = "block";
-          return;
-        }
-
-        for(const f of folders){
-          const item = document.createElement("div");
-          item.className = "story-item";
-          item.innerHTML = \`
-            <div class="story-head" onclick="toggleChapters(this)">
-              <div>
-                <div class="story-name">\${f.name}</div>
-                <div class="muted" data-folder-id="\${f.id}">Đang tải chương...</div>
-              </div>
-              <div>▼</div>
+        <div class="auth-section">
+            <div id="auth-content">
+                <h2 style="margin-bottom: 20px;">Đăng nhập để bắt đầu</h2>
+                <button id="auth-btn" class="btn">Đăng nhập với Google</button>
+                <p style="margin-top: 15px; color: #666; font-size: 14px;">
+                    Ứng dụng cần quyền truy cập Google Drive để lưu trữ truyện của bạn
+                </p>
             </div>
-            <div class="chapters"></div>
-          \`;
-          listEl.appendChild(item);
+        </div>
 
-          // load chapters
-          loadChapters(f.id, item.querySelector(".chapters"), item.querySelector(".muted"));
+        <div class="main-content" id="main-content">
+            <div class="story-form">
+                <h2 style="margin-bottom: 25px; color: #333;">✍️ Thêm truyện mới</h2>
+                <form id="story-form">
+                    <div class="form-group">
+                        <label for="story-name">Tên truyện:</label>
+                        <input type="text" id="story-name" required placeholder="Nhập tên truyện...">
+                    </div>
+                    <div class="form-group">
+                        <label for="chapter-title">Tiêu đề chương:</label>
+                        <input type="text" id="chapter-title" required placeholder="Ví dụ: Chương 1 - Bắt đầu">
+                    </div>
+                    <div class="form-group">
+                        <label for="chapter-content">Nội dung chương:</label>
+                        <textarea id="chapter-content" required placeholder="Nhập nội dung chương..."></textarea>
+                    </div>
+                    <button type="submit" class="btn" id="save-btn">💾 Lưu truyện</button>
+                </form>
+                <div id="message-area"></div>
+            </div>
+
+            <div class="story-list">
+                <h2 style="margin-bottom: 25px; color: #333;">📖 Lịch sử truyện</h2>
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Đang tải danh sách truyện...</p>
+                </div>
+                <div id="story-list-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o';
+        const CLIENT_ID = '398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com';
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+        let gapi, tokenClient;
+        let isSignedIn = false;
+        let mainFolderId = null;
+
+        // Khởi tạo Google API
+        async function initializeGapi() {
+            try {
+                await new Promise((resolve) => {
+                    gapi.load('client', resolve);
+                });
+                
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    discoveryDocs: [DISCOVERY_DOC]
+                });
+
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: handleAuthCallback
+                });
+
+                console.log('Google API initialized successfully');
+                setupAuthButton();
+            } catch (error) {
+                console.error('Error initializing Google API:', error);
+                showMessage('Lỗi khởi tạo API Google: ' + error.message, 'error');
+            }
         }
-      }catch(err){
-        console.error(err);
-        setStatus("Lỗi tải danh sách truyện: " + (err?.message || "Không rõ"), "err");
-      }
-    }
 
-    async function loadChapters(folderId, container, subtitle){
-      try{
-        const res = await gapi.client.drive.files.list({
-          q: "'" + folderId + "' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false",
-          fields: "files(id, name, modifiedTime)",
-          orderBy: "name"
+        function setupAuthButton() {
+            const authBtn = document.getElementById('auth-btn');
+            authBtn.onclick = () => {
+                tokenClient.requestAccessToken();
+            };
+        }
+
+        function handleAuthCallback(response) {
+            if (response.error) {
+                console.error('Auth error:', response);
+                showMessage('Lỗi xác thực: ' + response.error, 'error');
+                return;
+            }
+
+            isSignedIn = true;
+            document.querySelector('.auth-section').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            
+            initializeApp();
+        }
+
+        async function initializeApp() {
+            try {
+                await createMainFolder();
+                await loadStories();
+                setupForm();
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                showMessage('Lỗi khởi tạo ứng dụng: ' + error.message, 'error');
+            }
+        }
+
+        async function createMainFolder() {
+            try {
+                // Tìm thư mục chính
+                const response = await gapi.client.drive.files.list({
+                    q: "name='Truyện' and mimeType='application/vnd.google-apps.folder'",
+                    fields: 'files(id, name)'
+                });
+
+                if (response.result.files.length > 0) {
+                    mainFolderId = response.result.files[0].id;
+                    console.log('Found existing main folder:', mainFolderId);
+                } else {
+                    // Tạo thư mục chính mới
+                    const createResponse = await gapi.client.drive.files.create({
+                        resource: {
+                            name: 'Truyện',
+                            mimeType: 'application/vnd.google-apps.folder'
+                        }
+                    });
+                    mainFolderId = createResponse.result.id;
+                    console.log('Created new main folder:', mainFolderId);
+                }
+            } catch (error) {
+                console.error('Error creating main folder:', error);
+                throw error;
+            }
+        }
+
+        async function createStoryFolder(storyName) {
+            try {
+                // Kiểm tra xem thư mục truyện đã tồn tại chưa
+                const response = await gapi.client.drive.files.list({
+                    q: `name='${storyName}' and parents='${mainFolderId}' and mimeType='application/vnd.google-apps.folder'`,
+                    fields: 'files(id, name)'
+                });
+
+                if (response.result.files.length > 0) {
+                    return response.result.files[0].id;
+                }
+
+                // Tạo thư mục truyện mới
+                const createResponse = await gapi.client.drive.files.create({
+                    resource: {
+                        name: storyName,
+                        mimeType: 'application/vnd.google-apps.folder',
+                        parents: [mainFolderId]
+                    }
+                });
+
+                return createResponse.result.id;
+            } catch (error) {
+                console.error('Error creating story folder:', error);
+                throw error;
+            }
+        }
+
+        async function saveChapter(storyName, chapterTitle, chapterContent) {
+            try {
+                const storyFolderId = await createStoryFolder(storyName);
+                
+                // Tạo file chương
+                const fileMetadata = {
+                    name: `${chapterTitle}.txt`,
+                    parents: [storyFolderId]
+                };
+
+                const form = new FormData();
+                form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
+                form.append('file', new Blob([chapterContent], {type: 'text/plain'}));
+
+                const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${gapi.client.getToken().access_token}`
+                    },
+                    body: form
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to upload chapter');
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error saving chapter:', error);
+                throw error;
+            }
+        }
+
+        async function loadStories() {
+            const loadingEl = document.getElementById('loading');
+            const storyListEl = document.getElementById('story-list-content');
+            
+            try {
+                loadingEl.style.display = 'block';
+                storyListEl.innerHTML = '';
+
+                // Lấy danh sách thư mục truyện
+                const response = await gapi.client.drive.files.list({
+                    q: `parents='${mainFolderId}' and mimeType='application/vnd.google-apps.folder'`,
+                    fields: 'files(id, name, createdTime)',
+                    orderBy: 'createdTime desc'
+                });
+
+                const stories = response.result.files;
+
+                if (stories.length === 0) {
+                    storyListEl.innerHTML = '<p style="text-align: center; color: #666;">Chưa có truyện nào được lưu.</p>';
+                } else {
+                    for (const story of stories) {
+                        await renderStoryItem(story, storyListEl);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading stories:', error);
+                storyListEl.innerHTML = '<p style="text-align: center; color: #d32f2f;">Lỗi tải danh sách truyện.</p>';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        async function renderStoryItem(story, container) {
+            try {
+                // Lấy danh sách chương
+                const chaptersResponse = await gapi.client.drive.files.list({
+                    q: `parents='${story.id}' and mimeType!='application/vnd.google-apps.folder'`,
+                    fields: 'files(id, name, createdTime)',
+                    orderBy: 'createdTime asc'
+                });
+
+                const chapters = chaptersResponse.result.files;
+                
+                const storyDiv = document.createElement('div');
+                storyDiv.className = 'story-item';
+                storyDiv.innerHTML = `
+                    <div class="story-title">${story.name}</div>
+                    <div class="story-chapters">${chapters.length} chương</div>
+                    <button class="toggle-chapters" onclick="toggleChapters('${story.id}')">
+                        Xem chương
+                    </button>
+                    <div class="chapter-list" id="chapters-${story.id}">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Đang tải chương...</p>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(storyDiv);
+
+                // Lưu trữ thông tin chương để sử dụng sau
+                storyDiv.dataset.chapters = JSON.stringify(chapters);
+            } catch (error) {
+                console.error('Error rendering story item:', error);
+            }
+        }
+
+        async function toggleChapters(storyId) {
+            const chaptersDiv = document.getElementById(`chapters-${storyId}`);
+            
+            if (chaptersDiv.style.display === 'block') {
+                chaptersDiv.style.display = 'none';
+                return;
+            }
+
+            chaptersDiv.style.display = 'block';
+            
+            // Nếu đã tải rồi thì không tải lại
+            if (chaptersDiv.querySelector('.chapter-item')) {
+                return;
+            }
+
+            try {
+                const storyDiv = chaptersDiv.closest('.story-item');
+                const chapters = JSON.parse(storyDiv.dataset.chapters);
+                
+                chaptersDiv.innerHTML = '';
+                
+                for (const chapter of chapters) {
+                    const content = await getFileContent(chapter.id);
+                    const chapterDiv = document.createElement('div');
+                    chapterDiv.className = 'chapter-item';
+                    chapterDiv.innerHTML = `
+                        <div class="chapter-title">${chapter.name.replace('.txt', '')}</div>
+                        <div class="chapter-content">${content.substring(0, 200)}${content.length > 200 ? '...' : ''}</div>
+                    `;
+                    chaptersDiv.appendChild(chapterDiv);
+                }
+            } catch (error) {
+                console.error('Error loading chapters:', error);
+                chaptersDiv.innerHTML = '<p style="color: #d32f2f;">Lỗi tải chương.</p>';
+            }
+        }
+
+        async function getFileContent(fileId) {
+            try {
+                const response = await gapi.client.drive.files.get({
+                    fileId: fileId,
+                    alt: 'media'
+                });
+                return response.body;
+            } catch (error) {
+                console.error('Error getting file content:', error);
+                return 'Không thể tải nội dung';
+            }
+        }
+
+        function setupForm() {
+            const form = document.getElementById('story-form');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const saveBtn = document.getElementById('save-btn');
+                const originalText = saveBtn.textContent;
+                saveBtn.textContent = '⏳ Đang lưu...';
+                saveBtn.disabled = true;
+
+                try {
+                    const storyName = document.getElementById('story-name').value.trim();
+                    const chapterTitle = document.getElementById('chapter-title').value.trim();
+                    const chapterContent = document.getElementById('chapter-content').value.trim();
+
+                    if (!storyName || !chapterTitle || !chapterContent) {
+                        throw new Error('Vui lòng điền đầy đủ thông tin');
+                    }
+
+                    await saveChapter(storyName, chapterTitle, chapterContent);
+                    
+                    showMessage('✅ Lưu truyện thành công!', 'success');
+                    
+                    // Reset form
+                    document.getElementById('chapter-title').value = '';
+                    document.getElementById('chapter-content').value = '';
+                    
+                    // Tải lại danh sách truyện
+                    await loadStories();
+                    
+                } catch (error) {
+                    console.error('Error saving story:', error);
+                    showMessage('❌ Lỗi lưu truyện: ' + error.message, 'error');
+                } finally {
+                    saveBtn.textContent = originalText;
+                    saveBtn.disabled = false;
+                }
+            });
+        }
+
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('message-area');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'success' ? 'success-message' : 'error-message';
+            messageDiv.textContent = message;
+            
+            messageArea.innerHTML = '';
+            messageArea.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // Khởi tạo khi trang được tải
+        window.addEventListener('load', () => {
+            if (typeof gapi !== 'undefined') {
+                initializeGapi();
+            } else {
+                console.error('Google API not loaded');
+                showMessage('Lỗi tải Google API. Vui lòng tải lại trang.', 'error');
+            }
         });
-        const files = res.result.files || [];
-        subtitle.textContent = files.length ? (files.length + " chương") : "Chưa có chương";
-        container.innerHTML = files.map(f => {
-          return '<span class="chip" title="ID: ' + f.id + '\nCập nhật: ' + (f.modifiedTime || '') + '">' + f.name.replace(/\.txt$/,'') + '</span>';
-        }).join("");
-      }catch(err){
-        console.error(err);
-        subtitle.textContent = "Lỗi tải chương";
-      }
-    }
-
-    function toggleChapters(headEl){
-      const wrap = headEl.parentElement;
-      const pane = wrap.querySelector(".chapters");
-      const arrow = headEl.querySelector("div:last-child");
-      const show = pane.style.display !== "block";
-      pane.style.display = show ? "block" : "none";
-      arrow.textContent = show ? "▲" : "▼";
-    }
-  </script>
+    </script>
 </body>
 </html>
