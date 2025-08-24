@@ -496,6 +496,18 @@
                                 <span>Diễn biến cảm xúc:</span>
                                 <span id="emotionalPatterns">0</span>
                             </div>
+                            <div class="stat-item">
+                                <span>Hội thoại:</span>
+                                <span id="dialoguesCount">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Bối cảnh:</span>
+                                <span id="contextsCount">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Nhân vật:</span>
+                                <span id="charactersCount">0</span>
+                            </div>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill" id="progressFill"></div>
@@ -629,7 +641,11 @@ let aiKnowledge = {
     psychologicalTerms: new Set(),
     descriptivePatterns: new Set(),
     metaphors: new Set(),
-    adultTerms: new Set(), // Bổ sung từ vựng 18+
+    adultTerms: new Set(),
+    characterNames: new Set(),
+    locations: new Set(),
+    timeFrames: new Set(),
+    situations: new Set(),
     generationHistory: [],
     qualityMetrics: {
         complexityThreshold: 0.6,
@@ -672,7 +688,10 @@ const specializedVocabulary = {
                         'đồng nhất hóa', 'mặc cảm', 'mâu thuẫn nội tâm', 'xung đột tâm lý', 'ámm ảnh', 'dằn vặt'],
     transitionWords: ['tuy nhiên', 'bên cạnh đó', 'ngoài ra', 'hơn nữa', 'đặc biệt là', 'thêm vào đó', 'mặt khác',
                      'ngược lại', 'thực tế thì', 'quả thật', 'chắc chắn', 'có lẽ', 'dường như', 'rõ ràng là',
-                     'cuối cùng thì', 'kết quả là', 'vì vậy', 'do đó', 'cho nên', 'đồng thời']
+                     'cuối cùng thì', 'kết quả là', 'vì vậy', 'do đó', 'cho nên', 'đồng thời'],
+    characterNames: ['Minh', 'Hương', 'Lan', 'Hạnh', 'An', 'Bình', 'Dũng', 'Hải', 'Phương', 'Thảo', 'Ngọc', 'Trang'],
+    locations: ['phòng khách', 'nhà bếp', 'phòng ngủ', 'phòng tắm', 'ban công', 'sân vườn', 'cầu thang', 'nhà kho', 'garage'],
+    timeFrames: ['sáng sớm', 'buổi trưa', 'chiều tà', 'đêm khuya', 'nửa đêm', 'rạng sáng', 'hoàng hôn', 'bình minh']
 };
 
 // CẢI TIẾN: Cấu trúc câu phức tạp hơn với nhiều tầng nghĩa
@@ -686,258 +705,178 @@ const narrativePatterns = {
     ],
     innerMonologue: [
         "Trong tâm trí tôi, {innerThought} về những gì đang diễn ra, {psychological_analysis} khiến tôi {emotional_state}.",
-        "Tôi tự hỏi liệu {question} có phải là điều tôi nghĩ không, {self_reflection} làm tôi {resulting_emotion}.",
-        "Cảm giác {emotion} cứ ám ảnh tôi khi {situation}, {deep_thought} cứ vang vọng trong đầu.",
-        "Tôi không thể ngừng nghĩ về {observation} mà tôi đã thấy, {interpretation} cứ xoáy sâu vào tâm trí.",
-        "Điều này khiến tôi {emotion} một cách {intensity}, {introspection} khiến tôi nhận ra {realization}.",
-        "Có lẽ tôi đang {doubt} nhưng {feeling} này không thể phủ nhận, {psychological_awareness} ngày càng rõ rệt."
+        "Tôi tự hỏi liệu {question} có phải là {possibility} không, {further_thought} cứ xoáy sâu vào suy nghĩ của tôi.",
+        "Cảm giác {emotion} dâng trào khi tôi nghĩ về {situation}, {additional_reflection} làm tôi {resulting_emotion}.",
+        "Tôi không thể ngừng suy nghĩ về {subject}, {psychological_insight} khiến tôi {emotional_response} một cách sâu sắc.",
+        "Tâm trí tôi mải miết với {thought}, {deeper_analysis} hé lộ {realization} mà tôi chưa từng nhận ra trước đây."
     ],
-    conflict: [
-        "Tôi biết mình không nên {action} nhưng {desire} quá mạnh, {internal_struggle} khiến tôi {resulting_state}.",
-        "Ranh giới giữa {rightWrong} ngày càng {blur}, {moral_dilemma} làm tôi {emotional_turmoil}.",
-        "Tôi cảm thấy {guilty} vì {thought} về {situation}, {self_judgment} cứ dày vò tâm can tôi.",
-        "Làm thế nào để tôi có thể {cope} với {feeling} này? {existential_question} cứ treo lơ lửng không lời giải.",
-        "Mỗi lần {trigger}, tôi lại {reaction}, {pattern_analysis} khiến tôi nhận ra {self_discovery}."
+    emotionalDescription: [
+        "Một cảm giác {emotion} lan tỏa khắp người tôi khi {situation}, {physical_sensation} khiến tôi {reaction}.",
+        "Tôi cảm thấy {emotion} đến {intensity} khi chứng kiến {event}, {psychological_effect} ảnh hưởng sâu sắc đến tôi.",
+        "Trái tim tôi như {metaphor} khi {situation}, {emotional_detail} khiến tôi {physical_response}.",
+        "Cảm xúc {emotion} trào dâng {intensity} trong lòng tôi, {contextual_detail} làm tôi {resulting_emotion}.",
+        "Tôi bị choáng ngợp bởi {emotion} khi {situation}, {psychological_insight} khiến tôi {emotional_state}."
     ],
-    escalation: [
-        "Những {timeFrame} gần đây, {situation} ngày càng {intensity}, {development_detail} khiến tôi {emotional_change}.",
-        "Tôi nhận ra {realization} về bản thân mình, {personal_insight} làm thay đổi {perspective_change}.",
-        "Không thể phủ nhận rằng {truth} đang xảy ra, {evidence} ngày càng {increasing_evidence}.",
-        "Cách {wife} {action} với bố khiến tôi {emotion}, {behavioral_observation} cho thấy {implication}.",
-        "Tôi bắt đầu {change} cách nhìn về {relationship}, {transformative_thought} dần hình thành trong tôi."
+    tensionBuilding: [
+        "Bầu không khí trở nên {atmosphere} khi {event}, {observation} khiến tôi {emotional_response}.",
+        "Căng thẳng leo thang khi {situation}, {specific_detail} làm tôi {feeling} và {physical_sensation}.",
+        "Tôi cảm nhận rõ rệt {tension} giữa họ khi {context}, {observation} hé lộ {underlying_dynamic}.",
+        "Mọi thứ dường như {description} khi {event}, {psychological_insight} khiến tôi {emotional_state}.",
+        "Không khí {atmosphere} bao trùm khi {situation}, {observation} khiến tôi {feeling} một cách {intensity}."
     ],
-    // THÊM MỚI: Các loại đoạn văn chuyên sâu
-    psychological: [
-        "Trong sâu thẳm tâm trí, {psychological_insight} khiến tôi {emotional_response}, {deep_analysis} hé lộ {revelation}.",
-        "Nhận thức của tôi về {situation} dần thay đổi, {cognitive_shift} mang đến {new_perspective}.",
-        "Bản năng mách bảo tôi rằng {intuitive_feeling}, {subconscious_awareness} dần trỗi dậy mạnh mẽ.",
-        "Tâm lý tôi rơi vào trạng thái {psychological_state}, {internal_process} diễn ra phức tạp khôn lường."
-    ],
-    reflective: [
-        "Nhìn lại {time_period}, tôi nhận ra {retrospective_insight}, {hindsight} mang đến {lesson_learned}.",
-        "Ký ức về {past_event} ùa về, {memory_detail} khiến tôi {emotional_reaction}.",
-        "Nếu ngày đó tôi {alternative_action}, có lẽ {hypothetical_outcome} đã không xảy ra.",
-        "Suy ngẫm về {life_aspect}, tôi chợt hiểu {philosophical_understanding} về bản chất con người."
-    ],
-    descriptive: [
-        "Không gian xung quanh {environment_description}, {sensory_detail} tác động lên {emotional_response} của tôi.",
-        "Ánh mắt {eye_description} của {character} như {metaphorical_comparison}, khiến tôi {resulting_feeling}.",
-        "Cử chỉ {gesture_description} thoáng qua nhưng {significance} lại in sâu trong tâm trí tôi.",
-        "Bầu không khí {atmosphere_description} bao trùm, {environmental_factor} góp phần tạo nên {overall_mood}."
-    ],
-    // THÊM: Các đoạn văn 18+
-    adult: [
-        "Tôi không thể rời mắt khỏi {physical_description} của cô ấy, {adult_observation} khiến tôi {intense_emotion}.",
-        "Cảm giác {physical_sensation} lan tỏa khắp cơ thể tôi khi {intimate_situation}, {bodily_reaction} không thể kiểm soát.",
-        "Mỗi lần {intimate_action}, tôi lại {physical_response} và {emotional_response} một cách {intensity}.",
-        "Không gian giữa chúng tôi tràn ngập {atmosphere_description}, {sensory_detail} kích thích mọi giác quan.",
-        "Tôi cảm nhận được {physical_detail} của cô ấy qua {clothing_description}, {imagination_detail} khiến tôi {arousal_state}."
+    adultContent: [
+        "Tôi thấy {physicalDescription} của {wife} khi {situation}, {detailed_observation} khiến tôi {arousal_level}.",
+        "Bố tôi {action} với {wife} một cách {manner}, {specific_detail} khiến tôi {emotional_response} và {physical_response}.",
+        "Trong {location}, tôi chứng kiến {event} giữa họ, {adult_detail} làm tôi {arousal_level} một cách {intensity}.",
+        "Tôi không thể rời mắt khỏi {physicalDescription} khi {situation}, {adult_observation} khiến tôi {feeling}.",
+        "{wife} {action} một cách {manner}, {adult_detail} khiến tôi {arousal_level} và {psychological_response}."
     ]
 };
 
-// CẢI TIẾN: Các yếu tố tình tiết phong phú hơn
-const plotElements = {
-    triggers: ['khi vợ tôi cúi xuống', 'lúc bố giúp con dâu', 'những cử chỉ thân mật', 'ánh mắt trao đổi', 
-              'tiếng cười nhẹ', 'cách họ đứng gần nhau', 'khi vai chạm vai', 'lúc tay vô tình chạm nhau',
-              'khi chia sẻ chiếc khăn', 'lúc uống chung ly nước', 'khi điều chỉnh áo cho nhau'],
-    timeFrames: ['những ngày', 'buổi tối', 'cuối tuần', 'khi tôi về nhà', 'lúc ăn cơm', 'những lúc yên tĩnh',
-                'đêm khuya thanh vắng', 'sáng sớm tinh mơ', 'những chiều mưa', 'khi trời chập choạng tối'],
-    locations: ['trong nhà bếp', 'ở phòng khách', 'ngoài sân', 'trên cầu thang', 'trong phòng tắm', 'ở ban công',
-               'trong phòng ngủ', 'ngoài vườn sau', 'trên ghế sofa', 'quanh bàn ăn', 'dưới hiên nhà'],
-    discoveries: ['tôi phát hiện ra', 'tôi tình cờ thấy', 'tôi nghe được', 'tôi nhận ra', 'tôi không thể tin',
-                 'tôi vô tình chứng kiến', 'tôi bắt gặp', 'tôi khám phá ra', 'tôi vô tình nhìn thấy'],
-    consequences: ['tôi mất ngủ', 'tôi không thể tập trung', 'tôi bắt đầu tránh', 'tôi càng quan sát nhiều hơn',
-                  'tôi cảm thấy bối rối', 'tôi rơi vào hoang mang', 'tâm trí tôi rối bời', 'cảm xúc tôi giằng xé',
-                  'tôi tìm cách lảng tránh', 'tôi cố gắng phớt lờ', 'tôi không ngừng suy diễn']
+// CẢI TIẾN: Thêm các cấu trúc câu phức tạp hơn
+const complexSentenceStructures = [
+    "Mặc dù {contrasting_idea}, nhưng {main_idea} bởi vì {reason} khiến cho {result}.",
+    "Không chỉ {first_idea}, mà còn {second_idea} dẫn đến {outcome} bởi vì {explanation}.",
+    "Khi {event} xảy ra, {reaction} đã khiến {character} {response} bởi vì {motivation}.",
+    "Mối quan hệ giữa {character1} và {character2} trở nên {description} khi {event} dẫn đến {outcome}.",
+    "Trong khi {situation}, {character} nhận ra {realization} khiến cho {change} trong {aspect}.",
+    "Bằng cách {action}, {character} đã {result} nhưng {unexpected_outcome} xảy ra do {reason}.",
+    "Mặc dù {external_appearance}, nhưng {internal_reality} khiến {character} {response} dẫn đến {consequence}.",
+    "Khi {event} diễn ra, không chỉ {first_effect} mà còn {second_effect} bởi vì {underlying_cause}.",
+    "Sự {quality} của {character} đã dẫn đến {outcome} thông qua {process} mặc dù {obstacle}.",
+    "Thông qua {action}, {character} khám phá ra {discovery} khiến {change} trong {aspect} của cuộc sống."
+];
+
+// CẢI TIẾN: Thêm các mẫu hội thoại phức tạp
+const dialoguePatterns = {
+    tenseExchange: [
+        "{character1}: '{dialogue1}' {character2}: '{response1}' {character1}: '{followUp}'",
+        "{character1} nói với giọng {tone}: '{dialogue1}' {character2} đáp lại: '{response1}'",
+        "Trong lúc {situation}, {character1} hỏi: '{question}' {character2} trả lời: '{answer}'"
+    ],
+    emotionalRevelation: [
+        "{character} thổ lộ: '{confession}' với giọng {tone} đầy {emotion}",
+        "Với ánh mắt {expression}, {character} nói: '{statement}' thể hiện {emotion}",
+        "Giọng {character} run run khi nói: '{emotional_statement}'"
+    ],
+    subtleInteraction: [
+        "{character1} thì thầm với {character2}: '{whisper}' trong {situation}",
+        "Với cử chỉ {gesture}, {character} hỏi: '{question}' một cách {manner}",
+        "{character1} nhìn {character2} với ánh mắt {gaze} và nói: '{statement}'"
+    ]
 };
 
-// HÀM TÍNH ĐIỂM CHẤT LƯỢNG VĂN BẢN
-function calculateQualityMetrics(content) {
-    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const words = content.split(/\s+/).filter(w => w.length > 0);
-    
-    // Tính điểm phức tạp (dựa trên độ dài câu, từ vựng đa dạng)
-    const avgSentenceLength = words.length / sentences.length;
-    const uniqueWords = new Set(words.map(w => w.toLowerCase()));
-    const lexicalDiversity = uniqueWords.size / words.length;
-    const complexityScore = (avgSentenceLength / 20 * 0.4) + (lexicalDiversity * 0.6);
-    
-    // Tính điểm mạch lạc (dựa trên từ nối và liên kết)
-    const transitionWordsCount = words.filter(w => 
-        specializedVocabulary.transitionWords.includes(w.toLowerCase())).length;
-    const coherenceScore = Math.min(1, transitionWordsCount / (sentences.length * 0.5));
-    
-    // Tính điểm cảm xúc (dựa trên từ vựng cảm xúc)
-    const emotionWordsCount = words.filter(w => 
-        specializedVocabulary.emotions.includes(w.toLowerCase()) || 
-        specializedVocabulary.psychologicalTerms.includes(w.toLowerCase())).length;
-    const emotionScore = Math.min(1, emotionWordsCount / (words.length * 0.1));
-    
-    // Tính điểm độ dài
-    const lengthScore = Math.min(1, words.length / aiKnowledge.qualityMetrics.targetWordCount);
-    
-    return {
-        complexity: Math.round(complexityScore * 100) / 100,
-        coherence: Math.round(coherenceScore * 100) / 100,
-        emotion: Math.round(emotionScore * 100) / 100,
-        length: Math.round(lengthScore * 100) / 100,
-        wordCount: words.length,
-        sentenceCount: sentences.length
-    };
+// CẢI TIẾN: Thêm các mẫu mô tả tâm lý sâu sắc hơn
+const psychologicalPatterns = [
+    "{character} cảm thấy {emotion} không chỉ vì {immediate_cause} mà còn do {deeper_reason} từ {past_experience}.",
+    "Trong tiềm thức, {character} nhận ra {insight} thông qua {trigger} khiến {psychological_change}.",
+    "Mâu thuẫn giữa {desire} và {duty} khiến {character} {response} bởi vì {internal_conflict}.",
+    "Ám ảnh về {obsession} đã khiến {character} {behavior} thông qua {psychological_mechanism}.",
+    "Sự {emotion} của {character} bắt nguồn từ {root_cause} thay vì {surface_reason} dẫn đến {outcome}."
+];
+
+// CẢI TIẾN: Thêm các mẫu chuyển tiếp mượt mà hơn
+const transitionPatterns = [
+    "Chỉ một tuần sau, {event} xảy ra khiến {character} phải {response}.",
+    "Theo thời gian, {situation} dần {change} dẫn đến {new_development}.",
+    "Không lâu sau đó, {character} nhận ra {realization} thông qua {experience}.",
+    "Vào một buổi {timeFrame}, {event} đã thay đổi hoàn toàn {situation}.",
+    "Kể từ khi {past_event}, mọi thứ đã {change} khiến {character} {response}."
+];
+
+// Hàm khởi tạo
+function init() {
+    gapiLoaded();
+    gisLoaded();
+    setupEventListeners();
 }
 
-// HÀM ĐÁNH GIÁ VÀ CẢI THIỆN CHẤT LƯỢNG
-function evaluateAndImproveQuality(metrics, content) {
-    let improvedContent = content;
-    
-    // Nếu điểm phức tạp thấp, thêm câu phức tạp hơn
-    if (metrics.complexity < aiKnowledge.qualityMetrics.complexityThreshold) {
-        const complexSentences = Array.from(aiKnowledge.sentenceStructures)
-            .filter(s => s.split(' ').length > 15);
-        if (complexSentences.length > 0) {
-            const randomComplex = complexSentences[Math.floor(Math.random() * complexSentences.length)];
-            improvedContent += " " + adaptLearnedSentence(randomComplex);
-        }
-    }
-    
-    // Nếu điểm mạch lạc thấp, thêm từ chuyển tiếp
-    if (metrics.coherence < aiKnowledge.qualityMetrics.coherenceThreshold) {
-        const transitions = Array.from(specializedVocabulary.transitionWords);
-        const transition = transitions[Math.floor(Math.random() * transitions.length)];
-        improvedContent = improvedContent.replace(/\. ([A-Z])/g, `. ${transition}, $1`);
-    }
-    
-    // Nếu điểm cảm xúc thấp, thêm từ ngữ cảm xúc
-    if (metrics.emotion < aiKnowledge.qualityMetrics.emotionThreshold) {
-        const emotions = Array.from(specializedVocabulary.emotions);
-        const emotion = emotions[Math.floor(Math.random() * emotions.length)];
-        const emotionalPhrase = `Tôi cảm thấy ${emotion} một cách sâu sắc.`;
-        improvedContent += " " + emotionalPhrase;
-    }
-    
-    // Nếu độ dài chưa đạt, thêm nội dung mô tả
-    if (metrics.wordCount < aiKnowledge.qualityMetrics.targetWordCount * 0.9) {
-        const additionalContent = generateAdditionalContent();
-        improvedContent += " " + additionalContent;
-    }
-    
-    return improvedContent;
+function gapiLoaded() {
+    gapi.load('client', initializeGapiClient);
 }
 
-// HÀM TẠO NỘI DUNG BỔ SUNG
-function generateAdditionalContent() {
-    const contentTypes = ['observation', 'reflection', 'description', 'memory', 'adult'];
-    const selectedType = contentTypes[Math.floor(Math.random() * contentTypes.length)];
-    
-    switch(selectedType) {
-        case 'observation':
-            return generateDetailedObservation();
-        case 'reflection':
-            return generateInnerReflection();
-        case 'description':
-            return generateEnvironmentDescription();
-        case 'memory':
-            return generateMemoryRecall();
-        case 'adult':
-            return generateAdultContent();
-    }
+async function initializeGapiClient() {
+    await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
+    gapi_inited = true;
+    maybeEnableButtons();
 }
 
-// CÁC HÀM TẠO NỘI DUNG BỔ SUNG CHI TIẾT
-function generateDetailedObservation() {
-    const templates = [
-        "Tôi quan sát thấy {detailed_observation}, {specific_detail} khiến tôi {emotional_response}.",
-        "Không thể bỏ qua {visual_detail}, {movement_description} thu hút sự chú ý của tôi.",
-        "Ánh mắt {character} {eye_expression}, {gaze_interpretation} khiến tôi {resulting_feeling}."
-    ];
-    
-    let content = getRandomElement(templates);
-    content = replacePlaceholders(content);
-    return content;
-}
-
-function generateInnerReflection() {
-    const templates = [
-        "Suy nghĩ về {situation}, tôi nhận ra {personal_insight} về bản thân.",
-        "Tự vấn lương tâm, tôi thấy {self_realization} trong cách ứng xử của mình.",
-        "Trạng thái nội tâm hiện tại của tôi là {emotional_state}, {self_analysis} giúp tôi hiểu rõ hơn."
-    ];
-    
-    let content = getRandomElement(templates);
-    content = replacePlaceholders(content);
-    return content;
-}
-
-function generateEnvironmentDescription() {
-    const templates = [
-        "Không gian xung quanh {environment_description}, {sensory_detail} góp phần tạo nên {atmosphere}.",
-        "Bầu không khí trong phòng {room_atmosphere}, {environmental_factor} ảnh hưởng đến tâm trạng tôi.",
-        "Ánh sáng {light_description} chiếu qua {window_position}, tạo nên {light_effect} khiến cảnh vật trở nên {visual_impact}."
-    ];
-    
-    let content = getRandomElement(templates);
-    content = replacePlaceholders(content);
-    return content;
-}
-
-function generateMemoryRecall() {
-    const templates = [
-        "Ký ức về {past_event} ùa về, {memory_detail} khiến tôi {emotional_response}.",
-        "Nhớ lại {time_in_past}, tôi chợt nhận ra {retrospective_insight} về cuộc sống.",
-        "Hồi tưởng về {previous_occasion}, {comparison_to_present} làm tôi {resulting_feeling}."
-    ];
-    
-    let content = getRandomElement(templates);
-    content = replacePlaceholders(content);
-    return content;
-}
-
-function generateAdultContent() {
-    const templates = [
-        "Cảm giác {physical_sensation} lan tỏa khắp cơ thể khi {intimate_situation}, {bodily_reaction} không thể kiềm chế.",
-        "Tôi không thể rời mắt khỏi {physical_description} của cô ấy, {adult_observation} khiến tôi {intense_emotion}.",
-        "Mỗi lần {intimate_action}, tôi lại {physical_response} và {emotional_response} một cách {intensity}.",
-        "Không gian giữa chúng tôi tràn ngập {atmosphere_description}, {sensory_detail} kích thích mọi giác quan.",
-        "Tôi cảm nhận được {physical_detail} của cô ấy qua {clothing_description}, {imagination_detail} khiến tôi {arousal_state}."
-    ];
-    
-    let content = getRandomElement(templates);
-    content = replacePlaceholders(content);
-    return content;
-}
-
-// Initialize Google API
-async function initializeGapi() {
-    await gapi.load('client', async () => {
-        await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
-        gapi_inited = true; maybeEnableButtons();
-    });
-}
-
-function initializeGis() {
+function gisLoaded() {
     tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID, scope: SCOPES, callback: ''
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: ''
     });
-    gis_inited = true; maybeEnableButtons();
+    gis_inited = true;
+    maybeEnableButtons();
 }
 
-function maybeEnableButtons() { 
+function maybeEnableButtons() {
     if (gapi_inited && gis_inited) {
-        document.getElementById('authorizeButton').style.display = 'inline-block'; 
+        document.getElementById('authorizeButton').style.display = 'block';
+    }
+}
+
+function setupEventListeners() {
+    document.getElementById('authorizeButton').onclick = handleAuthClick;
+    document.getElementById('signoutButton').onclick = handleSignoutClick;
+    document.getElementById('storyForm').onsubmit = saveStory;
+    document.getElementById('trainAiButton').onclick = trainAI;
+    document.getElementById('resetAiButton').onclick = resetAI;
+    document.getElementById('generateStoryButton').onclick = generateAIStory;
+    document.getElementById('viewAiStoriesButton').onclick = viewAIStories;
+    
+    // Menu navigation
+    document.getElementById('menuTraining').onclick = () => showSection('trainingSection');
+    document.getElementById('menuGeneration').onclick = () => showSection('generationSection');
+    document.getElementById('menuManagement').onclick = () => showSection('managementSection');
+    document.getElementById('menuHistory').onclick = () => showSection('historySection');
+}
+
+function showSection(sectionId) {
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Show the selected section
+    document.getElementById(sectionId).classList.add('active');
+    
+    // Update active menu button
+    document.querySelectorAll('.nav-menu button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[onclick="showSection('${sectionId}')"]`).classList.add('active');
+    
+    // Load data if needed
+    if (sectionId === 'historySection') {
+        loadStoryHistory();
+        loadFolderContents();
+    } else if (sectionId === 'managementSection') {
+        loadExistingStories();
     }
 }
 
 function handleAuthClick() {
+    showLoading(true);
     tokenClient.callback = async (resp) => {
-        if (resp.error !== undefined) { 
-            showStatus('Lỗi đăng nhập: ' + resp.error, 'error'); 
-            return; 
+        if (resp.error !== undefined) {
+            showStatus('Đăng nhập thất bại: ' + resp.error, 'error');
+            showLoading(false);
+            return;
         }
-        document.getElementById('signoutButton').style.display = 'inline-block';
+        document.getElementById('signoutButton').style.display = 'block';
         document.getElementById('authorizeButton').style.display = 'none';
-        document.getElementById('authStatus').innerHTML = '✅ Đã đăng nhập thành công!';
-        await initializeApp();
+        document.getElementById('mainApp').style.display = 'block';
+        showStatus('Đăng nhập thành công!', 'success');
+        
+        // Load data
+        await loadOrCreateMainFolder();
+        loadStoryHistory();
+        loadAIKnowledge();
+        showLoading(false);
     };
+
     if (gapi.client.getToken() === null) {
         tokenClient.requestAccessToken({prompt: 'consent'});
     } else {
@@ -947,652 +886,682 @@ function handleAuthClick() {
 
 function handleSignoutClick() {
     const token = gapi.client.getToken();
-    if (token !== null) { 
-        google.accounts.oauth2.revoke(token.access_token); 
-        gapi.client.setToken(''); 
+    if (token !== null) {
+        google.accounts.oauth2.revoke(token.access_token);
+        gapi.client.setToken('');
+        document.getElementById('authorizeButton').style.display = 'block';
+        document.getElementById('signoutButton').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'none';
+        showStatus('Đã đăng xuất', 'success');
     }
-    document.getElementById('authorizeButton').style.display = 'inline-block';
-    document.getElementById('signoutButton').style.display = 'none';
-    document.getElementById('authStatus').innerHTML = '';
-    document.getElementById('mainApp').style.display = 'none';
 }
 
-async function initializeApp() {
+async function loadOrCreateMainFolder() {
     showLoading(true);
-    await createMainFolder(); 
-    await loadStoryHistory();
-    await loadAiKnowledge();
-    updateAiStats();
-    document.getElementById('mainApp').style.display = 'block';
-    showStatus('Khởi tạo ứng dụng thành công!', 'success');
-    showLoading(false);
-}
-
-async function createMainFolder() {
-    const folderName = 'QuanLyTruyen';
-    const response = await gapi.client.drive.files.list({
-        q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-        fields: 'files(id, name)'
-    });
-    if (response.result.files.length > 0) {
-        mainFolderId = response.result.files[0].id;
-    } else {
-        const folder = await gapi.client.drive.files.create({ 
-            resource: {name: folderName, mimeType: 'application/vnd.google-apps.folder'}, 
-            fields: 'id' 
-        });
-        mainFolderId = folder.result.id;
-    }
-}
-
-async function createStoryFolder(storyTitle) {
-    const folder = await gapi.client.drive.files.create({
-        resource: { 
-            name: storyTitle, 
-            mimeType: 'application/vnd.google-apps.folder', 
-            parents: [mainFolderId] 
-        }, 
-        fields: 'id'
-    });
-    return folder.result.id;
-}
-
-async function saveStoryContent(storyTitle, chapterTitle, content, storyFolderId) {
-    const fileMetadata = { 
-        name: `${chapterTitle}.txt`, 
-        parents: [storyFolderId]
-    };
-    
-    await gapi.client.request({
-        path: 'https://www.googleapis.com/upload/drive/v3/files', 
-        method: 'POST',
-        params: { uploadType: 'multipart' },
-        headers: { 'Content-Type': 'multipart/related; boundary="foo_bar_baz"' },
-        body: '--foo_bar_baz\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' +
-              JSON.stringify(fileMetadata) + '\r\n--foo_bar_baz\r\nContent-Type: text/plain\r\n\r\n' +
-              content + '\r\n--foo_bar_baz--'
-    });
-}
-
-async function loadStoryHistory() {
-    const response = await gapi.client.drive.files.list({
-        q: `'${mainFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-        fields: 'files(id, name, createdTime)', 
-        orderBy: 'createdTime desc'
-    });
-    const folders = response.result.files; 
-    storyHistory = [];
-    
-    for (let folder of folders) {
-        const filesResponse = await gapi.client.drive.files.list({
-            q: `'${folder.id}' in parents and trashed=false`,
-            fields: 'files(id, name, createdTime)'
-        });
-        storyHistory.push({ 
-            storyTitle: folder.name, 
-            folderId: folder.id, 
-            createdTime: folder.createdTime, 
-            chapters: filesResponse.result.files
-        });
-    }
-    displayHistory(); 
-    displayFolders();
-}
-
-// HÀM HUẤN LUYỆN AI NÂNG CAO
-async function trainAI() {
-    showLoading(true);
-    showStatus('Đang bắt đầu huấn luyện AI chuyên sâu...', 'success');
-    
-    const allFiles = [];
-    for (let story of storyHistory) {
-        for (let chapter of story.chapters) {
-            if (chapter.name.endsWith('.txt')) {
-                allFiles.push({...chapter, storyTitle: story.storyTitle});
-            }
-        }
-    }
-    
-    document.getElementById('totalFiles').textContent = allFiles.length;
-    let processedFiles = 0;
-    
-    for (let file of allFiles) {
-        try {
-            const response = await gapi.client.drive.files.get({
-                fileId: file.id,
-                alt: 'media'
-            });
-            
-            const content = response.body;
-            await advancedContentProcessing(content, file.storyTitle, file.name);
-            processedFiles++;
-            
-            // Update progress
-            const progress = (processedFiles / allFiles.length) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-            document.getElementById('trainedFiles').textContent = processedFiles;
-            
-            await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (error) {
-            console.error('Error processing file:', file.name, error);
-        }
-    }
-    
-    aiKnowledge.trainedFiles = processedFiles;
-    updateAiStats();
-    await saveAiKnowledge();
-    showLoading(false);
-    showStatus(`Huấn luyện hoàn thành! Đã xử lý ${processedFiles} file với học sâu.`, 'success');
-}
-
-// HÀM XỬ LÝ NỘI DUNG NÂNG CAO
-async function advancedContentProcessing(content, storyTitle, fileName) {
-    const sentences = content.split(/[.!?]+/).filter(s => s.length > 5);
-    const paragraphs = content.split(/\n\s*\n/).filter(p => p.length > 10);
-    
-    sentences.forEach((sentence, index) => {
-        // Học từ vựng cơ bản
-        const words = sentence.toLowerCase()
-            .replace(/[^\w\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/g, '')
-            .split(/\s+/);
-        
-        words.forEach(word => {
-            if (word.length > 2) {
-                aiKnowledge.vocabulary.add(word);
-                
-                // Học từ chuyển tiếp
-                if (specializedVocabulary.transitionWords.includes(word)) {
-                    aiKnowledge.transitionWords.add(word);
-                }
-                
-                // Học từ tâm lý
-                if (specializedVocabulary.psychologicalTerms.includes(word)) {
-                    aiKnowledge.psychologicalTerms.add(word);
-                }
-                
-                // Học từ ngữ 18+
-                if (specializedVocabulary.adultElements.includes(word)) {
-                    aiKnowledge.adultTerms.add(word);
-                }
-            }
-        });
-        
-        // Học cấu trúc câu phức tạp (câu dài, nhiều mệnh đề)
-        if (sentence.split(' ').length > 12) {
-            aiKnowledge.sentenceStructures.add(sentence.trim());
-        }
-        
-        // Học pattern mô tả
-        if (sentence.match(/(màu|sắc|ánh|sáng|bóng|tối|âm thanh|tiếng|mùi|hương|vị|cảm giác)/i)) {
-            aiKnowledge.descriptivePatterns.add(sentence.trim());
-        }
-        
-        // Học ẩn dụ và so sánh
-        if (sentence.match(/(như|tựa|giống|như là|như thể|tựa như)/i)) {
-            aiKnowledge.metaphors.add(sentence.trim());
-        }
-        
-        // Phát hiện diễn biến tình tiết
-        if (sentence.match(/(khi|lúc|sau khi|trước khi|trong lúc|bỗng nhiên|đột ngột)/i)) {
-            aiKnowledge.plotPoints.add(sentence.trim());
-        }
-        
-        // Học pattern cảm xúc và tâm lý
-        if (sentence.match(/(căng thẳng|lo lắng|bối rối|kích thích|khao khát|tội lỗi|không thể|phải chăng|day dứt|dằn vặt)/i)) {
-            aiKnowledge.emotionalPatterns.add(sentence.trim());
-        }
-        
-        // Phân tích mối quan hệ
-        if (sentence.match(/(bố (chồng|tôi)|con dâu|vợ tôi|họ|chúng tôi)/i)) {
-            aiKnowledge.characterRelationships.add(sentence.trim());
-        }
-        
-        // Học style tường thuật ngôi thứ nhất
-        if (sentence.match(/^(tôi|trong tâm trí|cảm giác|điều này khiến)/i)) {
-            aiKnowledge.narrativeStyles.add(sentence.trim());
-        }
-        
-        // Lưu dialogue
-        if (sentence.includes('"') || sentence.includes('"') || sentence.includes('"')) {
-            const dialogueMatch = sentence.match(/["'"](.*?)["'"]/);
-            if (dialogueMatch && !aiKnowledge.dialogues.includes(dialogueMatch[1])) {
-                aiKnowledge.dialogues.push(dialogueMatch[1]);
-            }
-        }
-        
-        // Lưu context
-        if (sentence.match(/(trong|khi|lúc|sau|trước|vào|giữa|ở)/)) {
-            if (!aiKnowledge.contexts.includes(sentence) && aiKnowledge.contexts.length < 1000) {
-                aiKnowledge.contexts.push(sentence);
-            }
-        }
-    });
-    
-    // Phân tích paragraph để học cấu trúc dài hơn
-    paragraphs.forEach(paragraph => {
-        if (paragraph.length > 100) {
-            aiKnowledge.stories.push({
-                content: paragraph,
-                storyTitle: storyTitle,
-                fileName: fileName
-            });
-        }
-    });
-    
-    // Lưu lại để học hỏi
-    aiKnowledge.generationHistory.push({
-        storyTitle: storyTitle,
-        fileName: fileName,
-        content: content.substring(0, 500) + '...',
-        metrics: calculateQualityMetrics(content),
-        timestamp: new Date().toISOString()
-    });
-}
-
-// HÀM TẠO TRUYỆN NÂNG CAO
-async function generateStory() {
-    const chapterCount = parseInt(document.getElementById('chapterCount').value) || 100;
-    if (chapterCount < 100 || chapterCount > 150) {
-        showStatus('Số chương phải từ 100 đến 150!', 'error');
-        return;
-    }
-    
-    if (aiKnowledge.vocabulary.size < 100) {
-        showStatus('AI chưa được huấn luyện đủ! Hãy huấn luyện AI với ít nhất 100 từ vựng.', 'error');
-        return;
-    }
-    
-    showLoading(true);
-    showStatus('AI đang tạo truyện với logic nâng cao...', 'success');
-    
-    // Tạo cốt truyện tổng thể trước
-    const overallPlot = generateOverallPlot();
-    const title = generateIntelligentTitle();
-    
-    // Create folder for the new story
-    const storyFolderId = await createStoryFolder(title);
-    
-    // Generate chapters with progressive storyline
-    let generatedChapters = 0;
-    const totalChapters = chapterCount;
-    
-    for (let i = 1; i <= totalChapters; i++) {
-        const chapterTitle = `Chương ${i}: ${generateChapterTitle(i, totalChapters)}`;
-        const chapterContent = generateIntelligentChapterContent(i, totalChapters, overallPlot);
-        
-        // Save chapter to Google Drive
-        await saveStoryContent(title, chapterTitle, chapterContent, storyFolderId);
-        
-        generatedChapters++;
-        
-        // Update progress
-        const progress = (generatedChapters / totalChapters) * 100;
-        document.getElementById('generationProgressFill').style.width = progress + '%';
-        document.getElementById('generationStatus').innerHTML = 
-            `<div class="status success">Đang tạo chương ${generatedChapters}/${totalChapters}: ${chapterTitle}</div>`;
-        
-        await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    
-    // Reload stories
-    await loadStoryHistory();
-    showLoading(false);
-    showStatus(`Đã tạo thành công truyện "${title}" với ${totalChapters} chương!`, 'success');
-    document.getElementById('generationStatus').innerHTML = '';
-}
-
-// HÀM TẠO CỐT TRUYỆN TỔNG THỂ
-function generateOverallPlot() {
-    const plotPhases = {
-        introduction: "Khởi đầu với sự quan sát đầu tiên của người chồng về mối quan hệ đặc biệt",
-        development: "Phát triển các tình tiết phức tạp và sự thay đổi trong mối quan hệ",
-        climax: "Đỉnh cao của xung đột nội tâm và những khám phá quan trọng",
-        resolution: "Giải quyết và kết thúc với sự thấu hiểu sâu sắc"
-    };
-    
-    return {
-        mainTheme: "Mối quan hệ phức tạp trong gia đình qua góc nhìn của người chồng",
-        characterDevelopment: "Sự thay đổi nhận thức và cảm xúc của nhân vật chính",
-        emotionalArc: "Từ tò mò ban đầu đến hiểu biết sâu sắc về bản chất con người",
-        phases: plotPhases
-    };
-}
-
-// HÀM TẠO TIÊU ĐỀ THÔNG MINH
-function generateIntelligentTitle() {
-    const titleTemplates = [
-        "Những Điều Tôi Thầm Biết",
-        "Bí Mật Trong Gia Đình",
-        "Góc Nhìn Của Người Chồng",
-        "Quan Sát Trong Thầm Lặng",
-        "Những Gì Tôi Không Nói Ra",
-        "Ranh Giới Mờ Nhạt",
-        "Câu Chuyện Chưa Kể",
-        "Trong Sự Im Lặng"
-    ];
-    
-    return titleTemplates[Math.floor(Math.random() * titleTemplates.length)];
-}
-
-// HÀM TẠO TIÊU ĐỀ CHƯƠNG
-function generateChapterTitle(chapterNum, totalChapters) {
-    const progress = chapterNum / totalChapters;
-    
-    if (progress < 0.2) {
-        // Giai đoạn mở đầu
-        const beginningTitles = ["Khởi đầu quan sát", "Những dấu hiệu đầu tiên", "Sự tò mò bắt đầu", "Cảm giác lạ lùng"];
-        return beginningTitles[Math.floor(Math.random() * beginningTitles.length)];
-    } else if (progress < 0.5) {
-        // Giai đoạn phát triển
-        const developmentTitles = ["Nhận ra điều bất thường", "Quan sát kỹ hơn", "Những phát hiện mới", "Sự thay đổi"];
-        return developmentTitles[Math.floor(Math.random() * developmentTitles.length)];
-    } else if (progress < 0.8) {
-        // Giai đoạn cao trào
-        const climaxTitles = ["Xung đột nội tâm", "Khám phá sự thật", "Không thể phủ nhận", "Đối mặt với thực tế"];
-        return climaxTitles[Math.floor(Math.random() * climaxTitles.length)];
-    } else {
-        // Giai đoạn kết thúc
-        const endingTitles = ["Sự thấu hiểu", "Chấp nhận thực tế", "Kết luận cuối cùng", "Bình yên tìm lại"];
-        return endingTitles[Math.floor(Math.random() * endingTitles.length)];
-    }
-}
-
-// HÀM TẠO NỘI DUNG CHƯƠNG THÔNG MINH
-function generateIntelligentChapterContent(chapterNum, totalChapters, overallPlot) {
-    const progress = chapterNum / totalChapters;
-    let content = "";
-    
-    // Xác định giai đoạn cốt truyện
-    let phase = 'introduction';
-    if (progress > 0.25) phase = 'development';
-    if (progress > 0.65) phase = 'climax';
-    if (progress > 0.85) phase = 'resolution';
-    
-    // Tạo đoạn mở đầu phù hợp với giai đoạn
-    content += generatePhaseIntro(phase, chapterNum) + "\n\n";
-    
-    // Tạo 3-5 đoạn văn chính
-    const paragraphCount = 3 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < paragraphCount; i++) {
-        content += generateIntelligentParagraph(phase, i, paragraphCount) + "\n\n";
-    }
-    
-    // Thêm kết thúc chương
-    content += generateChapterEnding(phase) + "\n";
-    
-    // Đảm bảo đủ số từ (3000-4000)
-    while (content.split(/\s+/).length < 3000) {
-        const additionalContent = generateAdditionalContent();
-        content += additionalContent + "\n\n";
-    }
-    
-    // Giới hạn tối đa 4000 từ
-    const words = content.split(/\s+/);
-    if (words.length > 4000) {
-        content = words.slice(0, 4000).join(' ');
-    }
-    
-    return content;
-}
-
-// HÀM TẠO ĐOẠN MỞ ĐẦU THEO GIAI ĐOẠN
-function generatePhaseIntro(phase, chapterNum) {
-    const templates = {
-        introduction: [
-            `Hôm nay là ngày thứ ${chapterNum} kể từ khi tôi bắt đầu để ý đến những điều lạ lùng trong nhà.`,
-            `Tôi không thể ngờ được rằng cuộc sống gia đình tôi lại có những bí mật như thế này.`,
-            `Mọi thứ bắt đầu từ một cử chỉ nhỏ mà tôi tình cờ nhận ra.`
-        ],
-        development: [
-            `Càng quan sát, tôi càng thấy rõ hơn về mối quan hệ đặc biệt này.`,
-            `Những nghi ngờ trong tôi ngày càng lớn dần theo thời gian.`,
-            `Tôi bắt đầu hiểu tại sao mọi thứ trong nhà lại có những thay đổi tinh tế.`
-        ],
-        climax: [
-            `Hôm nay, tôi không thể phủ nhận những gì đang diễn ra trước mắt mình.`,
-            `Sự thật đã trở nên quá rõ ràng để tôi có thể bỏ qua.`,
-            `Xung đột trong tâm trí tôi đạt đến đỉnh điểm.`
-        ],
-        resolution: [
-            `Cuối cùng, tôi cũng tìm được cách để hiểu và chấp nhận thực tế.`,
-            `Nhìn lại chặng đường đã qua, tôi nhận ra nhiều điều về bản thân mình.`,
-            `Giờ đây, tôi có thể nhìn nhận mọi thứ một cách bình tĩnh hơn.`
-        ]
-    };
-    
-    const phaseTemplates = templates[phase] || templates.introduction;
-    return phaseTemplates[Math.floor(Math.random() * phaseTemplates.length)];
-}
-
-// HÀM TẠO ĐOẠN VĂN THÔNG MINH
-function generateIntelligentParagraph(phase, paragraphIndex, totalParagraphs) {
-    let paragraph = "";
-    
-    // Tạo 4-6 câu cho mỗi đoạn
-    const sentenceCount = 4 + Math.floor(Math.random() * 3);
-    
-    for (let i = 0; i < sentenceCount; i++) {
-        paragraph += generateContextualSentence(phase, i, sentenceCount) + " ";
-    }
-    
-    return paragraph.trim();
-}
-
-// HÀM TẠO CÂU VỚI NGỮ CẢNH
-function generateContextualSentence(phase, sentenceIndex, totalSentences) {
-    // Sử dụng kiến thức đã học để tạo câu có nghĩa
-    const learnedStructures = Array.from(aiKnowledge.sentenceStructures);
-    const learnedEmotions = Array.from(aiKnowledge.emotionalPatterns);
-    const learnedPlots = Array.from(aiKnowledge.plotPoints);
-    
-    if (learnedStructures.length > 0 && Math.random() < 0.3) {
-        // Sử dụng cấu trúc đã học
-        return adaptLearnedSentence(getRandomElement(learnedStructures));
-    }
-    
-    // Tạo câu mới dựa trên pattern
-    let patterns = narrativePatterns[phase === 'climax' ? 'conflict' : 'observation'] || narrativePatterns.innerMonologue;
-    
-    // Thêm pattern 18+ nếu phù hợp
-    if (phase === 'climax' && Math.random() < 0.4) {
-        patterns = patterns.concat(narrativePatterns.adult || []);
-    }
-    
-    let sentence = getRandomElement(patterns);
-    
-    // Thay thế placeholder
-    sentence = replacePlaceholders(sentence);
-    
-    return sentence;
-}
-
-// HÀM CHUYỂN ĐỔI CÂU ĐÃ HỌC
-function adaptLearnedSentence(sentence) {
-    // Thay đổi nhẹ cấu trúc để tạo sự đa dạng
-    sentence = sentence.replace(/\b(tôi|mình)\b/gi, Math.random() < 0.3 ? 'bản thân tôi' : 'tôi');
-    sentence = sentence.replace(/\b(thấy|nhìn)\b/gi, Math.random() < 0.3 ? 'quan sát' : 'thấy');
-    sentence = sentence.replace(/\b(cảm thấy|cảm giác)\b/gi, Math.random() < 0.3 ? 'nhận thức' : 'cảm thấy');
-    
-    return sentence;
-}
-
-// HÀM THAY THẾ PLACEHOLDER
-function replacePlaceholders(text) {
-    const replacements = {
-        '{situation}': getRandomElement(['bữa cơm tối', 'lúc xem TV', 'khi tôi về nhà', 'những buổi chiều', 'cuối tuần']),
-        '{wife}': getRandomElement(['vợ tôi', 'con dâu', 'cô ấy', 'người phụ nữ trong nhà']),
-        '{observation}': getRandomElement(['cách nhìn', 'cử chỉ', 'ánh mắt', 'nụ cười', 'cách cư xử']),
-        '{emotion}': getRandomElement(['bối rối', 'tò mò', 'lo lắng', 'kích thích', 'không yên']),
-        '{action}': getRandomElement(['nói chuyện', 'cười đùa', 'giúp đỡ', 'đứng gần', 'trao đổi']),
-        '{manner}': getRandomElement(['thân mật', 'kín đáo', 'tự nhiên', 'đặc biệt', 'khác thường']),
-        '{innerThought}': getRandomElement(['tôi thắc mắc', 'tôi băn khoăn', 'tôi suy ngẫm', 'tôi tự hỏi']),
-        '{question}': getRandomElement(['điều này có ý nghĩa gì', 'tôi có nên lo lắng', 'đây có phải điều bình thường', 'mọi thứ có đang thay đổi']),
-        '{feeling}': getRandomElement(['căng thẳng', 'bất an', 'tò mò', 'khó hiểu', 'phức tạp']),
-        '{intensity}': getRandomElement(['mạnh mẽ', 'sâu sắc', 'không thể phủ nhận', 'ngày càng rõ ràng']),
-        '{physicalDescription}': getRandomElement(['ánh mắt', 'nụ cười', 'cách di chuyển', 'cử chỉ tay', 'biểu cảm']),
-        '{timeFrame}': getRandomElement(['những ngày gần đây', 'thời gian qua', 'tuần vừa rồi', 'gần đây']),
-        '{physical_sensation}': getRandomElement(['nóng bừng', 'rần rần', 'run rẩy', 'bủn rủn', 'ngứa ngáy']),
-        '{intimate_situation}': getRandomElement(['chạm vào nhau', 'ở gần nhau', 'trò chuyện thân mật', 'trong phòng kín']),
-        '{bodily_reaction}': getRandomElement(['tim đập nhanh', 'hơi thở gấp gáp', 'cơ thể căng cứng', 'mồ hôi vã ra']),
-        '{adult_observation}': getRandomElement(['đường cong quyến rũ', 'làn da mịn màng', 'ánh mắt đầy dục vọng', 'cử chỉ gợi tình']),
-        '{intense_emotion}': getRandomElement(['khao khát mãnh liệt', 'ham muốn không kiềm chế', 'say đắm', 'điên cuồng']),
-        '{intimate_action}': getRandomElement(['chạm nhẹ', 'ôm ấp', 'hôn', 'thì thầm']),
-        '{physical_response}': getRandomElement(['run lên', 'nóng ran', 'rung động', 'co thắt']),
-        '{emotional_response}': getRandomElement(['thăng hoa', 'sung sướng', 'đê mê', 'ngây ngất']),
-        '{atmosphere_description}': getRandomElement(['ngột ngạt dục vọng', 'căng thẳng tình dục', 'quyến rũ nguy hiểm', 'say đắm']),
-        '{sensory_detail}': getRandomElement(['hương thơm cơ thể', 'hơi ấm tỏa ra', 'tiếng thở dốc', 'ánh mắt thiêu đốt']),
-        '{physical_detail}': getRandomElement(['đường cong', 'làn da', 'hơi ấm', 'sự mềm mại']),
-        '{clothing_description}': getRandomElement(['chiếc váy mỏng', 'áo bó sát', 'trang phục gợi cảm', 'vải mỏng manh']),
-        '{imagination_detail}': getRandomElement(['tưởng tượng ra cơ thể', 'mơ về sự đụng chạm', 'khát khao được chạm', 'ham muốn được vuốt ve']),
-        '{arousal_state}': getRandomElement(['kích động', 'nứng tình', 'căng cứng', 'ướt át'])
-    };
-    
-    Object.keys(replacements).forEach(placeholder => {
-        text = text.replace(new RegExp(placeholder, 'g'), replacements[placeholder]);
-    });
-    
-    return text;
-}
-
-// HÀM TẠO KẾT THÚC CHƯƠNG
-function generateChapterEnding(phase) {
-    const endings = {
-        introduction: [
-            "Tôi quyết định sẽ quan sát kỹ hơn trong những ngày tới.",
-            "Có lẽ tôi cần thời gian để hiểu rõ hơn về tình hình này.",
-            "Câu hỏi trong đầu tôi vẫn chưa có lời giải đáp."
-        ],
-        development: [
-            "Mọi thứ đang trở nên phức tạp hơn tôi nghĩ.",
-            "Tôi cảm thấy mình đang đứng trước một bí ẩn lớn.",
-            "Những mảnh ghép bắt đầu khớp với nhau trong tâm trí tôi."
-        ],
-        climax: [
-            "Giờ đây tôi không thể làm ngơ trước sự thật này nữa.",
-            "Cuộc sống của tôi sẽ không bao giờ như trước.",
-            "Tôi phải đối mặt với thực tế dù có đau đớn đến đâu."
-        ],
-        resolution: [
-            "Cuối cùng tôi cũng tìm được sự bình yên trong tâm hồn.",
-            "Tôi học được rằng cuộc sống luôn phức tạp hơn những gì ta nghĩ.",
-            "Giờ đây tôi có thể nhìn mọi thứ với con mắt khác."
-        ]
-    };
-    
-    const phaseEndings = endings[phase] || endings.introduction;
-    return phaseEndings[Math.floor(Math.random() * phaseEndings.length)];
-}
-
-// HÀM LẤY PHẦN TỬ NGẪU NHIÊN
-function getRandomElement(array) {
-    if (!array || array.length === 0) return '';
-    return array[Math.floor(Math.random() * array.length)];
-}
-
-// HÀM LƯU KIẾN THỨC AI
-async function saveAiKnowledge() {
-    const knowledgeStr = JSON.stringify({
-        vocabulary: Array.from(aiKnowledge.vocabulary),
-        stories: aiKnowledge.stories,
-        trainedFiles: aiKnowledge.trainedFiles,
-        sentenceStructures: Array.from(aiKnowledge.sentenceStructures),
-        plotPoints: Array.from(aiKnowledge.plotPoints),
-        emotionalPatterns: Array.from(aiKnowledge.emotionalPatterns),
-        dialogues: aiKnowledge.dialogues || [],
-        contexts: aiKnowledge.contexts || [],
-        characterRelationships: Array.from(aiKnowledge.characterRelationships || new Set()),
-        narrativeStyles: Array.from(aiKnowledge.narrativeStyles || new Set()),
-        transitionWords: Array.from(aiKnowledge.transitionWords || new Set()),
-        psychologicalTerms: Array.from(aiKnowledge.psychologicalTerms || new Set()),
-        descriptivePatterns: Array.from(aiKnowledge.descriptivePatterns || new Set()),
-        metaphors: Array.from(aiKnowledge.metaphors || new Set()),
-        adultTerms: Array.from(aiKnowledge.adultTerms || new Set()),
-        generationHistory: aiKnowledge.generationHistory || [],
-        qualityMetrics: aiKnowledge.qualityMetrics || {}
-    });
-    
-    const fileName = 'ai_knowledge_advanced.json';
-    const response = await gapi.client.drive.files.list({
-        q: `name='${fileName}' and '${mainFolderId}' in parents and trashed=false`,
-        fields: 'files(id)'
-    });
-    
-    if (response.result.files.length > 0) {
-        const fileId = response.result.files[0].id;
-        await gapi.client.request({
-            path: `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
-            method: 'PATCH',
-            params: { uploadType: 'media' },
-            body: knowledgeStr
-        });
-    } else {
-        const fileMetadata = { 
-            name: fileName, 
-            parents: [mainFolderId] 
-        };
-        
-        await gapi.client.request({
-            path: 'https://www.googleapis.com/upload/drive/v3/files', 
-            method: 'POST',
-            params: { uploadType: 'multipart' },
-            headers: { 'Content-Type': 'multipart/related; boundary="foo_bar_baz"' },
-            body: '--foo_bar_baz\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' +
-                  JSON.stringify(fileMetadata) + '\r\n--foo_bar_baz\r\nContent-Type: application/json\r\n\r\n' +
-                  knowledgeStr + '\r\n--foo_bar_baz--'
-        });
-    }
-}
-
-// HÀM TẢI KIẾN THỨC AI
-async function loadAiKnowledge() {
-    const fileName = 'ai_knowledge_advanced.json';
     try {
+        // Tìm thư mục chính
         const response = await gapi.client.drive.files.list({
-            q: `name='${fileName}' and '${mainFolderId}' in parents and trashed=false`,
-            fields: 'files(id)'
+            q: "name='AI Truyện Manager' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+            fields: 'files(id, name)'
         });
         
-        if (response.result.files.length > 0) {
-            const fileId = response.result.files[0].id;
-            const fileResponse = await gapi.client.drive.files.get({
-                fileId: fileId,
-                alt: 'media'
+        const folders = response.result.files;
+        if (folders.length > 0) {
+            mainFolderId = folders[0].id;
+            showStatus('Đã tìm thấy thư mục chính', 'success');
+        } else {
+            // Tạo thư mục mới nếu không tìm thấy
+            const fileMetadata = {
+                name: 'AI Truyện Manager',
+                mimeType: 'application/vnd.google-apps.folder'
+            };
+            
+            const createResponse = await gapi.client.drive.files.create({
+                resource: fileMetadata,
+                fields: 'id'
             });
             
-            const knowledge = JSON.parse(fileResponse.body);
-            aiKnowledge.vocabulary = new Set(knowledge.vocabulary);
-            aiKnowledge.stories = knowledge.stories;
-            aiKnowledge.trainedFiles = knowledge.trainedFiles;
-            aiKnowledge.sentenceStructures = new Set(knowledge.sentenceStructures || []);
-            aiKnowledge.plotPoints = new Set(knowledge.plotPoints || []);
-            aiKnowledge.emotionalPatterns = new Set(knowledge.emotionalPatterns || []);
-            aiKnowledge.dialogues = knowledge.dialogues || [];
-            aiKnowledge.contexts = knowledge.contexts || [];
-            aiKnowledge.characterRelationships = new Set(knowledge.characterRelationships || []);
-            aiKnowledge.narrativeStyles = new Set(knowledge.narrativeStyles || []);
-            aiKnowledge.transitionWords = new Set(knowledge.transitionWords || []);
-            aiKnowledge.psychologicalTerms = new Set(knowledge.psychologicalTerms || []);
-            aiKnowledge.descriptivePatterns = new Set(knowledge.descriptivePatterns || []);
-            aiKnowledge.metaphors = new Set(knowledge.metaphors || []);
-            aiKnowledge.adultTerms = new Set(knowledge.adultTerms || []);
-            aiKnowledge.generationHistory = knowledge.generationHistory || [];
-            aiKnowledge.qualityMetrics = knowledge.qualityMetrics || {
-                complexityThreshold: 0.6,
-                coherenceThreshold: 0.7,
-                emotionThreshold: 0.65,
-                targetWordCount: 3500
+            mainFolderId = createResponse.result.id;
+            showStatus('Đã tạo thư mục chính mới', 'success');
+        }
+        
+        // Tạo thư mục con cho dữ liệu AI nếu chưa có
+        await createAIDataFolder();
+        
+    } catch (error) {
+        showStatus('Lỗi khi tạo/tìm thư mục: ' + error.message, 'error');
+    }
+    showLoading(false);
+}
+
+async function createAIDataFolder() {
+    try {
+        // Tìm thư mục dữ liệu AI
+        const response = await gapi.client.drive.files.list({
+            q: `name='AI Knowledge Data' and mimeType='application/vnd.google-apps.folder' and '${mainFolderId}' in parents and trashed=false`,
+            fields: 'files(id, name)'
+        });
+        
+        const folders = response.result.files;
+        if (folders.length === 0) {
+            // Tạo thư mục mới nếu không tìm thấy
+            const fileMetadata = {
+                name: 'AI Knowledge Data',
+                mimeType: 'application/vnd.google-apps.folder',
+                parents: [mainFolderId]
             };
+            
+            await gapi.client.drive.files.create({
+                resource: fileMetadata,
+                fields: 'id'
+            });
         }
     } catch (error) {
-        console.error('Error loading AI knowledge:', error);
+        console.error('Lỗi khi tạo thư mục AI data:', error);
     }
+}
+
+async function saveStory(e) {
+    e.preventDefault();
+    showLoading(true);
+    
+    const mode = document.getElementById('storyMode').value;
+    const storyTitle = mode === 'new' ? document.getElementById('storyTitle').value : document.getElementById('existingStory').value;
+    const chapterTitle = document.getElementById('chapterTitle').value;
+    const content = document.getElementById('storyContent').value;
+    
+    if (!storyTitle || !chapterTitle || !content) {
+        showStatus('Vui lòng điền đầy đủ thông tin', 'error');
+        showLoading(false);
+        return;
+    }
+    
+    try {
+        let storyFolderId;
+        
+        if (mode === 'new') {
+            // Tạo thư mục mới cho truyện
+            const fileMetadata = {
+                name: storyTitle,
+                mimeType: 'application/vnd.google-apps.folder',
+                parents: [mainFolderId]
+            };
+            
+            const folderResponse = await gapi.client.drive.files.create({
+                resource: fileMetadata,
+                fields: 'id'
+            });
+            
+            storyFolderId = folderResponse.result.id;
+            
+            // Tạo file metadata cho truyện
+            const metadata = {
+                title: storyTitle,
+                created: new Date().toISOString(),
+                chapters: 1
+            };
+            
+            const metadataContent = JSON.stringify(metadata, null, 2);
+            const metadataBlob = new Blob([metadataContent], {type: 'application/json'});
+            
+            const metadataFile = new File([metadataBlob], 'metadata.json', {type: 'application/json'});
+            
+            const metadataMetadata = {
+                name: 'metadata.json',
+                parents: [storyFolderId]
+            };
+            
+            await uploadFile(metadataMetadata, metadataFile);
+            
+        } else {
+            // Tìm thư mục truyện đã có
+            const response = await gapi.client.drive.files.list({
+                q: `name='${storyTitle}' and mimeType='application/vnd.google-apps.folder' and '${mainFolderId}' in parents and trashed=false`,
+                fields: 'files(id, name)'
+            });
+            
+            if (response.result.files.length === 0) {
+                showStatus('Không tìm thấy truyện', 'error');
+                showLoading(false);
+                return;
+            }
+            
+            storyFolderId = response.result.files[0].id;
+            
+            // Cập nhật metadata
+            const metadataResponse = await gapi.client.drive.files.list({
+                q: `name='metadata.json' and '${storyFolderId}' in parents and trashed=false`,
+                fields: 'files(id, name)'
+            });
+            
+            if (metadataResponse.result.files.length > 0) {
+                const metadataFileId = metadataResponse.result.files[0].id;
+                const metadataFile = await gapi.client.drive.files.get({
+                    fileId: metadataFileId,
+                    alt: 'media'
+                });
+                
+                const metadata = metadataFile.result;
+                metadata.chapters = (metadata.chapters || 0) + 1;
+                
+                const updatedMetadataContent = JSON.stringify(metadata, null, 2);
+                const updatedMetadataBlob = new Blob([updatedMetadataContent], {type: 'application/json'});
+                
+                await gapi.client.drive.files.update({
+                    fileId: metadataFileId,
+                    uploadType: 'media',
+                    media: {
+                        mimeType: 'application/json',
+                        body: updatedMetadataBlob
+                    }
+                });
+            }
+        }
+        
+        // Tạo file chương mới
+        const chapterContent = content;
+        const chapterBlob = new Blob([chapterContent], {type: 'text/plain'});
+        const chapterFile = new File([chapterBlob], `${chapterTitle}.txt`, {type: 'text/plain'});
+        
+        const chapterMetadata = {
+            name: `${chapterTitle}.txt`,
+            parents: [storyFolderId]
+        };
+        
+        await uploadFile(chapterMetadata, chapterFile);
+        
+        // Cập nhật lịch sử
+        storyHistory.unshift({
+            title: storyTitle,
+            chapter: chapterTitle,
+            date: new Date().toISOString()
+        });
+        
+        saveStoryHistory();
+        updateAIKnowledge(content);
+        
+        showStatus(`Đã lưu chương "${chapterTitle}" vào truyện "${storyTitle}"`, 'success');
+        document.getElementById('storyForm').reset();
+        
+    } catch (error) {
+        showStatus('Lỗi khi lưu truyện: ' + error.message, 'error');
+    }
+    
+    showLoading(false);
+}
+
+async function uploadFile(metadata, file) {
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+    form.append('file', file);
+    
+    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: new Headers({'Authorization': 'Bearer ' + gapi.client.getToken().access_token}),
+        body: form
+    });
+    
+    return await response.json();
+}
+
+function saveStoryHistory() {
+    localStorage.setItem('storyHistory', JSON.stringify(storyHistory));
+    displayStoryHistory();
+}
+
+function loadStoryHistory() {
+    const savedHistory = localStorage.getItem('storyHistory');
+    if (savedHistory) {
+        storyHistory = JSON.parse(savedHistory);
+    }
+    displayStoryHistory();
+}
+
+function displayStoryHistory() {
+    const historyList = document.getElementById('historyList');
+    historyList.innerHTML = '';
+    
+    if (storyHistory.length === 0) {
+        historyList.innerHTML = '<div class="history-item"><p>Chưa có lịch sử truyện</p></div>';
+        return;
+    }
+    
+    storyHistory.slice(0, 10).forEach(item => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        historyItem.onclick = () => viewStoryChapters(item.title);
+        
+        historyItem.innerHTML = `
+            <div class="story-title">${item.title}</div>
+            <div class="story-chapter">Chương: ${item.chapter}</div>
+            <div class="story-date">${new Date(item.date).toLocaleDateString('vi-VN')}</div>
+        `;
+        
+        historyList.appendChild(historyItem);
+    });
+}
+
+async function loadFolderContents() {
+    if (!mainFolderId) return;
+    
+    try {
+        const response = await gapi.client.drive.files.list({
+            q: `'${mainFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+            fields: 'files(id, name, createdTime)',
+            orderBy: 'createdTime desc'
+        });
+        
+        const folders = response.result.files;
+        const folderList = document.getElementById('folderList');
+        folderList.innerHTML = '';
+        
+        if (folders.length === 0) {
+            folderList.innerHTML = '<div class="history-item"><p>Chưa có thư mục truyện</p></div>';
+            return;
+        }
+        
+        folders.forEach(folder => {
+            const folderItem = document.createElement('div');
+            folderItem.className = 'history-item';
+            folderItem.onclick = () => viewStoryChapters(folder.name);
+            
+            folderItem.innerHTML = `
+                <div class="story-title">${folder.name}</div>
+                <div class="story-date">Tạo ngày: ${new Date(folder.createdTime).toLocaleDateString('vi-VN')}</div>
+            `;
+            
+            folderList.appendChild(folderItem);
+        });
+        
+    } catch (error) {
+        console.error('Lỗi khi tải danh sách thư mục:', error);
+    }
+}
+
+async function viewStoryChapters(storyTitle) {
+    showLoading(true);
+    
+    try {
+        // Tìm thư mục truyện
+        const response = await gapi.client.drive.files.list({
+            q: `name='${storyTitle}' and mimeType='application/vnd.google-apps.folder' and '${mainFolderId}' in parents and trashed=false`,
+            fields: 'files(id, name)'
+        });
+        
+        if (response.result.files.length === 0) {
+            showStatus('Không tìm thấy truyện', 'error');
+            showLoading(false);
+            return;
+        }
+        
+        const storyFolderId = response.result.files[0].id;
+        
+        // Lấy danh sách chương
+        const chaptersResponse = await gapi.client.drive.files.list({
+            q: `'${storyFolderId}' in parents and mimeType='text/plain' and trashed=false`,
+            fields: 'files(id, name)',
+            orderBy: 'name'
+        });
+        
+        const chapters = chaptersResponse.result.files;
+        
+        // Hiển thị modal với danh sách chương
+        document.getElementById('chaptersModalTitle').textContent = `Chương truyện: ${storyTitle}`;
+        const chapterList = document.getElementById('chapterList');
+        chapterList.innerHTML = '';
+        
+        if (chapters.length === 0) {
+            chapterList.innerHTML = '<div class="chapter-item">Chưa có chương nào</div>';
+        } else {
+            chapters.forEach(chapter => {
+                const chapterItem = document.createElement('div');
+                chapterItem.className = 'chapter-item';
+                chapterItem.textContent = chapter.name.replace('.txt', '');
+                chapterItem.onclick = () => loadChapterContent(chapter.id, chapter.name.replace('.txt', ''), storyTitle, storyFolderId);
+                chapterList.appendChild(chapterItem);
+            });
+        }
+        
+        document.getElementById('chapterContent').style.display = 'none';
+        document.getElementById('chapterActions').style.display = 'none';
+        openModal('chaptersModal');
+        
+    } catch (error) {
+        showStatus('Lỗi khi tải chương truyện: ' + error.message, 'error');
+    }
+    
+    showLoading(false);
+}
+
+async function loadChapterContent(chapterId, chapterTitle, storyTitle, storyFolderId) {
+    showLoading(true);
+    
+    try {
+        const response = await gapi.client.drive.files.get({
+            fileId: chapterId,
+            alt: 'media'
+        });
+        
+        const content = response.body;
+        
+        document.getElementById('chapterList').style.display = 'none';
+        document.getElementById('chapterContent').style.display = 'block';
+        document.getElementById('chapterContent').textContent = content;
+        document.getElementById('chapterActions').style.display = 'flex';
+        
+        // Lưu thông tin chương đang xem
+        currentEditingChapter = {
+            id: chapterId,
+            title: chapterTitle,
+            storyTitle: storyTitle,
+            folderId: storyFolderId,
+            content: content
+        };
+        
+    } catch (error) {
+        showStatus('Lỗi khi tải nội dung chương: ' + error.message, 'error');
+    }
+    
+    showLoading(false);
+}
+
+function editChapter() {
+    const contentDiv = document.getElementById('chapterContent');
+    const currentContent = contentDiv.textContent;
+    
+    contentDiv.innerHTML = `<textarea id="editChapterContent" style="width: 100%; height: 400px; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 15px;">${currentContent}</textarea>`;
+}
+
+async function saveChapterChanges() {
+    showLoading(true);
+    
+    try {
+        const editedContent = document.getElementById('editChapterContent').value;
+        
+        const blob = new Blob([editedContent], {type: 'text/plain'});
+        const file = new File([blob], `${currentEditingChapter.title}.txt`, {type: 'text/plain'});
+        
+        const metadata = {
+            name: `${currentEditingChapter.title}.txt`,
+            parents: [currentEditingChapter.folderId]
+        };
+        
+        // Xóa file cũ
+        await gapi.client.drive.files.delete({
+            fileId: currentEditingChapter.id
+        });
+        
+        // Tạo file mới với nội dung đã chỉnh sửa
+        await uploadFile(metadata, file);
+        
+        // Cập nhật nội dung hiển thị
+        document.getElementById('chapterContent').innerHTML = '';
+        document.getElementById('chapterContent').textContent = editedContent;
+        
+        showStatus('Đã lưu thay đổi', 'success');
+        
+        // Cập nhật lại knowledge base
+        updateAIKnowledge(editedContent);
+        
+    } catch (error) {
+        showStatus('Lỗi khi lưu thay đổi: ' + error.message, 'error');
+    }
+    
+    showLoading(false);
+}
+
+function cancelEdit() {
+    document.getElementById('chapterContent').innerHTML = '';
+    document.getElementById('chapterContent').textContent = currentEditingChapter.content;
+}
+
+async function deleteChapter() {
+    if (!confirm('Bạn có chắc chắn muốn xóa chương này?')) return;
+    
+    showLoading(true);
+    
+    try {
+        await gapi.client.drive.files.delete({
+            fileId: currentEditingChapter.id
+        });
+        
+        showStatus('Đã xóa chương', 'success');
+        closeModal('chaptersModal');
+        
+    } catch (error) {
+        showStatus('Lỗi khi xóa chương: ' + error.message, 'error');
+    }
+    
+    showLoading(false);
+}
+
+function openModal(modalId) {
+    document.getElementById(modalId).style.display = 'block';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+    // Reset modal state
+    if (modalId === 'chaptersModal') {
+        document.getElementById('chapterList').style.display = 'block';
+        document.getElementById('chapterContent').style.display = 'none';
+        document.getElementById('chapterActions').style.display = 'none';
+    }
+}
+
+// Đóng modal khi click bên ngoài
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+};
+
+function toggleStoryMode() {
+    const mode = document.getElementById('storyMode').value;
+    if (mode === 'new') {
+        document.getElementById('newStoryGroup').style.display = 'block';
+        document.getElementById('existingStoryGroup').style.display = 'none';
+        document.getElementById('submitButtonText').textContent = 'Lưu Truyện Mới';
+    } else {
+        document.getElementById('newStoryGroup').style.display = 'none';
+        document.getElementById('existingStoryGroup').style.display = 'block';
+        document.getElementById('submitButtonText').textContent = 'Thêm Chương Mới';
+        loadExistingStories();
+    }
+}
+
+async function loadExistingStories() {
+    if (!mainFolderId) return;
+    
+    try {
+        const response = await gapi.client.drive.files.list({
+            q: `'${mainFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+            fields: 'files(id, name)'
+        });
+        
+        const folders = response.result.files;
+        const select = document.getElementById('existingStory');
+        select.innerHTML = '<option value="">-- Chọn truyện --</option>';
+        
+        folders.forEach(folder => {
+            const option = document.createElement('option');
+            option.value = folder.name;
+            option.textContent = folder.name;
+            select.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('Lỗi khi tải danh sách truyện:', error);
+    }
+}
+
+function updateAIKnowledge(content) {
+    // Phân tích nội dung để cập nhật kiến thức cho AI
+    const words = content.split(/\s+/);
+    words.forEach(word => {
+        if (word.length > 3) {
+            aiKnowledge.vocabulary.add(word.toLowerCase());
+        }
+    });
+    
+    // Phân tích câu
+    const sentences = content.split(/[.!?]+/);
+    aiKnowledge.trainedFiles += sentences.length;
+    
+    sentences.forEach(sentence => {
+        if (sentence.length > 10) {
+            // Phân tích cấu trúc câu
+            aiKnowledge.sentenceStructures.add(sentence.trim());
+            
+            // Phân tích từ khóa cảm xúc
+            specializedVocabulary.emotions.forEach(emotion => {
+                if (sentence.toLowerCase().includes(emotion)) {
+                    aiKnowledge.emotionalPatterns.add(emotion);
+                }
+            });
+            
+            // Phân tích hội thoại
+            if (sentence.includes(':"') || sentence.includes(':"')) {
+                aiKnowledge.dialogues.push(sentence.trim());
+            }
+            
+            // Phân tích bối cảnh
+            specializedVocabulary.locations.forEach(location => {
+                if (sentence.toLowerCase().includes(location)) {
+                    aiKnowledge.contexts.push({location, context: sentence.trim()});
+                }
+            });
+            
+            // Phân tích tên nhân vật
+            specializedVocabulary.characterNames.forEach(name => {
+                if (sentence.includes(name)) {
+                    aiKnowledge.characterNames.add(name);
+                }
+            });
+            
+            // Phân tích yếu tố 18+
+            specializedVocabulary.adultElements.forEach(term => {
+                if (sentence.toLowerCase().includes(term)) {
+                    aiKnowledge.adultTerms.add(term);
+                }
+            });
+        }
+    });
+    
+    // Lưu kiến thức AI
+    saveAIKnowledge();
+    updateAIStats();
+}
+
+function saveAIKnowledge() {
+    // Chuyển Set thành Array để lưu trữ
+    const knowledgeToSave = {
+        vocabulary: Array.from(aiKnowledge.vocabulary),
+        trainedFiles: aiKnowledge.trainedFiles,
+        sentenceStructures: Array.from(aiKnowledge.sentenceStructures),
+        emotionalPatterns: Array.from(aiKnowledge.emotionalPatterns),
+        dialogues: aiKnowledge.dialogues,
+        contexts: aiKnowledge.contexts,
+        characterNames: Array.from(aiKnowledge.characterNames),
+        adultTerms: Array.from(aiKnowledge.adultTerms),
+        generationHistory: aiKnowledge.generationHistory
+    };
+    
+    localStorage.setItem('aiKnowledge', JSON.stringify(knowledgeToSave));
+}
+
+function loadAIKnowledge() {
+    const savedKnowledge = localStorage.getItem('aiKnowledge');
+    if (savedKnowledge) {
+        const parsedKnowledge = JSON.parse(savedKnowledge);
+        
+        // Khôi phục các Set từ Array
+        aiKnowledge.vocabulary = new Set(parsedKnowledge.vocabulary || []);
+        aiKnowledge.trainedFiles = parsedKnowledge.trainedFiles || 0;
+        aiKnowledge.sentenceStructures = new Set(parsedKnowledge.sentenceStructures || []);
+        aiKnowledge.emotionalPatterns = new Set(parsedKnowledge.emotionalPatterns || []);
+        aiKnowledge.dialogues = parsedKnowledge.dialogues || [];
+        aiKnowledge.contexts = parsedKnowledge.contexts || [];
+        aiKnowledge.characterNames = new Set(parsedKnowledge.characterNames || []);
+        aiKnowledge.adultTerms = new Set(parsedKnowledge.adultTerms || []);
+        aiKnowledge.generationHistory = parsedKnowledge.generationHistory || [];
+    }
+    updateAIStats();
+}
+
+function updateAIStats() {
+    document.getElementById('totalFiles').textContent = storyHistory.length;
+    document.getElementById('trainedFiles').textContent = aiKnowledge.trainedFiles;
+    document.getElementById('vocabularyCount').textContent = aiKnowledge.vocabulary.size;
+    document.getElementById('sentenceStructures').textContent = aiKnowledge.sentenceStructures.size;
+    document.getElementById('emotionalPatterns').textContent = aiKnowledge.emotionalPatterns.size;
+    document.getElementById('dialoguesCount').textContent = aiKnowledge.dialogues.length;
+    document.getElementById('contextsCount').textContent = aiKnowledge.contexts.length;
+    document.getElementById('charactersCount').textContent = aiKnowledge.characterNames.size;
+    
+    // Cập nhật thanh tiến trình
+    const progress = Math.min(100, (aiKnowledge.trainedFiles / 500) * 100);
+    document.getElementById('progressFill').style.width = `${progress}%`;
+}
+
+async function trainAI() {
+    showLoading(true);
+    
+    try {
+        // Thu thập tất cả nội dung từ các truyện đã lưu để huấn luyện AI
+        if (!mainFolderId) {
+            showStatus('Chưa có thư mục chính', 'error');
+            showLoading(false);
+            return;
+        }
+        
+        // Lấy danh sách tất cả thư mục truyện
+        const response = await gapi.client.drive.files.list({
+            q: `'${mainFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+            fields: 'files(id, name)'
+        });
+        
+        const storyFolders = response.result.files;
+        let totalChapters = 0;
+        
+        for (const folder of storyFolders) {
+            // Lấy tất cả file chương trong thư mục truyện
+            const chaptersResponse = await gapi.client.drive.files.list({
+                q: `'${folder.id}' in parents and mimeType='text/plain' and trashed=false`,
+                fields: 'files(id, name)'
+            });
+            
+            const chapters = chaptersResponse.result.files;
+            totalChapters += chapters.length;
+            
+            for (const chapter of chapters) {
+                // Đọc nội dung chương
+                const contentResponse = await gapi.client.drive.files.get({
+                    fileId: chapter.id,
+                    alt: 'media'
+                });
+                
+                const content = contentResponse.body;
+                
+                // Cập nhật kiến thức AI từ nội dung
+                updateAIKnowledge(content);
+            }
+        }
+        
+        showStatus(`Đã huấn luyện AI với ${totalChapters} chương truyện`, 'success');
+        
+    } catch (error) {
+        showStatus('Lỗi khi huấn luyện AI: ' + error.message, 'error');
+    }
+    
+    showLoading(false);
 }
 
 function resetAI() {
-    if (confirm('Bạn có chắc chắn muốn reset toàn bộ kiến thức của AI?')) {
-        aiKnowledge = { 
-            vocabulary: new Set(), 
-            stories: [], 
+    if (confirm('Bạn có chắc chắn muốn reset toàn bộ kiến thức của AI? Hành động này không thể hoàn tác.')) {
+        aiKnowledge = {
+            vocabulary: new Set(),
+            stories: [],
             trainedFiles: 0,
             sentenceStructures: new Set(),
             plotPoints: new Set(),
@@ -1606,6 +1575,10 @@ function resetAI() {
             descriptivePatterns: new Set(),
             metaphors: new Set(),
             adultTerms: new Set(),
+            characterNames: new Set(),
+            locations: new Set(),
+            timeFrames: new Set(),
+            situations: new Set(),
             generationHistory: [],
             qualityMetrics: {
                 complexityThreshold: 0.6,
@@ -1614,339 +1587,324 @@ function resetAI() {
                 targetWordCount: 3500
             }
         };
-        updateAiStats();
-        saveAiKnowledge();
-        showStatus('Đã reset kiến thức của AI!', 'success');
+        
+        localStorage.removeItem('aiKnowledge');
+        updateAIStats();
+        showStatus('Đã reset kiến thức AI', 'success');
     }
 }
 
-// HÀM KIỂM TRA NỘI DUNG NHẠY CẢM
-function isSensitiveContent(content) {
-    const sensitiveKeywords = [
-        'bố chồng', 'con dâu', 'khao khát', 'kích thích', 'dục vọng', 'bí mật', 
-        'thầm kín', 'cấm kị', 'ranh giới', 'quan hệ đặc biệt', 'không thể cưỡng lại',
-        'ham muốn', 'thèm muốn', 'tội lỗi', 'xấu hổ', 'bối rối về tình dục', 'dâm dục',
-        'quan hệ', 'ân ái', 'làm tình', 'yêu đương', 'gợi tình', 'quyến rũ', 'khoái cảm'
-    ];
-    
-    return sensitiveKeywords.some(keyword => 
-        content.toLowerCase().includes(keyword.toLowerCase())
-    );
-}
-
-// HÀM HIỂN THỊ NỘI DUNG CHƯƠNG
-async function viewChapterContent(chapter, folderId) {
-    const chapterContent = document.getElementById('chapterContent');
-    const chapterActions = document.getElementById('chapterActions');
-    
-    try {
-        const response = await gapi.client.drive.files.get({
-            fileId: chapter.id,
-            alt: 'media'
-        });
-        
-        const content = response.body;
-        chapterContent.textContent = content;
-        chapterContent.style.display = 'block';
-        chapterActions.style.display = 'block';
-        currentEditingChapter = { id: chapter.id, content: content, name: chapter.name };
-        
-        // Kiểm tra và xử lý nội dung nhạy cảm
-        if (isSensitiveContent(content)) {
-            chapterContent.classList.add('sensitive-content');
-            
-            const revealBtn = document.createElement('button');
-            revealBtn.className = 'reveal-btn';
-            revealBtn.textContent = '👁️ Hiển thị nội dung nhạy cảm';
-            revealBtn.onclick = function() {
-                chapterContent.classList.toggle('revealed');
-                this.textContent = chapterContent.classList.contains('revealed') ? 
-                    '🙈 Ẩn nội dung nhạy cảm' : '👁️ Hiển thị nội dung nhạy cảm';
-            };
-            
-            chapterContent.parentNode.insertBefore(revealBtn, chapterContent);
-        }
-    } catch (error) {
-        console.error('Error loading chapter content:', error);
-        showStatus('Có lỗi khi tải nội dung chương!', 'error');
-    }
-}
-
-// UI Functions
-function displayHistory() {
-    const historyList = document.getElementById('historyList');
-    historyList.innerHTML = '';
-    
-    if (storyHistory.length === 0) {
-        historyList.innerHTML = '<div class="history-item">Chưa có truyện nào.</div>';
-        return;
-    }
-    
-    storyHistory.forEach(story => {
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        item.onclick = () => viewStoryChapters(story);
-        
-        item.innerHTML = `
-            <div class="story-title">${story.storyTitle}</div>
-            <div class="story-chapter">${story.chapters.length} chương</div>
-            <div class="story-date">${new Date(story.createdTime).toLocaleDateString('vi-VN')}</div>
-        `;
-        historyList.appendChild(item);
-    });
-}
-
-function displayFolders() {
-    const folderList = document.getElementById('folderList');
-    const existingStory = document.getElementById('existingStory');
-    folderList.innerHTML = '';
-    existingStory.innerHTML = '<option value="">-- Chọn truyện --</option>';
-    
-    if (storyHistory.length === 0) {
-        folderList.innerHTML = '<div class="history-item">Chưa có thư mục nào.</div>';
-        return;
-    }
-    
-    storyHistory.forEach(story => {
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        
-        item.innerHTML = `
-            <div class="story-title">${story.storyTitle}</div>
-            <div class="story-chapter">${story.chapters.length} chương</div>
-        `;
-        folderList.appendChild(item);
-        
-        const option = document.createElement('option');
-        option.value = story.folderId;
-        option.textContent = story.storyTitle;
-        existingStory.appendChild(option);
-    });
-}
-
-function toggleStoryMode() {
-    const mode = document.getElementById('storyMode').value;
-    if (mode === 'new') {
-        document.getElementById('newStoryGroup').style.display = 'block';
-        document.getElementById('existingStoryGroup').style.display = 'none';
-        document.getElementById('submitButtonText').textContent = 'Lưu Truyện Mới';
-    } else {
-        document.getElementById('newStoryGroup').style.display = 'none';
-        document.getElementById('existingStoryGroup').style.display = 'block';
-        document.getElementById('submitButtonText').textContent = 'Thêm Chương Mới';
-    }
-}
-
-async function handleStoryFormSubmit(e) {
-    e.preventDefault();
+// CẢI TIẾN: Hàm tạo truyện AI với các cải tiến mới
+async function generateAIStory() {
     showLoading(true);
     
-    const mode = document.getElementById('storyMode').value;
-    const storyTitle = document.getElementById('storyTitle').value;
-    const chapterTitle = document.getElementById('chapterTitle').value;
-    const storyContent = document.getElementById('storyContent').value;
+    const chapterCount = parseInt(document.getElementById('chapterCount').value) || 100;
+    
+    if (chapterCount < 100 || chapterCount > 150) {
+        showStatus('Số chương phải từ 100 đến 150', 'error');
+        showLoading(false);
+        return;
+    }
     
     try {
-        let storyFolderId;
-        if (mode === 'new') {
-            storyFolderId = await createStoryFolder(storyTitle);
-        } else {
-            storyFolderId = document.getElementById('existingStory').value;
-            if (!storyFolderId) {
-                showStatus('Vui lòng chọn một truyện có sẵn!', 'error');
-                showLoading(false);
-                return;
-            }
+        // Tạo thư mục mới cho truyện AI
+        const storyTitle = `AI Truyện - ${new Date().toLocaleDateString('vi-VN')}`;
+        const fileMetadata = {
+            name: storyTitle,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [mainFolderId]
+        };
+        
+        const folderResponse = await gapi.client.drive.files.create({
+            resource: fileMetadata,
+            fields: 'id'
+        });
+        
+        const storyFolderId = folderResponse.result.id;
+        
+        // Tạo metadata
+        const metadata = {
+            title: storyTitle,
+            created: new Date().toISOString(),
+            chapters: chapterCount,
+            generatedByAI: true
+        };
+        
+        const metadataContent = JSON.stringify(metadata, null, 2);
+        const metadataBlob = new Blob([metadataContent], {type: 'application/json'});
+        const metadataFile = new File([metadataBlob], 'metadata.json', {type: 'application/json'});
+        
+        const metadataMetadata = {
+            name: 'metadata.json',
+            parents: [storyFolderId]
+        };
+        
+        await uploadFile(metadataMetadata, metadataFile);
+        
+        // Tạo các chương
+        let progress = 0;
+        document.getElementById('generationProgressFill').style.width = '0%';
+        document.getElementById('generationStatus').innerHTML = '<div class="status info">Đang tạo truyện... 0%</div>';
+        
+        for (let i = 1; i <= chapterCount; i++) {
+            const chapterTitle = `Chương ${i}`;
+            const chapterContent = generateChapterContent(i, chapterCount);
+            
+            const chapterBlob = new Blob([chapterContent], {type: 'text/plain'});
+            const chapterFile = new File([chapterBlob], `${chapterTitle}.txt`, {type: 'text/plain'});
+            
+            const chapterMetadata = {
+                name: `${chapterTitle}.txt`,
+                parents: [storyFolderId]
+            };
+            
+            await uploadFile(chapterMetadata, chapterFile);
+            
+            // Cập nhật tiến trình
+            progress = Math.floor((i / chapterCount) * 100);
+            document.getElementById('generationProgressFill').style.width = `${progress}%`;
+            document.getElementById('generationStatus').innerHTML = `<div class="status info">Đang tạo truyện... ${progress}%</div>`;
         }
         
-        await saveStoryContent(storyTitle, chapterTitle, storyContent, storyFolderId);
-        await loadStoryHistory();
+        // Lưu thông tin truyện AI
+        aiGeneratedStories.push({
+            title: storyTitle,
+            chapters: chapterCount,
+            date: new Date().toISOString(),
+            folderId: storyFolderId
+        });
         
-        document.getElementById('storyForm').reset();
-        showStatus('Đã lưu truyện thành công!', 'success');
+        saveAIGeneratedStories();
+        
+        showStatus(`Đã tạo thành công truyện "${storyTitle}" với ${chapterCount} chương`, 'success');
+        document.getElementById('generationStatus').innerHTML = '';
+        
     } catch (error) {
-        console.error('Error saving story:', error);
-        showStatus('Có lỗi xảy ra khi lưu truyện!', 'error');
+        showStatus('Lỗi khi tạo truyện AI: ' + error.message, 'error');
     }
+    
     showLoading(false);
 }
 
-function showStatus(message, type) {
-    const statusEl = document.getElementById('status');
-    statusEl.textContent = message;
-    statusEl.className = `status ${type}`;
-    statusEl.style.display = 'block';
-    setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
+// CẢI TIẾN: Hàm tạo nội dung chương với các cải tiến mới
+function generateChapterContent(chapterNumber, totalChapters) {
+    // Xác định giai đoạn của truyện dựa trên số chương
+    const storyPhase = chapterNumber / totalChapters;
+    
+    // Lựa chọn ngẫu nhiên các yếu tố từ kiến thức AI
+    const character = getRandomElement(Array.from(aiKnowledge.characterNames)) || getRandomElement(specializedVocabulary.characterNames);
+    const wife = getRandomElement(specializedVocabulary.characterNames.filter(name => name !== character)) || 'vợ';
+    const location = getRandomElement(Array.from(aiKnowledge.locations)) || getRandomElement(specializedVocabulary.locations);
+    const timeFrame = getRandomElement(Array.from(aiKnowledge.timeFrames)) || getRandomElement(specializedVocabulary.timeFrames);
+    const situation = getRandomElement(Array.from(aiKnowledge.situations)) || getRandomElement(specializedVocabulary.situations);
+    const emotion = getRandomElement(Array.from(aiKnowledge.emotionalPatterns)) || getRandomElement(specializedVocabulary.emotions);
+    
+    // Xác định độ phức tạp dựa trên giai đoạn truyện
+    const complexity = 0.5 + (storyPhase * 0.5);
+    
+    // Tạo nội dung chương
+    let content = '';
+    const targetLength = aiKnowledge.qualityMetrics.targetWordCount;
+    let wordCount = 0;
+    
+    // Thêm tiêu đề chương
+    content += `Chương ${chapterNumber}\n\n`;
+    
+    // Tạo nội dung chính
+    while (wordCount < targetLength) {
+        // Lựa chọn ngẫu nhiên một mẫu cấu trúc
+        const patternType = getRandomElement(Object.keys(narrativePatterns));
+        const pattern = getRandomElement(narrativePatterns[patternType]);
+        
+        // Điền vào chỗ trống
+        let generatedText = pattern
+            .replace(/{situation}/g, situation)
+            .replace(/{wife}/g, wife)
+            .replace(/{character}/g, character)
+            .replace(/{location}/g, location)
+            .replace(/{timeFrame}/g, timeFrame)
+            .replace(/{emotion}/g, emotion)
+            .replace(/{psychological_insight}/g, generatePsychologicalInsight())
+            .replace(/{detailed_observation}/g, generateDetailedObservation())
+            .replace(/{specific_detail}/g, generateSpecificDetail())
+            .replace(/{additional_detail}/g, generateAdditionalDetail())
+            .replace(/{innerThought}/g, generateInnerThought())
+            .replace(/{question}/g, generateQuestion())
+            .replace(/{physicalDescription}/g, generatePhysicalDescription())
+            .replace(/{action}/g, generateAction())
+            .replace(/{manner}/g, generateManner())
+            .replace(/{contextual_detail}/g, generateContextualDetail())
+            .replace(/{atmosphere}/g, generateAtmosphere())
+            .replace(/{intensity}/g, generateIntensity())
+            .replace(/{observation}/g, generateObservation())
+            .replace(/{emotional_response}/g, generateEmotionalResponse())
+            .replace(/{feeling}/g, generateFeeling())
+            .replace(/{psychological_analysis}/g, generatePsychologicalAnalysis())
+            .replace(/{emotional_state}/g, generateEmotionalState())
+            .replace(/{possibility}/g, generatePossibility())
+            .replace(/{further_thought}/g, generateFurtherThought())
+            .replace(/{additional_reflection}/g, generateAdditionalReflection())
+            .replace(/{resulting_emotion}/g, generateResultingEmotion())
+            .replace(/{subject}/g, generateSubject())
+            .replace(/{deeper_analysis}/g, generateDeeperAnalysis())
+            .replace(/{realization}/g, generateRealization())
+            .replace(/{physical_sensation}/g, generatePhysicalSensation())
+            .replace(/{reaction}/g, generateReaction())
+            .replace(/{event}/g, generateEvent())
+            .replace(/{psychological_effect}/g, generatePsychologicalEffect())
+            .replace(/{metaphor}/g, generateMetaphor())
+            .replace(/{emotional_detail}/g, generateEmotionalDetail())
+            .replace(/{physical_response}/g, generatePhysicalResponse())
+            .replace(/{tension}/g, generateTension())
+            .replace(/{context}/g, generateContext())
+            .replace(/{observation}/g, generateObservation())
+            .replace(/{underlying_dynamic}/g, generateUnderlyingDynamic())
+            .replace(/{description}/g, generateDescription())
+            .replace(/{arousal_level}/g, generateArousalLevel())
+            .replace(/{adult_detail}/g, generateAdultDetail())
+            .replace(/{adult_observation}/g, generateAdultObservation())
+            .replace(/{psychological_response}/g, generatePsychologicalResponse());
+        
+        // Thêm vào nội dung
+        content += generatedText + ' ';
+        
+        // Đếm số từ
+        wordCount += generatedText.split(/\s+/).length;
+        
+        // Thêm đoạn hội thoại nếu phù hợp
+        if (Math.random() < 0.3) {
+            const dialogue = generateDialogue(character, wife);
+            content += dialogue + ' ';
+            wordCount += dialogue.split(/\s+/).length;
+        }
+        
+        // Thêm phân tích tâm lý nếu phù hợp
+        if (Math.random() < complexity) {
+            const psychologicalAnalysis = generatePsychologicalAnalysis();
+            content += psychologicalAnalysis + ' ';
+            wordCount += psychologicalAnalysis.split(/\s+/).length;
+        }
+    }
+    
+    // Giới hạn độ dài
+    const words = content.split(/\s+/);
+    if (words.length > targetLength) {
+        content = words.slice(0, targetLength).join(' ');
+    }
+    
+    return content;
+}
+
+// Các hàm hỗ trợ tạo nội dung
+function getRandomElement(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+function generatePsychologicalInsight() {
+    const insights = [
+        "sự thật này khiến tôi nhận ra những góc khuất trong tâm hồn mình",
+        "điều này làm sâu sắc thêm hiểu biết của tôi về bản chất con người",
+        "tôi chợt hiểu ra mối liên hệ giữa hành động này và những trải nghiệm trong quá khứ",
+        "nhận thức này hé mở những động cơ tiềm ẩn mà trước giờ tôi không dám thừa nhận",
+        "sự thấu hiểu này đánh thức những cảm xúc mà tôi tưởng đã chôn vùi"
+    ];
+    return getRandomElement(insights);
+}
+
+function generateDetailedObservation() {
+    const observations = [
+        "cách ánh mắt họ lướt qua nhau trong tích tắc",
+        "nụ cười thoáng hiện rồi vội vã tắt lịm",
+        "cử chỉ vuốt tay nhẹ nhàng như vô tình",
+        "ánh nhìn lảng tránh khi bắt gặp nhau",
+        "khoảng cách giữa hai người luôn được duy trì ở mức vừa đủ xa"
+    ];
+    return getRandomElement(observations);
+}
+
+// Thêm các hàm hỗ trợ khác ở đây...
+
+function generateDialogue(character1, character2) {
+    const pattern = getRandomElement(Object.values(dialoguePatterns)[0]);
+    return pattern
+        .replace(/{character1}/g, character1)
+        .replace(/{character2}/g, character2)
+        .replace(/{dialogue1}/g, generateDialogueLine())
+        .replace(/{response1}/g, generateResponseLine())
+        .replace(/{followUp}/g, generateFollowUpLine())
+        .replace(/{tone}/g, getRandomElement(['nhẹ nhàng', 'căng thẳng', 'thì thầm', 'run rẩy', 'lạnh lùng']))
+        .replace(/{question}/g, generateQuestionLine())
+        .replace(/{answer}/g, generateAnswerLine());
+}
+
+function generateDialogueLine() {
+    const lines = [
+        "Em có cảm thấy điều gì kỳ lạ không?",
+        "Anh nghĩ chúng ta nên nói chuyện này",
+        "Tại sao mọi thứ lại trở nên phức tạp thế?",
+        "Em không biết mình đang cảm thấy thế nào nữa",
+        "Có điều gì đó không ổn giữa chúng ta"
+    ];
+    return getRandomElement(lines);
+}
+
+// Thêm các hàm generate khác...
+
+function saveAIGeneratedStories() {
+    localStorage.setItem('aiGeneratedStories', JSON.stringify(aiGeneratedStories));
+}
+
+function loadAIGeneratedStories() {
+    const savedStories = localStorage.getItem('aiGeneratedStories');
+    if (savedStories) {
+        aiGeneratedStories = JSON.parse(savedStories);
+    }
+}
+
+async function viewAIStories() {
+    loadAIGeneratedStories();
+    
+    const aiStoryList = document.getElementById('aiStoryList');
+    aiStoryList.innerHTML = '';
+    
+    if (aiGeneratedStories.length === 0) {
+        aiStoryList.innerHTML = '<div class="chapter-item">Chưa có truyện nào được tạo bởi AI</div>';
+    } else {
+        aiGeneratedStories.forEach(story => {
+            const storyItem = document.createElement('div');
+            storyItem.className = 'chapter-item';
+            storyItem.onclick = () => viewStoryChapters(story.title);
+            
+            storyItem.innerHTML = `
+                <div class="story-title">${story.title}</div>
+                <div class="story-chapter">${story.chapters} chương</div>
+                <div class="story-date">${new Date(story.date).toLocaleDateString('vi-VN')}</div>
+            `;
+            
+            aiStoryList.appendChild(storyItem);
+        });
+    }
+    
+    openModal('aiStoriesModal');
 }
 
 function showLoading(show) {
     document.getElementById('loading').style.display = show ? 'block' : 'none';
 }
 
-// Modal Functions
-function viewStoryChapters(story) {
-    const modal = document.getElementById('chaptersModal');
-    const title = document.getElementById('chaptersModalTitle');
-    const chapterList = document.getElementById('chapterList');
-    const chapterContent = document.getElementById('chapterContent');
-    const chapterActions = document.getElementById('chapterActions');
+function showStatus(message, type) {
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = message;
+    statusDiv.className = 'status ' + type;
+    statusDiv.style.display = 'block';
     
-    title.textContent = story.storyTitle;
-    chapterList.innerHTML = '';
-    chapterContent.style.display = 'none';
-    chapterActions.style.display = 'none';
-    
-    story.chapters.forEach(chapter => {
-        const item = document.createElement('div');
-        item.className = 'chapter-item';
-        item.onclick = () => viewChapterContent(chapter, story.folderId);
-        item.textContent = chapter.name.replace('.txt', '');
-        chapterList.appendChild(item);
-    });
-    
-    modal.style.display = 'block';
+    setTimeout(() => {
+        statusDiv.style.display = 'none';
+    }, 5000);
 }
 
-function editChapter() {
-    const chapterContent = document.getElementById('chapterContent');
-    chapterContent.contentEditable = true;
-    chapterContent.focus();
-    chapterContent.style.background = 'rgba(255, 255, 255, 0.1)';
-    chapterContent.style.border = '1px solid rgba(102, 126, 234, 0.5)';
-}
-
-async function saveChapterChanges() {
-    if (!currentEditingChapter) return;
-    
-    const chapterContent = document.getElementById('chapterContent');
-    const newContent = chapterContent.textContent;
-    
-    try {
-        await gapi.client.request({
-            path: `https://www.googleapis.com/upload/drive/v3/files/${currentEditingChapter.id}`,
-            method: 'PATCH',
-            params: { uploadType: 'media' },
-            body: newContent
-        });
-        
-        chapterContent.contentEditable = false;
-        chapterContent.style.background = 'rgba(255, 255, 255, 0.05)';
-        chapterContent.style.border = 'none';
-        currentEditingChapter.content = newContent;
-        
-        showStatus('Đã lưu thay đổi thành công!', 'success');
-    } catch (error) {
-        console.error('Error saving chapter changes:', error);
-        showStatus('Có lỗi khi lưu thay đổi!', 'error');
-    }
-}
-
-function cancelEdit() {
-    const chapterContent = document.getElementById('chapterContent');
-    chapterContent.textContent = currentEditingChapter.content;
-    chapterContent.contentEditable = false;
-    chapterContent.style.background = 'rgba(255, 255, 255, 0.05)';
-    chapterContent.style.border = 'none';
-}
-
-async function deleteChapter() {
-    if (!currentEditingChapter || !confirm('Bạn có chắc chắn muốn xóa chương này?')) return;
-    
-    try {
-        await gapi.client.drive.files.delete({ fileId: currentEditingChapter.id });
-        closeModal('chaptersModal');
-        await loadStoryHistory();
-        showStatus('Đã xóa chương thành công!', 'success');
-    } catch (error) {
-        console.error('Error deleting chapter:', error);
-        showStatus('Có lỗi khi xóa chương!', 'error');
-    }
-}
-
-function closeModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
-    currentEditingChapter = null;
-    
-    // Remove reveal buttons
-    const revealBtns = document.querySelectorAll('.reveal-btn');
-    revealBtns.forEach(btn => btn.remove());
-}
-
-function viewAiStories() {
-    const modal = document.getElementById('aiStoriesModal');
-    const aiStoryList = document.getElementById('aiStoryList');
-    
-    aiStoryList.innerHTML = '';
-    
-    if (aiGeneratedStories.length === 0) {
-        aiStoryList.innerHTML = '<div class="history-item">Chưa có truyện nào được AI tạo.</div>';
-    } else {
-        aiGeneratedStories.forEach(story => {
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            item.onclick = () => {
-                closeModal('aiStoriesModal');
-                viewStoryChapters(story);
-            };
-            
-            item.innerHTML = `
-                <div class="story-title">${story.storyTitle} <span style="color:#ff9a3d">[AI]</span></div>
-                <div class="story-chapter">${story.chapters.length} chương - ${new Date(story.createdTime).toLocaleDateString('vi-VN')}</div>
-            `;
-            aiStoryList.appendChild(item);
-        });
-    }
-    
-    modal.style.display = 'block';
-}
-
-function updateAiStats() {
-    document.getElementById('vocabularyCount').textContent = aiKnowledge.vocabulary.size;
-    document.getElementById('sentenceStructures').textContent = aiKnowledge.sentenceStructures.size;
-    document.getElementById('plotPoints').textContent = aiKnowledge.plotPoints.size;
-    document.getElementById('emotionalPatterns').textContent = aiKnowledge.emotionalPatterns.size;
-}
-
-// Menu Navigation
-function showSection(sectionId) {
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.classList.remove('active');
-    });
-    
-    document.getElementById(sectionId).classList.add('active');
-    
-    document.querySelectorAll('.nav-menu button').forEach(button => {
-        button.classList.remove('active');
-    });
-    document.querySelector(`.nav-menu button[data-section="${sectionId}"]`).classList.add('active');
-}
-
-// Event Listeners
-document.getElementById('authorizeButton').addEventListener('click', handleAuthClick);
-document.getElementById('signoutButton').addEventListener('click', handleSignoutClick);
-document.getElementById('storyForm').addEventListener('submit', handleStoryFormSubmit);
-document.getElementById('trainAiButton').addEventListener('click', trainAI);
-document.getElementById('resetAiButton').addEventListener('click', resetAI);
-document.getElementById('generateStoryButton').addEventListener('click', generateStory);
-document.getElementById('viewAiStoriesButton').addEventListener('click', viewAiStories);
-
-// Menu navigation event listeners
-document.getElementById('menuTraining').addEventListener('click', () => showSection('trainingSection'));
-document.getElementById('menuGeneration').addEventListener('click', () => showSection('generationSection'));
-document.getElementById('menuManagement').addEventListener('click', () => showSection('managementSection'));
-document.getElementById('menuHistory').addEventListener('click', () => showSection('historySection'));
-
-// Add data-section attributes to menu buttons
-document.getElementById('menuTraining').setAttribute('data-section', 'trainingSection');
-document.getElementById('menuGeneration').setAttribute('data-section', 'generationSection');
-document.getElementById('menuManagement').setAttribute('data-section', 'managementSection');
-document.getElementById('menuHistory').setAttribute('data-section', 'historySection');
-
-// Initialize the app
-window.onload = () => {
-    initializeGapi();
-    initializeGis();
-};
+// Khởi tạo ứng dụng
+window.onload = init;
 </script>
 </body>
 </html>
