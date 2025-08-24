@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý Truyện - Google Drive Database</title>
     <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
     <style>
         * {
             margin: 0;
@@ -301,27 +302,35 @@
         let storyHistory = [];
 
         // Khởi tạo Google API
-        function gapiLoaded() {
-            gapi.load('client', initializeGapi);
-        }
-
         async function initializeGapi() {
-            await gapi.client.init({
-                apiKey: API_KEY,
-                discoveryDocs: [DISCOVERY_DOC],
-            });
-            gapi_inited = true;
-            maybeEnableButtons();
+            try {
+                await gapi.load('client', async () => {
+                    await gapi.client.init({
+                        apiKey: API_KEY,
+                        discoveryDocs: [DISCOVERY_DOC],
+                    });
+                    gapi_inited = true;
+                    maybeEnableButtons();
+                });
+            } catch (error) {
+                console.error('Lỗi khởi tạo GAPI:', error);
+                showStatus('Lỗi khởi tạo Google API', 'error');
+            }
         }
 
-        function gisLoaded() {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: '', // sẽ được định nghĩa sau
-            });
-            gis_inited = true;
-            maybeEnableButtons();
+        function initializeGis() {
+            try {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: '', // sẽ được định nghĩa sau
+                });
+                gis_inited = true;
+                maybeEnableButtons();
+            } catch (error) {
+                console.error('Lỗi khởi tạo GIS:', error);
+                showStatus('Lỗi khởi tạo Google Identity Services', 'error');
+            }
         }
 
         function maybeEnableButtons() {
@@ -332,9 +341,15 @@
 
         // Xử lý đăng nhập
         function handleAuthClick() {
+            if (!tokenClient) {
+                showStatus('Google Identity Services chưa được khởi tạo', 'error');
+                return;
+            }
+
             tokenClient.callback = async (resp) => {
                 if (resp.error !== undefined) {
-                    throw (resp);
+                    showStatus('Lỗi đăng nhập: ' + resp.error, 'error');
+                    return;
                 }
                 document.getElementById('signoutButton').style.display = 'inline-block';
                 document.getElementById('authorizeButton').style.display = 'none';
@@ -603,16 +618,19 @@
         document.getElementById('authorizeButton').addEventListener('click', handleAuthClick);
         document.getElementById('signoutButton').addEventListener('click', handleSignoutClick);
 
-        // Cảnh báo về API keys
+        // Khởi tạo khi trang load xong
         window.addEventListener('load', function() {
             if (CLIENT_ID === 'YOUR_CLIENT_ID' || API_KEY === 'YOUR_API_KEY') {
-                alert('⚠️ Vui lòng cập nhật CLIENT_ID và API_KEY trong code!');
+                showStatus('⚠️ Vui lòng cập nhật CLIENT_ID và API_KEY trong code!', 'error');
+                return;
             }
+            
+            // Khởi tạo Google APIs
+            setTimeout(() => {
+                initializeGapi();
+                initializeGis();
+            }, 1000);
         });
-
-        // Load Google APIs
-        gapiLoaded();
-        gisLoaded();
     </script>
 </body>
 </html>
