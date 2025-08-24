@@ -1,170 +1,618 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Quản lý Truyện với Google Drive</title>
-  <script src="https://apis.google.com/js/api.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <style>
-    body { font-family: Arial; margin: 20px; }
-    input, textarea, button { display: block; margin: 10px 0; width: 100%; }
-    #history { margin-top: 20px; border: 1px solid #ccc; padding: 10px; }
-    #status { margin: 10px 0; font-weight: bold; color: blue; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Truyện - Google Drive Database</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .main-content {
+            padding: 30px;
+        }
+        
+        .auth-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        .history-section {
+            background: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .history-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .history-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s ease;
+        }
+        
+        .history-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .story-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .story-chapter {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .story-date {
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h2>📚 Nhập truyện</h2>
-  <button id="loginBtn" disabled>🔑 Đăng nhập Google</button>
-  <div id="status">Chưa đăng nhập</div>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Quản lý Truyện</h1>
+            <p>Sử dụng Google Drive làm Database</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="auth-section">
+                <button id="authorizeButton" class="btn">🔐 Đăng nhập Google Drive</button>
+                <button id="signoutButton" class="btn" style="display: none;">🚪 Đăng xuất</button>
+                <div id="authStatus"></div>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Đang xử lý...</p>
+            </div>
+            
+            <div class="status" id="status"></div>
+            
+            <div id="mainApp" style="display: none;">
+                <div class="form-section">
+                    <h2>✏️ Thêm Truyện Mới</h2>
+                    <form id="storyForm">
+                        <div class="form-group">
+                            <label for="storyTitle">Tên Truyện:</label>
+                            <input type="text" id="storyTitle" required placeholder="Nhập tên truyện...">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="chapterTitle">Tên Chương:</label>
+                            <input type="text" id="chapterTitle" required placeholder="Nhập tên chương...">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="storyContent">Nội dung:</label>
+                            <textarea id="storyContent" required placeholder="Nhập nội dung truyện..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn">💾 Lưu Truyện</button>
+                    </form>
+                </div>
+                
+                <div class="grid">
+                    <div class="history-section">
+                        <div class="history-header">
+                            <h2>📖 Lịch sử Truyện</h2>
+                        </div>
+                        <div class="history-list" id="historyList">
+                            <!-- Lịch sử sẽ được load ở đây -->
+                        </div>
+                    </div>
+                    
+                    <div class="history-section">
+                        <div class="history-header">
+                            <h2>📁 Thư mục Google Drive</h2>
+                        </div>
+                        <div class="history-list" id="folderList">
+                            <!-- Danh sách thư mục sẽ được load ở đây -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <input type="text" id="storyName" placeholder="Tên truyện">
-  <input type="text" id="chapterName" placeholder="Tên chương">
-  <textarea id="chapterContent" placeholder="Nội dung chương..."></textarea>
-  <button onclick="saveChapter()">💾 Lưu chương</button>
+    <script>
+        // Cấu hình Google Drive API
+        const CLIENT_ID = 'YOUR_CLIENT_ID'; // Thay bằng Client ID của bạn
+        const API_KEY = 'YOUR_API_KEY'; // Thay bằng API Key của bạn
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-  <h3>📖 Lịch sử truyện</h3>
-  <div id="history"></div>
+        let tokenClient;
+        let gapi_inited = false;
+        let gis_inited = false;
+        let mainFolderId = null;
+        let storyHistory = [];
 
-  <script>
-    const CLIENT_ID = "199144324956-rsc4tttep6uq67poepa2nclieqi82avj.apps.googleusercontent.com";
-    const SCOPES = "https://www.googleapis.com/auth/drive.file";
+        // Khởi tạo Google API
+        function gapiLoaded() {
+            gapi.load('client', initializeGapi);
+        }
 
-    let tokenClient;
-    let gapiInited = false;
-    let gisInited = false;
+        async function initializeGapi() {
+            await gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: [DISCOVERY_DOC],
+            });
+            gapi_inited = true;
+            maybeEnableButtons();
+        }
 
-    // Load gapi
-    function gapiLoaded() {
-      gapi.load('client', initializeGapiClient);
-    }
+        function gisLoaded() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: '', // sẽ được định nghĩa sau
+            });
+            gis_inited = true;
+            maybeEnableButtons();
+        }
 
-    async function initializeGapiClient() {
-      await gapi.client.init({
-        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-      });
-      gapiInited = true;
-      maybeEnableLogin();
-    }
+        function maybeEnableButtons() {
+            if (gapi_inited && gis_inited) {
+                document.getElementById('authorizeButton').style.display = 'inline-block';
+            }
+        }
 
-    // Load GIS
-    function gisLoaded() {
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (resp) => {
-          if (resp.error) {
-            console.error("❌ Lỗi đăng nhập:", resp);
-            document.getElementById("status").textContent = "❌ Đăng nhập thất bại!";
-            return;
-          }
-          console.log("✅ Token nhận được:", resp);
-          document.getElementById("status").textContent = "✅ Đăng nhập thành công!";
-          // thử gọi API Drive để lấy thông tin user
-          gapi.client.drive.about.get({fields: "user"}).then(res => {
-            let user = res.result.user;
-            document.getElementById("status").textContent =
-              `✅ Đăng nhập: ${user.displayName} (${user.emailAddress})`;
-          });
-          loadHistory();
-        },
-      });
-      gisInited = true;
-      maybeEnableLogin();
-    }
+        // Xử lý đăng nhập
+        function handleAuthClick() {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) {
+                    throw (resp);
+                }
+                document.getElementById('signoutButton').style.display = 'inline-block';
+                document.getElementById('authorizeButton').style.display = 'none';
+                document.getElementById('authStatus').innerHTML = '✅ Đã đăng nhập thành công!';
+                
+                await initializeApp();
+            };
 
-    function maybeEnableLogin() {
-      if (gapiInited && gisInited) {
-        document.getElementById("loginBtn").disabled = false;
-      }
-    }
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            } else {
+                tokenClient.requestAccessToken({prompt: ''});
+            }
+        }
 
-    document.getElementById("loginBtn").onclick = () => {
-      if (gapi.client.getToken() === null) {
-        tokenClient.requestAccessToken({ prompt: "consent" });
-      } else {
-        tokenClient.requestAccessToken({ prompt: "" });
-      }
-    };
+        // Xử lý đăng xuất
+        function handleSignoutClick() {
+            const token = gapi.client.getToken();
+            if (token !== null) {
+                google.accounts.oauth2.revoke(token.access_token);
+                gapi.client.setToken('');
+                document.getElementById('authorizeButton').style.display = 'inline-block';
+                document.getElementById('signoutButton').style.display = 'none';
+                document.getElementById('authStatus').innerHTML = '';
+                document.getElementById('mainApp').style.display = 'none';
+            }
+        }
 
-    // === Tạo thư mục nếu chưa có ===
-    async function createFolderIfNotExist(folderName) {
-      let res = await gapi.client.drive.files.list({
-        q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-        fields: "files(id, name)"
-      });
-      if (res.result.files.length > 0) return res.result.files[0].id;
+        // Khởi tạo ứng dụng
+        async function initializeApp() {
+            showLoading(true);
+            try {
+                await createMainFolder();
+                await loadStoryHistory();
+                document.getElementById('mainApp').style.display = 'block';
+                showStatus('Khởi tạo ứng dụng thành công!', 'success');
+            } catch (error) {
+                showStatus('Lỗi khởi tạo: ' + error.message, 'error');
+            }
+            showLoading(false);
+        }
 
-      let folder = await gapi.client.drive.files.create({
-        resource: { name: folderName, mimeType: 'application/vnd.google-apps.folder' },
-        fields: 'id'
-      });
-      return folder.result.id;
-    }
+        // Tạo thư mục chính
+        async function createMainFolder() {
+            const folderName = 'QuanLyTruyen';
+            
+            // Kiểm tra xem thư mục đã tồn tại chưa
+            const response = await gapi.client.drive.files.list({
+                q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                fields: 'files(id, name)'
+            });
 
-    // === Lưu chương ===
-    async function saveChapter() {
-      let storyName = document.getElementById("storyName").value;
-      let chapterName = document.getElementById("chapterName").value;
-      let content = document.getElementById("chapterContent").value;
+            if (response.result.files.length > 0) {
+                mainFolderId = response.result.files[0].id;
+            } else {
+                // Tạo thư mục mới
+                const folderMetadata = {
+                    name: folderName,
+                    mimeType: 'application/vnd.google-apps.folder'
+                };
 
-      if (!storyName || !chapterName || !content) {
-        alert("⚠️ Vui lòng nhập đầy đủ thông tin!");
-        return;
-      }
+                const folder = await gapi.client.drive.files.create({
+                    resource: folderMetadata,
+                    fields: 'id'
+                });
+                
+                mainFolderId = folder.result.id;
+            }
+        }
 
-      let folderId = await createFolderIfNotExist(storyName);
+        // Tạo thư mục cho truyện
+        async function createStoryFolder(storyTitle) {
+            const folderMetadata = {
+                name: storyTitle,
+                mimeType: 'application/vnd.google-apps.folder',
+                parents: [mainFolderId]
+            };
 
-      const fileMetadata = { name: chapterName + ".txt", parents: [folderId] };
-      const media = new Blob([content], { type: 'text/plain' });
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
-      form.append('file', media);
+            const folder = await gapi.client.drive.files.create({
+                resource: folderMetadata,
+                fields: 'id'
+            });
 
-      await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-        method: "POST",
-        headers: new Headers({ "Authorization": "Bearer " + gapi.client.getToken().access_token }),
-        body: form
-      });
+            return folder.result.id;
+        }
 
-      alert("✅ Đã lưu chương!");
-      loadHistory();
-    }
+        // Lưu nội dung truyện
+        async function saveStoryContent(storyTitle, chapterTitle, content, storyFolderId) {
+            const fileName = `${chapterTitle}.txt`;
+            const fileMetadata = {
+                name: fileName,
+                parents: [storyFolderId]
+            };
 
-    // === Lịch sử truyện ===
-    async function loadHistory() {
-      let res = await gapi.client.drive.files.list({
-        q: "mimeType='application/vnd.google-apps.folder' and trashed=false",
-        fields: "files(id, name)"
-      });
+            const media = {
+                mimeType: 'text/plain',
+                body: content
+            };
 
-      let historyDiv = document.getElementById("history");
-      historyDiv.innerHTML = "";
+            await gapi.client.request({
+                path: 'https://www.googleapis.com/upload/drive/v3/files',
+                method: 'POST',
+                params: {
+                    uploadType: 'multipart'
+                },
+                headers: {
+                    'Content-Type': 'multipart/related; boundary="foo_bar_baz"'
+                },
+                body: 
+                    '--foo_bar_baz\r\n' +
+                    'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+                    JSON.stringify(fileMetadata) + '\r\n' +
+                    '--foo_bar_baz\r\n' +
+                    'Content-Type: text/plain\r\n\r\n' +
+                    content + '\r\n' +
+                    '--foo_bar_baz--'
+            });
+        }
 
-      res.result.files.forEach(folder => {
-        let btn = document.createElement("button");
-        btn.textContent = folder.name;
-        btn.onclick = () => loadChapters(folder.id, folder.name);
-        historyDiv.appendChild(btn);
-      });
-    }
+        // Load lịch sử truyện
+        async function loadStoryHistory() {
+            try {
+                const response = await gapi.client.drive.files.list({
+                    q: `'${mainFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                    fields: 'files(id, name, createdTime)',
+                    orderBy: 'createdTime desc'
+                });
 
-    async function loadChapters(folderId, storyName) {
-      let res = await gapi.client.drive.files.list({
-        q: `'${folderId}' in parents and trashed=false`,
-        fields: "files(id, name)"
-      });
+                const folders = response.result.files;
+                storyHistory = [];
 
-      let historyDiv = document.getElementById("history");
-      historyDiv.innerHTML = `<h4>${storyName}</h4>`;
-      res.result.files.forEach(file => {
-        let p = document.createElement("p");
-        p.textContent = file.name;
-        historyDiv.appendChild(p);
-      });
-    }
+                for (let folder of folders) {
+                    // Lấy các file trong thư mục
+                    const filesResponse = await gapi.client.drive.files.list({
+                        q: `'${folder.id}' in parents and trashed=false`,
+                        fields: 'files(id, name, createdTime)'
+                    });
 
-    gapiLoaded();
-    window.gisLoaded = gisLoaded;
-  </script>
+                    const chapters = filesResponse.result.files;
+                    storyHistory.push({
+                        storyTitle: folder.name,
+                        folderId: folder.id,
+                        createdTime: folder.createdTime,
+                        chapters: chapters
+                    });
+                }
+
+                displayHistory();
+                displayFolders();
+            } catch (error) {
+                console.error('Lỗi load lịch sử:', error);
+            }
+        }
+
+        // Hiển thị lịch sử
+        function displayHistory() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+
+            if (storyHistory.length === 0) {
+                historyList.innerHTML = '<div class="history-item">Chưa có truyện nào</div>';
+                return;
+            }
+
+            storyHistory.forEach(story => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                const chaptersText = story.chapters.map(ch => ch.name).join(', ');
+                const date = new Date(story.createdTime).toLocaleString('vi-VN');
+                
+                historyItem.innerHTML = `
+                    <div class="story-title">${story.storyTitle}</div>
+                    <div class="story-chapter">Chương: ${chaptersText || 'Chưa có chương'}</div>
+                    <div class="story-date">${date}</div>
+                `;
+                
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        // Hiển thị thư mục
+        function displayFolders() {
+            const folderList = document.getElementById('folderList');
+            folderList.innerHTML = '';
+
+            if (storyHistory.length === 0) {
+                folderList.innerHTML = '<div class="history-item">Chưa có thư mục nào</div>';
+                return;
+            }
+
+            storyHistory.forEach(story => {
+                const folderItem = document.createElement('div');
+                folderItem.className = 'history-item';
+                
+                folderItem.innerHTML = `
+                    <div class="story-title">📁 ${story.storyTitle}</div>
+                    <div class="story-chapter">${story.chapters.length} file(s)</div>
+                    <div class="story-date">ID: ${story.folderId}</div>
+                `;
+                
+                folderList.appendChild(folderItem);
+            });
+        }
+
+        // Xử lý form submit
+        document.getElementById('storyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const storyTitle = document.getElementById('storyTitle').value.trim();
+            const chapterTitle = document.getElementById('chapterTitle').value.trim();
+            const storyContent = document.getElementById('storyContent').value.trim();
+            
+            if (!storyTitle || !chapterTitle || !storyContent) {
+                showStatus('Vui lòng điền đầy đủ thông tin!', 'error');
+                return;
+            }
+
+            showLoading(true);
+            
+            try {
+                // Kiểm tra xem thư mục truyện đã tồn tại chưa
+                let storyFolderId = null;
+                const existingStory = storyHistory.find(story => story.storyTitle === storyTitle);
+                
+                if (existingStory) {
+                    storyFolderId = existingStory.folderId;
+                } else {
+                    storyFolderId = await createStoryFolder(storyTitle);
+                }
+
+                // Lưu nội dung truyện
+                await saveStoryContent(storyTitle, chapterTitle, storyContent, storyFolderId);
+                
+                // Reset form
+                document.getElementById('storyForm').reset();
+                
+                // Reload lịch sử
+                await loadStoryHistory();
+                
+                showStatus(`Đã lưu truyện "${storyTitle}" - Chương "${chapterTitle}" thành công!`, 'success');
+            } catch (error) {
+                showStatus('Lỗi lưu truyện: ' + error.message, 'error');
+            }
+            
+            showLoading(false);
+        });
+
+        // Utility functions
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+
+        // Event listeners
+        document.getElementById('authorizeButton').addEventListener('click', handleAuthClick);
+        document.getElementById('signoutButton').addEventListener('click', handleSignoutClick);
+
+        // Cảnh báo về API keys
+        window.addEventListener('load', function() {
+            if (CLIENT_ID === 'YOUR_CLIENT_ID' || API_KEY === 'YOUR_API_KEY') {
+                alert('⚠️ Vui lòng cập nhật CLIENT_ID và API_KEY trong code!');
+            }
+        });
+
+        // Load Google APIs
+        gapiLoaded();
+        gisLoaded();
+    </script>
 </body>
 </html>
