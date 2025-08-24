@@ -3,203 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <title>Quản lý Truyện với Google Drive</title>
+  <script src="https://apis.google.com/js/api.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-    #history div { margin: 10px 0; padding: 10px; background: #fff; border-radius: 6px; cursor: pointer; }
-    .chapters { margin-left: 20px; display: none; }
-    .story-head { display: flex; justify-content: space-between; align-items: center; }
-    .story-name { font-weight: bold; }
-    .muted { font-size: 12px; color: #666; }
+    body { font-family: Arial; margin: 20px; }
+    input, textarea, button { display: block; margin: 10px 0; width: 100%; }
+    #history { margin-top: 20px; border: 1px solid #ccc; padding: 10px; }
   </style>
 </head>
 <body>
-  <h2>📚 Trình quản lý truyện</h2>
+  <h2>📚 Nhập truyện</h2>
+  <input type="text" id="storyName" placeholder="Tên truyện">
+  <input type="text" id="chapterName" placeholder="Tên chương">
+  <textarea id="chapterContent" placeholder="Nội dung chương..."></textarea>
+  <button onclick="saveChapter()">💾 Lưu chương</button>
 
-  <button onclick="handleAuthClick()">🔑 Đăng nhập Google</button>
-  <button onclick="handleSignoutClick()">🚪 Đăng xuất</button>
-
-  <h3>Nhập truyện mới</h3>
-  <input id="storyName" placeholder="Tên truyện"><br><br>
-  <textarea id="chapterContent" placeholder="Nội dung chương" rows="6" cols="50"></textarea><br>
-  <button onclick="saveStory()">💾 Lưu truyện</button>
-
-  <h3>Lịch sử truyện</h3>
+  <h3>📖 Lịch sử truyện</h3>
   <div id="history"></div>
 
   <script>
     const CLIENT_ID = "199144324956-rsc4tttep6uq67poepa2nclieqi82avj.apps.googleusercontent.com";
     const API_KEY = "AIzaSyBGHB5FnrtMXliWtk3X6FZAl0CE2neNgZM";
-
-    const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
     const SCOPES = "https://www.googleapis.com/auth/drive.file";
 
-    let gapiInited = false;
-    let gisInited = false;
-    let tokenClient;
-    let parentFolderId = null;
-
-    // Google API script loaded
+    // 1. Load API
     function gapiLoaded() {
-      gapi.load("client:auth2", initClient);
+      gapi.load('client:auth2', initClient);
     }
 
     async function initClient() {
       await gapi.client.init({
         apiKey: API_KEY,
         clientId: CLIENT_ID,
-        discoveryDocs: DISCOVERY_DOCS,
         scope: SCOPES,
+        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
       });
+      gapi.auth2.getAuthInstance().signIn().then(loadHistory);
+    }
 
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: "", // Sẽ set sau
+    // 2. Tạo thư mục
+    async function createFolderIfNotExist(folderName) {
+      let res = await gapi.client.drive.files.list({
+        q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+        fields: "files(id, name)"
       });
+      if (res.result.files.length > 0) return res.result.files[0].id;
 
-      gapiInited = true;
-      console.log("✅ GAPI đã khởi tạo");
-      checkMainFolder();
-    }
-
-    function handleAuthClick() {
-      tokenClient.callback = async (resp) => {
-        if (resp.error !== undefined) {
-          throw (resp);
-        }
-        console.log("Đăng nhập thành công");
-        checkMainFolder();
-      };
-      if (gapi.client.getToken() === null) {
-        tokenClient.requestAccessToken({ prompt: "consent" });
-      } else {
-        tokenClient.requestAccessToken({ prompt: "" });
-      }
-    }
-
-    function handleSignoutClick() {
-      const token = gapi.client.getToken();
-      if (token !== null) {
-        google.accounts.oauth2.revoke(token.access_token);
-        gapi.client.setToken("");
-        console.log("🚪 Đã đăng xuất");
-      }
-    }
-
-    async function checkMainFolder() {
-      const res = await gapi.client.drive.files.list({
-        q: "name='TruyenApp' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-        fields: "files(id, name)",
+      let folder = await gapi.client.drive.files.create({
+        resource: { name: folderName, mimeType: 'application/vnd.google-apps.folder' },
+        fields: 'id'
       });
-      if (res.result.files.length > 0) {
-        parentFolderId = res.result.files[0].id;
-      } else {
-        const folder = await gapi.client.drive.files.create({
-          resource: {
-            name: "TruyenApp",
-            mimeType: "application/vnd.google-apps.folder",
-          },
-          fields: "id",
-        });
-        parentFolderId = folder.result.id;
-      }
-      listStories();
+      return folder.result.id;
     }
 
-    async function saveStory() {
-      const storyName = document.getElementById("storyName").value.trim();
-      const chapterContent = document.getElementById("chapterContent").value.trim();
-      if (!storyName || !chapterContent) {
-        alert("Nhập tên truyện và nội dung chương!");
+    // 3. Lưu chương vào file
+    async function saveChapter() {
+      let storyName = document.getElementById("storyName").value;
+      let chapterName = document.getElementById("chapterName").value;
+      let content = document.getElementById("chapterContent").value;
+
+      if (!storyName || !chapterName || !content) {
+        alert("Vui lòng nhập đầy đủ thông tin!");
         return;
       }
 
-      // Tìm hoặc tạo folder truyện
-      const res = await gapi.client.drive.files.list({
-        q: "name='" + storyName + "' and mimeType='application/vnd.google-apps.folder' and '" + parentFolderId + "' in parents and trashed=false",
-        fields: "files(id, name)",
-      });
-      let storyFolderId;
-      if (res.result.files.length > 0) {
-        storyFolderId = res.result.files[0].id;
-      } else {
-        const folder = await gapi.client.drive.files.create({
-          resource: {
-            name: storyName,
-            mimeType: "application/vnd.google-apps.folder",
-            parents: [parentFolderId],
-          },
-          fields: "id",
-        });
-        storyFolderId = folder.result.id;
-      }
+      let folderId = await createFolderIfNotExist(storyName);
 
-      // Tạo file chương
-      const fileMetadata = {
-        name: "chuong-" + Date.now() + ".txt",
-        parents: [storyFolderId],
-      };
-      const media = {
-        mimeType: "text/plain",
-        body: chapterContent,
-      };
+      const fileMetadata = { name: chapterName + ".txt", parents: [folderId] };
+      const media = { mimeType: 'text/plain', body: content };
+
       await gapi.client.drive.files.create({
         resource: fileMetadata,
         media: media,
-        fields: "id",
+        fields: 'id'
       });
-      alert("✅ Đã lưu chương!");
-      listStories();
+
+      alert("Đã lưu chương!");
+      loadHistory();
     }
 
-    async function listStories() {
-      if (!parentFolderId) return;
-      const res = await gapi.client.drive.files.list({
-        q: "'" + parentFolderId + "' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false",
-        fields: "files(id, name)",
+    // 4. Xem lại lịch sử truyện
+    async function loadHistory() {
+      let res = await gapi.client.drive.files.list({
+        q: "mimeType='application/vnd.google-apps.folder' and trashed=false",
+        fields: "files(id, name)"
       });
-      const history = document.getElementById("history");
-      history.innerHTML = "";
 
-      res.result.files.forEach(f => {
-        const item = document.createElement("div");
-        item.innerHTML =
-          '<div class="story-head" onclick="toggleChapters(this)">' +
-            '<div>' +
-              '<div class="story-name">' + f.name + '</div>' +
-              '<div class="muted" data-folder-id="' + f.id + '">Đang tải chương...</div>' +
-            '</div>' +
-            '<div>▼</div>' +
-          '</div>' +
-          '<div class="chapters"></div>';
-        history.appendChild(item);
+      let historyDiv = document.getElementById("history");
+      historyDiv.innerHTML = "";
+
+      res.result.files.forEach(folder => {
+        let btn = document.createElement("button");
+        btn.textContent = folder.name;
+        btn.onclick = () => loadChapters(folder.id, folder.name);
+        historyDiv.appendChild(btn);
       });
     }
 
-    async function toggleChapters(el) {
-      const muted = el.querySelector(".muted");
-      const chaptersDiv = el.parentElement.querySelector(".chapters");
-      if (chaptersDiv.style.display === "block") {
-        chaptersDiv.style.display = "none";
-        return;
-      }
-      chaptersDiv.style.display = "block";
-      const folderId = muted.getAttribute("data-folder-id");
-      const res = await gapi.client.drive.files.list({
-        q: "'" + folderId + "' in parents and trashed=false",
-        fields: "files(id, name)",
+    async function loadChapters(folderId, storyName) {
+      let res = await gapi.client.drive.files.list({
+        q: `'${folderId}' in parents and trashed=false`,
+        fields: "files(id, name)"
       });
-      chaptersDiv.innerHTML = "";
+
+      let historyDiv = document.getElementById("history");
+      historyDiv.innerHTML = `<h4>${storyName}</h4>`;
       res.result.files.forEach(file => {
-        const ch = document.createElement("div");
-        ch.textContent = "📖 " + file.name;
-        chaptersDiv.appendChild(ch);
+        let p = document.createElement("p");
+        p.textContent = file.name;
+        historyDiv.appendChild(p);
       });
     }
-  </script>
 
-  <!-- Google API -->
-  <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+    gapiLoaded();
+  </script>
 </body>
 </html>
