@@ -87,6 +87,10 @@
             background: linear-gradient(45deg, #4ecdc4, #44a08d);
             box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
         }
+        .btn.info {
+            background: linear-gradient(45deg, #45aaf2, #2d98da);
+            box-shadow: 0 4px 15px rgba(69, 170, 242, 0.3);
+        }
         .form-section {
             background: rgba(255, 255, 255, 0.05);
             padding: 20px; 
@@ -255,47 +259,6 @@
             border-bottom: none;
         }
         
-        /* Chat Interface */
-        .chat-container {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .chat-message {
-            margin: 10px 0;
-            padding: 10px 15px;
-            border-radius: 10px;
-            max-width: 85%;
-        }
-        .chat-message.user {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            margin-left: auto;
-            text-align: right;
-        }
-        .chat-message.ai {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-            margin-right: auto;
-        }
-        .chat-input {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .chat-input input {
-            flex: 1;
-            padding: 12px 15px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 25px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-        }
-        
         /* Progress Bar */
         .progress-bar {
             width: 100%;
@@ -365,6 +328,30 @@
             color: rgba(255, 255, 255, 0.7);
         }
         
+        /* Navigation Menu */
+        .nav-menu {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nav-menu button {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        /* Content Sections */
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        
         /* Modal for viewing chapters */
         .modal {
             display: none;
@@ -431,6 +418,7 @@
             .form-section, .history-section { margin-bottom: 15px; }
             .btn { font-size: 14px; padding: 10px 16px; }
             .modal-content { margin: 20px 10px; padding: 15px; }
+            .nav-menu { flex-direction: column; }
         }
         
         /* Safe area for iPhone */
@@ -470,95 +458,100 @@
             <div class="status" id="status"></div>
             
             <div id="mainApp" style="display: none;">
+                <!-- Navigation Menu -->
+                <div class="nav-menu">
+                    <button id="menuTraining" class="btn info active">🧠 Huấn luyện AI</button>
+                    <button id="menuGeneration" class="btn success">📖 AI Tạo Truyện</button>
+                    <button id="menuManagement" class="btn">✍️ Quản lý Truyện</button>
+                    <button id="menuHistory" class="btn">📚 Lịch sử Truyện</button>
+                </div>
+                
                 <!-- AI Training Section -->
-                <div class="ai-section">
-                    <h2>🧠 Huấn luyện AI</h2>
-                    <div class="ai-stats" id="aiStats">
-                        <div class="stat-item">
-                            <span>Tổng số file:</span>
-                            <span id="totalFiles">0</span>
+                <div id="trainingSection" class="content-section active">
+                    <div class="ai-section">
+                        <h2>🧠 Huấn luyện AI</h2>
+                        <div class="ai-stats" id="aiStats">
+                            <div class="stat-item">
+                                <span>Tổng số file:</span>
+                                <span id="totalFiles">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Đã huấn luyện:</span>
+                                <span id="trainedFiles">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Từ vựng học được:</span>
+                                <span id="vocabularyCount">0</span>
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <span>Đã huấn luyện:</span>
-                            <span id="trainedFiles">0</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
                         </div>
-                        <div class="stat-item">
-                            <span>Từ vựng học được:</span>
-                            <span id="vocabularyCount">0</span>
-                        </div>
+                        <button id="trainAiButton" class="btn success">🎯 Bắt đầu huấn luyện AI</button>
+                        <button id="resetAiButton" class="btn danger">🔄 Reset AI</button>
                     </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <button id="trainAiButton" class="btn success">🎯 Bắt đầu huấn luyện AI</button>
-                    <button id="resetAiButton" class="btn danger">🔄 Reset AI</button>
                 </div>
-
+                
                 <!-- AI Story Generation Section -->
-                <div class="ai-generated-section">
-                    <h2>📖 AI Tạo Truyện Tự Động</h2>
-                    <div class="ai-story-controls">
-                        <input type="number" id="chapterCount" placeholder="Số chương (100-150)" min="100" max="150" value="100">
-                        <button id="generateStoryButton" class="btn success">🚀 AI Tạo Truyện Mới</button>
-                        <button id="viewAiStoriesButton" class="btn">📚 Xem Truyện AI Đã Tạo</button>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="generationProgressFill"></div>
-                    </div>
-                    <div id="generationStatus"></div>
-                </div>
-
-                <!-- Chat with AI -->
-                <div class="form-section">
-                    <h2>💬 Trò chuyện với AI</h2>
-                    <div class="chat-container" id="chatContainer">
-                        <div class="chat-message ai">Xin chào! Tôi đã sẵn sàng trò chuyện. Hãy huấn luyện tôi với các file truyện để tôi có thể hỗ trợ bạn tốt hơn!</div>
-                    </div>
-                    <div class="chat-input">
-                        <input type="text" id="chatInput" placeholder="Nhập tin nhắn...">
-                        <button id="sendChatButton" class="btn">📤</button>
+                <div id="generationSection" class="content-section">
+                    <div class="ai-generated-section">
+                        <h2>📖 AI Tạo Truyện Tự Động</h2>
+                        <div class="ai-story-controls">
+                            <input type="number" id="chapterCount" placeholder="Số chương (100-150)" min="100" max="150" value="100">
+                            <button id="generateStoryButton" class="btn success">🚀 AI Tạo Truyện Mới</button>
+                            <button id="viewAiStoriesButton" class="btn">📚 Xem Truyện AI Đã Tạo</button>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="generationProgressFill"></div>
+                        </div>
+                        <div id="generationStatus"></div>
                     </div>
                 </div>
                 
-                <!-- Story Management -->
-                <div class="form-section">
-                    <h2>✍️ Thêm Truyện / Chương Mới</h2>
-                    <form id="storyForm">
-                        <div class="form-group">
-                            <label for="storyMode">Chế độ:</label>
-                            <select id="storyMode" onchange="toggleStoryMode()">
-                                <option value="new">Tạo truyện mới</option>
-                                <option value="existing">Thêm chương vào truyện có sẵn</option>
-                            </select>
-                        </div>
-                        <div class="form-group" id="newStoryGroup">
-                            <label for="storyTitle">Tên Truyện Mới:</label>
-                            <input type="text" id="storyTitle" placeholder="Nhập tên truyện mới...">
-                        </div>
-                        <div class="form-group" id="existingStoryGroup" style="display: none;">
-                            <label for="existingStory">Chọn Truyện Có Sẵn:</label>
-                            <select id="existingStory"><option value="">-- Chọn truyện --</option></select>
-                        </div>
-                        <div class="form-group">
-                            <label for="chapterTitle">Tên Chương:</label>
-                            <input type="text" id="chapterTitle" required placeholder="Nhập tên chương...">
-                        </div>
-                        <div class="form-group">
-                            <label for="storyContent">Nội dung:</label>
-                            <textarea id="storyContent" required placeholder="Nhập nội dung truyện..."></textarea>
-                        </div>
-                        <button type="submit" class="btn">💾 <span id="submitButtonText">Lưu Truyện Mới</span></button>
-                    </form>
+                <!-- Story Management Section -->
+                <div id="managementSection" class="content-section">
+                    <div class="form-section">
+                        <h2>✍️ Thêm Truyện / Chương Mới</h2>
+                        <form id="storyForm">
+                            <div class="form-group">
+                                <label for="storyMode">Chế độ:</label>
+                                <select id="storyMode" onchange="toggleStoryMode()">
+                                    <option value="new">Tạo truyện mới</option>
+                                    <option value="existing">Thêm chương vào truyện có sẵn</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="newStoryGroup">
+                                <label for="storyTitle">Tên Truyện Mới:</label>
+                                <input type="text" id="storyTitle" placeholder="Nhập tên truyện mới...">
+                            </div>
+                            <div class="form-group" id="existingStoryGroup" style="display: none;">
+                                <label for="existingStory">Chọn Truyện Có Sẵn:</label>
+                                <select id="existingStory"><option value="">-- Chọn truyện --</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="chapterTitle">Tên Chương:</label>
+                                <input type="text" id="chapterTitle" required placeholder="Nhập tên chương...">
+                            </div>
+                            <div class="form-group">
+                                <label for="storyContent">Nội dung:</label>
+                                <textarea id="storyContent" required placeholder="Nhập nội dung truyện..."></textarea>
+                            </div>
+                            <button type="submit" class="btn">💾 <span id="submitButtonText">Lưu Truyện Mới</span></button>
+                        </form>
+                    </div>
                 </div>
                 
-                <div class="grid">
-                    <div class="history-section">
-                        <div class="history-header"><h2>📖 Lịch sử Truyện</h2></div>
-                        <div class="history-list" id="historyList"></div>
-                    </div>
-                    <div class="history-section">
-                        <div class="history-header"><h2>📁 Thư mục Google Drive</h2></div>
-                        <div class="history-list" id="folderList"></div>
+                <!-- History Section -->
+                <div id="historySection" class="content-section">
+                    <div class="grid">
+                        <div class="history-section">
+                            <div class="history-header"><h2>📖 Lịch sử Truyện</h2></div>
+                            <div class="history-list" id="historyList"></div>
+                        </div>
+                        <div class="history-section">
+                            <div class="history-header"><h2>📁 Thư mục Google Drive</h2></div>
+                            <div class="history-list" id="folderList"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1079,62 +1072,6 @@ function generateChapterContent(words) {
     return content;
 }
 
-// Chat with AI
-async function sendChatMessage() {
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
-    
-    if (!message) return;
-    
-    // Add user message to chat
-    addChatMessage(message, 'user');
-    input.value = '';
-    
-    // Generate AI response
-    const response = generateAiResponse(message);
-    
-    // Add AI response to chat with a small delay to simulate thinking
-    setTimeout(() => {
-        addChatMessage(response, 'ai');
-    }, 1000);
-}
-
-function addChatMessage(message, sender) {
-    const chatContainer = document.getElementById('chatContainer');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `chat-message ${sender}`;
-    messageDiv.textContent = message;
-    chatContainer.appendChild(messageDiv);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-function generateAiResponse(message) {
-    // Simple AI response based on learned vocabulary
-    const responses = [
-        "Tôi đã học được nhiều từ các truyện của bạn và có thể tạo ra những câu chuyện mới.",
-        "Dựa trên những gì tôi đã học, tôi có thể giúp bạn viết truyện hoặc tạo truyện tự động.",
-        "Hãy cho tôi biết thêm về câu chuyện bạn muốn viết, tôi sẽ cố gắng hỗ trợ bạn.",
-        "Tôi đã phân tích nhiều truyện và hiểu được cấu trúc câu chuyện, nhân vật và tình tiết.",
-        "Bạn muốn tôi tạo một câu chuyện mới dựa trên phong cách viết của những truyện đã có?"
-    ];
-    
-    // Check if message contains specific keywords
-    if (message.toLowerCase().includes('truyện') || message.toLowerCase().includes('story')) {
-        return responses[Math.floor(Math.random() * responses.length)];
-    }
-    
-    if (message.toLowerCase().includes('tạo') || message.toLowerCase().includes('generate')) {
-        return "Tôi có thể tạo một câu chuyện mới với 100-150 chương. Hãy nhấn nút 'AI Tạo Truyện Mới' để bắt đầu!";
-    }
-    
-    if (message.toLowerCase().includes('huấn luyện') || message.toLowerCase().includes('train')) {
-        return `Tôi đã được huấn luyện với ${aiKnowledge.trainedFiles} file và học được ${aiKnowledge.vocabulary.size} từ vựng.`;
-    }
-    
-    // Default response
-    return "Tôi là AI hỗ trợ viết truyện. Tôi có thể giúp bạn tạo truyện mới dựa trên các truyện đã có trong thư viện.";
-}
-
 // UI Functions
 function displayHistory() {
     const historyList = document.getElementById('historyList');
@@ -1378,6 +1315,23 @@ function viewAiStories() {
     modal.style.display = 'block';
 }
 
+// Menu Navigation
+function showSection(sectionId) {
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Show selected section
+    document.getElementById(sectionId).classList.add('active');
+    
+    // Update active button
+    document.querySelectorAll('.nav-menu button').forEach(button => {
+        button.classList.remove('active');
+    });
+    document.querySelector(`.nav-menu button[data-section="${sectionId}"]`).classList.add('active');
+}
+
 // Event Listeners
 document.getElementById('authorizeButton').addEventListener('click', handleAuthClick);
 document.getElementById('signoutButton').addEventListener('click', handleSignoutClick);
@@ -1386,10 +1340,18 @@ document.getElementById('trainAiButton').addEventListener('click', trainAI);
 document.getElementById('resetAiButton').addEventListener('click', resetAI);
 document.getElementById('generateStoryButton').addEventListener('click', generateStory);
 document.getElementById('viewAiStoriesButton').addEventListener('click', viewAiStories);
-document.getElementById('sendChatButton').addEventListener('click', sendChatMessage);
-document.getElementById('chatInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendChatMessage();
-});
+
+// Menu navigation event listeners
+document.getElementById('menuTraining').addEventListener('click', () => showSection('trainingSection'));
+document.getElementById('menuGeneration').addEventListener('click', () => showSection('generationSection'));
+document.getElementById('menuManagement').addEventListener('click', () => showSection('managementSection'));
+document.getElementById('menuHistory').addEventListener('click', () => showSection('historySection'));
+
+// Add data-section attributes to menu buttons
+document.getElementById('menuTraining').setAttribute('data-section', 'trainingSection');
+document.getElementById('menuGeneration').setAttribute('data-section', 'generationSection');
+document.getElementById('menuManagement').setAttribute('data-section', 'managementSection');
+document.getElementById('menuHistory').setAttribute('data-section', 'historySection');
 
 // Initialize the app
 window.onload = () => {
