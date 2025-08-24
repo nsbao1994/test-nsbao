@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý Truyện</title>
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * {
             margin: 0;
@@ -317,22 +317,42 @@
             try {
                 console.log('Initializing GAPI...');
                 
+                // Kiểm tra lại các dependencies
+                if (typeof gapi === 'undefined') {
+                    throw new Error('GAPI not available');
+                }
+                
+                if (typeof google === 'undefined' || !google.accounts) {
+                    throw new Error('Google Sign-In not available');
+                }
+                
                 // Load gapi client
                 await new Promise((resolve, reject) => {
                     gapi.load('client', {
-                        callback: resolve,
-                        onerror: reject
+                        callback: () => {
+                            console.log('GAPI client loaded successfully');
+                            resolve();
+                        },
+                        onerror: (error) => {
+                            console.error('GAPI load error:', error);
+                            reject(new Error('Failed to load GAPI client'));
+                        },
+                        timeout: 5000,
+                        ontimeout: () => {
+                            console.error('GAPI load timeout');
+                            reject(new Error('GAPI client load timeout'));
+                        }
                     });
                 });
                 
-                console.log('GAPI client loaded');
+                console.log('GAPI client loaded, initializing...');
                 
                 await gapi.client.init({
                     apiKey: API_KEY,
                     discoveryDocs: [DISCOVERY_DOC]
                 });
 
-                console.log('GAPI client initialized');
+                console.log('GAPI client initialized successfully');
 
                 // Initialize OAuth2 token client
                 tokenClient = google.accounts.oauth2.initTokenClient({
@@ -341,37 +361,72 @@
                     callback: handleAuthCallback,
                     error_callback: (error) => {
                         console.error('OAuth error:', error);
-                        showMessage('Lỗi xác thực OAuth: ' + error.type, 'error');
+                        showMessage('Lỗi xác thực OAuth: ' + (error.type || error.message), 'error');
                     }
                 });
 
                 console.log('OAuth2 token client initialized');
-                console.log('Google API initialized successfully');
                 
-                // Update UI
+                // Update UI to show success
                 document.getElementById('auth-content').innerHTML = `
-                    <h2 style="margin-bottom: 20px;">✅ Kết nối thành công</h2>
+                    <div style="background: linear-gradient(45deg, #4CAF50, #45a049); color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+                        <h2 style="margin-bottom: 10px;">✅ Kết nối thành công!</h2>
+                        <p style="opacity: 0.9;">Google Drive API đã sẵn sàng</p>
+                    </div>
+                    <h3 style="margin-bottom: 15px;">Bước tiếp theo</h3>
                     <p style="margin-bottom: 20px; color: #666;">
-                        Google API đã sẵn sàng. Click để đăng nhập với tài khoản Google của bạn.
+                        Click nút bên dưới để đăng nhập với tài khoản Google và bắt đầu lưu truyện.
                     </p>
-                    <button id="auth-btn" class="btn">🔐 Đăng nhập với Google</button>
+                    <button id="auth-btn" class="btn">🔐 Đăng nhập với Google Drive</button>
                     <p style="margin-top: 15px; color: #666; font-size: 14px;">
-                        Ứng dụng cần quyền truy cập Google Drive để lưu trữ truyện của bạn
+                        <strong>Lưu ý:</strong> Ứng dụng chỉ truy cập các file do chính nó tạo ra trên Google Drive của bạn.
                     </p>
                 `;
                 
                 setupAuthButton();
+                console.log('Google API initialization completed successfully');
                 
             } catch (error) {
                 console.error('Error initializing Google API:', error);
+                
+                let errorMessage = 'Lỗi không xác định';
+                let suggestions = [];
+                
+                if (error.message.includes('GAPI not available')) {
+                    errorMessage = 'Google API không tải được';
+                    suggestions = [
+                        'Kiểm tra kết nối internet',
+                        'Tắt trình chặn quảng cáo',
+                        'Thử trình duyệt khác'
+                    ];
+                } else if (error.message.includes('timeout')) {
+                    errorMessage = 'Kết nối với Google API bị timeout';
+                    suggestions = [
+                        'Kiểm tra tốc độ internet',
+                        'Thử lại sau vài phút',
+                        'Tắt VPN nếu đang sử dụng'
+                    ];
+                } else {
+                    errorMessage = error.message || 'Lỗi khởi tạo Google API';
+                    suggestions = [
+                        'Tải lại trang',
+                        'Xóa cache trình duyệt',
+                        'Thử trình duyệt khác'
+                    ];
+                }
+                
                 document.getElementById('auth-content').innerHTML = `
-                    <h2 style="color: #d32f2f; margin-bottom: 20px;">❌ Lỗi khởi tạo API</h2>
-                    <p style="color: #666; margin-bottom: 20px;">
-                        Chi tiết lỗi: ${error.message || error}
-                    </p>
-                    <button class="btn" onclick="window.location.reload()">🔄 Thử lại</button>
+                    <div style="background: linear-gradient(45deg, #f44336, #d32f2f); color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+                        <h2 style="margin-bottom: 10px;">❌ Lỗi khởi tạo</h2>
+                        <p style="opacity: 0.9;">${errorMessage}</p>
+                    </div>
+                    <div style="text-align: left; color: #666; margin-bottom: 20px;">
+                        <strong>Thử các cách sau:</strong><br>
+                        ${suggestions.map(s => `• ${s}`).join('<br>')}
+                    </div>
+                    <button class="btn" onclick="window.location.reload()">🔄 Tải lại trang</button>
+                    <button class="btn" onclick="initApp()" style="margin-left: 10px;">🔄 Thử lại ngay</button>
                 `;
-                throw error;
             }
         }
 
@@ -669,52 +724,95 @@
         }
 
         // Khởi tạo khi trang được tải
-        window.addEventListener('load', async () => {
-            console.log('Page loaded, initializing...');
+        function initApp() {
+            console.log('Starting app initialization...');
             
-            // Đợi Google API script tải xong
-            let attempts = 0;
-            const maxAttempts = 20;
-            
-            const waitForGapi = () => {
-                return new Promise((resolve, reject) => {
-                    const checkGapi = () => {
-                        attempts++;
-                        console.log(`Checking for gapi... attempt ${attempts}`);
-                        
-                        if (typeof gapi !== 'undefined' && typeof google !== 'undefined') {
-                            console.log('Google APIs loaded successfully');
-                            resolve();
-                        } else if (attempts >= maxAttempts) {
-                            reject(new Error('Google API failed to load after multiple attempts'));
-                        } else {
-                            setTimeout(checkGapi, 500);
-                        }
-                    };
-                    checkGapi();
-                });
-            };
-            
-            try {
-                await waitForGapi();
-                await initializeGapi();
-            } catch (error) {
-                console.error('Error loading Google API:', error);
-                document.getElementById('auth-content').innerHTML = `
-                    <h2 style="color: #d32f2f; margin-bottom: 20px;">❌ Lỗi tải Google API</h2>
-                    <p style="color: #666; margin-bottom: 20px;">
-                        Không thể kết nối với Google API. Vui lòng thử:
-                    </p>
-                    <ul style="text-align: left; color: #666; margin-bottom: 20px;">
-                        <li>Kiểm tra kết nối internet</li>
-                        <li>Tắt trình chặn quảng cáo (AdBlock)</li>
-                        <li>Tải lại trang</li>
-                        <li>Thử trình duyệt khác</li>
-                    </ul>
-                    <button class="btn" onclick="window.location.reload()">🔄 Tải lại trang</button>
-                `;
+            // Kiểm tra xem các API đã tải chưa
+            if (typeof gapi === 'undefined') {
+                console.log('GAPI not loaded, creating script tag...');
+                loadGoogleAPI();
+                return;
             }
-        });
+            
+            if (typeof google === 'undefined' || !google.accounts) {
+                console.log('Google Sign-In not loaded, creating script tag...');
+                loadGoogleSignIn();
+                return;
+            }
+            
+            console.log('All APIs loaded, initializing...');
+            initializeGapi();
+        }
+
+        function loadGoogleAPI() {
+            const script = document.createElement('script');
+            script.src = 'https://apis.google.com/js/api.js';
+            script.onload = () => {
+                console.log('GAPI script loaded');
+                loadGoogleSignIn();
+            };
+            script.onerror = () => {
+                showInitError('Không thể tải Google API. Kiểm tra kết nối internet và thử lại.');
+            };
+            document.head.appendChild(script);
+        }
+
+        function loadGoogleSignIn() {
+            if (typeof google !== 'undefined' && google.accounts) {
+                initializeGapi();
+                return;
+            }
+            
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.onload = () => {
+                console.log('Google Sign-In script loaded');
+                // Đợi một chút để đảm bảo google.accounts được khởi tạo
+                setTimeout(() => {
+                    if (typeof gapi !== 'undefined' && typeof google !== 'undefined' && google.accounts) {
+                        initializeGapi();
+                    } else {
+                        showInitError('Google APIs không khởi tạo được. Vui lòng thử trình duyệt khác.');
+                    }
+                }, 1000);
+            };
+            script.onerror = () => {
+                showInitError('Không thể tải Google Sign-In. Kiểm tra kết nối internet và thử lại.');
+            };
+            document.head.appendChild(script);
+        }
+
+        function showInitError(message) {
+            document.getElementById('auth-content').innerHTML = `
+                <h2 style="color: #d32f2f; margin-bottom: 20px;">❌ Lỗi tải Google API</h2>
+                <p style="color: #666; margin-bottom: 20px;">${message}</p>
+                <div style="text-align: left; color: #666; margin-bottom: 20px;">
+                    <strong>Thử các cách sau:</strong><br>
+                    • Tắt trình chặn quảng cáo (AdBlock, uBlock Origin)<br>
+                    • Kiểm tra kết nối internet<br>
+                    • Thử trình duyệt khác (Chrome, Firefox, Edge)<br>
+                    • Tắt VPN nếu đang sử dụng<br>
+                    • Xóa cache và cookie của trang web
+                </div>
+                <button class="btn" onclick="window.location.reload()">🔄 Tải lại trang</button>
+                <button class="btn" onclick="initApp()" style="margin-left: 10px;">🔄 Thử lại</button>
+            `;
+        }
+
+        // Khởi tạo khi DOM sẵn sàng
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+
+        // Backup: thử lại sau 3 giây nếu chưa khởi tạo
+        setTimeout(() => {
+            if (!isSignedIn && document.getElementById('main-content').style.display !== 'block') {
+                console.log('Backup initialization attempt...');
+                initApp();
+            }
+        }, 3000);
     </script>
 </body>
 </html>
