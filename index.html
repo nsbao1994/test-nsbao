@@ -99,7 +99,17 @@
             transition: border-color 0.3s ease;
         }
         
-        .form-group input:focus, .form-group textarea:focus {
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            background-color: white;
+        }
+        
+        .form-group select:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -244,11 +254,26 @@
             
             <div id="mainApp" style="display: none;">
                 <div class="form-section">
-                    <h2>✏️ Thêm Truyện Mới</h2>
+                    <h2>✏️ Thêm Truyện / Chương Mới</h2>
                     <form id="storyForm">
                         <div class="form-group">
-                            <label for="storyTitle">Tên Truyện:</label>
-                            <input type="text" id="storyTitle" required placeholder="Nhập tên truyện...">
+                            <label for="storyMode">Chế độ:</label>
+                            <select id="storyMode" onchange="toggleStoryMode()">
+                                <option value="new">Tạo truyện mới</option>
+                                <option value="existing">Thêm chương vào truyện có sẵn</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="newStoryGroup">
+                            <label for="storyTitle">Tên Truyện Mới:</label>
+                            <input type="text" id="storyTitle" placeholder="Nhập tên truyện mới...">
+                        </div>
+                        
+                        <div class="form-group" id="existingStoryGroup" style="display: none;">
+                            <label for="existingStory">Chọn Truyện Có Sẵn:</label>
+                            <select id="existingStory">
+                                <option value="">-- Chọn truyện --</option>
+                            </select>
                         </div>
                         
                         <div class="form-group">
@@ -261,7 +286,7 @@
                             <textarea id="storyContent" required placeholder="Nhập nội dung truyện..."></textarea>
                         </div>
                         
-                        <button type="submit" class="btn">💾 Lưu Truyện</button>
+                        <button type="submit" class="btn">💾 <span id="submitButtonText">Lưu Truyện Mới</span></button>
                     </form>
                 </div>
                 
