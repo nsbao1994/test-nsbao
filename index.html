@@ -496,6 +496,10 @@
                                 <span>Diễn biến cảm xúc:</span>
                                 <span id="emotionalPatterns">0</span>
                             </div>
+                            <div class="stat-item">
+                                <span>Đoạn hội thoại:</span>
+                                <span id="dialoguesCount">0</span>
+                            </div>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill" id="progressFill"></div>
@@ -751,161 +755,6 @@ const plotElements = {
                   'tôi tìm cách lảng tránh', 'tôi cố gắng phớt lờ', 'tôi không ngừng suy diễn']
 };
 
-// HÀM TÍNH ĐIỂM CHẤT LƯỢNG VĂN BẢN
-function calculateQualityMetrics(content) {
-    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const words = content.split(/\s+/).filter(w => w.length > 0);
-    
-    // Tính điểm phức tạp (dựa trên độ dài câu, từ vựng đa dạng)
-    const avgSentenceLength = words.length / sentences.length;
-    const uniqueWords = new Set(words.map(w => w.toLowerCase()));
-    const lexicalDiversity = uniqueWords.size / words.length;
-    const complexityScore = (avgSentenceLength / 20 * 0.4) + (lexicalDiversity * 0.6);
-    
-    // Tính điểm mạch lạc (dựa trên từ nối và liên kết)
-    const transitionWordsCount = words.filter(w => 
-        specializedVocabulary.transitionWords.includes(w.toLowerCase())).length;
-    const coherenceScore = Math.min(1, transitionWordsCount / (sentences.length * 0.5));
-    
-    // Tính điểm cảm xúc (dựa trên từ vựng cảm xúc)
-    const emotionWordsCount = words.filter(w => 
-        specializedVocabulary.emotions.includes(w.toLowerCase()) || 
-        specializedVocabulary.psychologicalTerms.includes(w.toLowerCase())).length;
-    const emotionScore = Math.min(1, emotionWordsCount / (words.length * 0.1));
-    
-    // Tính điểm độ dài
-    const lengthScore = Math.min(1, words.length / aiKnowledge.qualityMetrics.targetWordCount);
-    
-    return {
-        complexity: Math.round(complexityScore * 100) / 100,
-        coherence: Math.round(coherenceScore * 100) / 100,
-        emotion: Math.round(emotionScore * 100) / 100,
-        length: Math.round(lengthScore * 100) / 100,
-        wordCount: words.length,
-        sentenceCount: sentences.length
-    };
-}
-
-// HÀM ĐÁNH GIÁ VÀ CẢI THIỆN CHẤT LƯỢNG
-function evaluateAndImproveQuality(metrics, content) {
-    let improvedContent = content;
-    
-    // Nếu điểm phức tạp thấp, thêm câu phức tạp hơn
-    if (metrics.complexity < aiKnowledge.qualityMetrics.complexityThreshold) {
-        const complexSentences = Array.from(aiKnowledge.sentenceStructures)
-            .filter(s => s.split(' ').length > 15);
-        if (complexSentences.length > 0) {
-            const randomComplex = complexSentences[Math.floor(Math.random() * complexSentences.length)];
-            improvedContent += " " + adaptLearnedSentence(randomComplex);
-        }
-    }
-    
-    // Nếu điểm mạch lạc thấp, thêm từ chuyển tiếp
-    if (metrics.coherence < aiKnowledge.qualityMetrics.coherenceThreshold) {
-        const transitions = Array.from(specializedVocabulary.transitionWords);
-        const transition = transitions[Math.floor(Math.random() * transitions.length)];
-        improvedContent = improvedContent.replace(/\. ([A-Z])/g, `. ${transition}, $1`);
-    }
-    
-    // Nếu điểm cảm xúc thấp, thêm từ ngữ cảm xúc
-    if (metrics.emotion < aiKnowledge.qualityMetrics.emotionThreshold) {
-        const emotions = Array.from(specializedVocabulary.emotions);
-        const emotion = emotions[Math.floor(Math.random() * emotions.length)];
-        const emotionalPhrase = `Tôi cảm thấy ${emotion} một cách sâu sắc.`;
-        improvedContent += " " + emotionalPhrase;
-    }
-    
-    // Nếu độ dài chưa đạt, thêm nội dung mô tả
-    if (metrics.wordCount < aiKnowledge.qualityMetrics.targetWordCount * 0.9) {
-        const additionalContent = generateAdditionalContent();
-        improvedContent += " " + additionalContent;
-    }
-    
-    return improvedContent;
-}
-
-// HÀM TẠO NỘI DUNG BỔ SUNG
-function generateAdditionalContent() {
-    const contentTypes = ['observation', 'reflection', 'description', 'memory', 'adult'];
-    const selectedType = contentTypes[Math.floor(Math.random() * contentTypes.length)];
-    
-    switch(selectedType) {
-        case 'observation':
-            return generateDetailedObservation();
-        case 'reflection':
-            return generateInnerReflection();
-        case 'description':
-            return generateEnvironmentDescription();
-        case 'memory':
-            return generateMemoryRecall();
-        case 'adult':
-            return generateAdultContent();
-    }
-}
-
-// CÁC HÀM TẠO NỘI DUNG BỔ SUNG CHI TIẾT
-function generateDetailedObservation() {
-    const templates = [
-        "Tôi quan sát thấy {detailed_observation}, {specific_detail} khiến tôi {emotional_response}.",
-        "Không thể bỏ qua {visual_detail}, {movement_description} thu hút sự chú ý của tôi.",
-        "Ánh mắt {character} {eye_expression}, {gaze_interpretation} khiến tôi {resulting_feeling}."
-    ];
-    
-    let content = getRandomElement(templates);
-    content = replacePlaceholders(content);
-    return content;
-}
-
-function generateInnerReflection() {
-    const templates = [
-        "Suy nghĩ về {situation}, tôi nhận ra {personal_insight} về bản thân.",
-        "Tự vấn lương tâm, tôi thấy {self_realization} trong cách ứng xử của mình.",
-        "Trạng thái nội tâm hiện tại của tôi là {emotional_state}, {self_analysis} giúp tôi hiểu rõ hơn."
-    ];
-    
-    let content = getRandomElement(templates);
-    content = replacePlaceholders(content);
-    return content;
-}
-
-function generateEnvironmentDescription() {
-    const templates = [
-        "Không gian xung quanh {environment_description}, {sensory_detail} góp phần tạo nên {atmosphere}.",
-        "Bầu không khí trong phòng {room_atmosphere}, {environmental_factor} ảnh hưởng đến tâm trạng tôi.",
-        "Ánh sáng {light_description} chiếu qua {window_position}, tạo nên {light_effect} khiến cảnh vật trở nên {visual_impact}."
-    ];
-    
-    let content = getRandomElement(templates);
-    content = replacePlaceholders(content);
-    return content;
-}
-
-function generateMemoryRecall() {
-    const templates = [
-        "Ký ức về {past_event} ùa về, {memory_detail} khiến tôi {emotional_response}.",
-        "Nhớ lại {time_in_past}, tôi chợt nhận ra {retrospective_insight} về cuộc sống.",
-        "Hồi tưởng về {previous_occasion}, {comparison_to_present} làm tôi {resulting_feeling}."
-    ];
-    
-    let content = getRandomElement(templates);
-    content = replacePlaceholders(content);
-    return content;
-}
-
-function generateAdultContent() {
-    const templates = [
-        "Cảm giác {physical_sensation} lan tỏa khắp cơ thể khi {intimate_situation}, {bodily_reaction} không thể kiềm chế.",
-        "Tôi không thể rời mắt khỏi {physical_description} của cô ấy, {adult_observation} khiến tôi {intense_emotion}.",
-        "Mỗi lần {intimate_action}, tôi lại {physical_response} và {emotional_response} một cách {intensity}.",
-        "Không gian giữa chúng tôi tràn ngập {atmosphere_description}, {sensory_detail} kích thích mọi giác quan.",
-        "Tôi cảm nhận được {physical_detail} của cô ấy qua {clothing_description}, {imagination_detail} khiến tôi {arousal_state}."
-    ];
-    
-    let content = getRandomElement(templates);
-    content = replacePlaceholders(content);
-    return content;
-}
-
 // Initialize Google API
 async function initializeGapi() {
     await gapi.load('client', async () => {
@@ -1037,6 +886,31 @@ async function loadStoryHistory() {
     }
     displayHistory(); 
     displayFolders();
+    updateExistingStoriesDropdown();
+}
+
+// HÀM MỚI: Cập nhật dropdown truyện có sẵn
+async function updateExistingStoriesDropdown() {
+    const existingStoryDropdown = document.getElementById('existingStory');
+    const currentValue = existingStoryDropdown.value;
+    
+    // Xóa tất cả options hiện có (giữ option đầu tiên)
+    while (existingStoryDropdown.options.length > 1) {
+        existingStoryDropdown.remove(1);
+    }
+    
+    // Thêm các truyện mới vào dropdown
+    storyHistory.forEach(story => {
+        const option = document.createElement('option');
+        option.value = story.folderId;
+        option.textContent = story.storyTitle;
+        existingStoryDropdown.appendChild(option);
+    });
+    
+    // Khôi phục giá trị đã chọn nếu vẫn tồn tại
+    if (currentValue) {
+        existingStoryDropdown.value = currentValue;
+    }
 }
 
 // HÀM HUẤN LUYỆN AI NÂNG CAO
@@ -1179,6 +1053,9 @@ async function advancedContentProcessing(content, storyTitle, fileName) {
         }
     });
     
+    // Dạy AI các đoạn hội thoại
+    teachAIDialogues(content);
+    
     // Lưu lại để học hỏi
     aiKnowledge.generationHistory.push({
         storyTitle: storyTitle,
@@ -1186,6 +1063,37 @@ async function advancedContentProcessing(content, storyTitle, fileName) {
         content: content.substring(0, 500) + '...',
         metrics: calculateQualityMetrics(content),
         timestamp: new Date().toISOString()
+    });
+}
+
+// HÀM MỚI: Dạy AI các đoạn hội thoại
+function teachAIDialogues(content) {
+    const dialoguePatterns = [
+        /"[^"]+"/g,  // Nhận diện văn bản trong dấu ngoặc kép
+        /“[^”]+”/g,  // Nhận diện văn bản trong dấu ngoặc kép "thông minh"
+        /'[^']+'/g   // Nhận diện văn bản trong dấu ngoặc đơn
+    ];
+    
+    dialoguePatterns.forEach(pattern => {
+        const dialogues = content.match(pattern);
+        if (dialogues) {
+            dialogues.forEach(dialogue => {
+                // Lọc ra các đoạn hội thoại có ý nghĩa (dài hơn 5 ký tự)
+                if (dialogue.length > 5 && !aiKnowledge.dialogues.includes(dialogue)) {
+                    aiKnowledge.dialogues.push(dialogue);
+                }
+            });
+        }
+    });
+    
+    // Cũng học các câu hỏi và câu cảm thán
+    const sentences = content.split(/[.!?]+/);
+    sentences.forEach(sentence => {
+        if ((sentence.includes('?') || sentence.includes('!')) && 
+            sentence.length > 10 && 
+            !aiKnowledge.dialogues.includes(sentence.trim())) {
+            aiKnowledge.dialogues.push(sentence.trim());
+        }
     });
 }
 
@@ -1372,10 +1280,33 @@ function generateIntelligentParagraph(phase, paragraphIndex, totalParagraphs) {
     const sentenceCount = 4 + Math.floor(Math.random() * 3);
     
     for (let i = 0; i < sentenceCount; i++) {
-        paragraph += generateContextualSentence(phase, i, sentenceCount) + " ";
+        // Thỉnh thoảng thêm đoạn hội thoại (20% cơ hội)
+        if (i === Math.floor(sentenceCount/2) && Math.random() < 0.2) {
+            paragraph += generateIntelligentDialogue() + " ";
+        } else {
+            paragraph += generateContextualSentence(phase, i, sentenceCount) + " ";
+        }
     }
     
     return paragraph.trim();
+}
+
+// HÀM MỚI: Tạo đoạn hội thoại thông minh
+function generateIntelligentDialogue() {
+    if (aiKnowledge.dialogues.length === 0) {
+        return '"Tôi không biết phải nói gì lúc này..."'; // Fallback dialogue
+    }
+    
+    const randomDialogue = getRandomElement(aiKnowledge.dialogues);
+    
+    // Biến đổi dialogue để tạo sự đa dạng
+    let newDialogue = randomDialogue
+        .replace(/tôi/gi, () => Math.random() > 0.5 ? 'anh' : 'tôi')
+        .replace(/anh/gi, () => Math.random() > 0.5 ? 'tôi' : 'anh')
+        .replace(/em/gi, () => Math.random() > 0.5 ? 'cô' : 'em')
+        .replace(/cô/gi, () => Math.random() > 0.5 ? 'em' : 'cô');
+    
+    return newDialogue;
 }
 
 // HÀM TẠO CÂU VỚI NGỮ CẢNH
@@ -1416,7 +1347,7 @@ function adaptLearnedSentence(sentence) {
     return sentence;
 }
 
-// HÀM THAY THẾ PLACEHOLDER
+// HÀM THAY THẾ PLACEHOLDER (BẢN ĐẦY ĐỦ)
 function replacePlaceholders(text) {
     const replacements = {
         '{situation}': getRandomElement(['bữa cơm tối', 'lúc xem TV', 'khi tôi về nhà', 'những buổi chiều', 'cuối tuần']),
@@ -1444,7 +1375,80 @@ function replacePlaceholders(text) {
         '{physical_detail}': getRandomElement(['đường cong', 'làn da', 'hơi ấm', 'sự mềm mại']),
         '{clothing_description}': getRandomElement(['chiếc váy mỏng', 'áo bó sát', 'trang phục gợi cảm', 'vải mỏng manh']),
         '{imagination_detail}': getRandomElement(['tưởng tượng ra cơ thể', 'mơ về sự đụng chạm', 'khát khao được chạm', 'ham muốn được vuốt ve']),
-        '{arousal_state}': getRandomElement(['kích động', 'nứng tình', 'căng cứng', 'ướt át'])
+        '{arousal_state}': getRandomElement(['kích động', 'nứng tình', 'căng cứng', 'ướt át']),
+        '{psychological_insight}': getRandomElement(['nhận ra sự thật phũ phàng', 'hiểu được động cơ thầm kín', 'khám phá bản chất thật sự', 'thấu hiểu tâm lý phức tạp']),
+        '{detailed_observation}': getRandomElement(['cách ánh mắt họ lướt qua nhau', 'nụ cười mà chỉ họ hiểu với nhau', 'cử chỉ thân mật quá mức bình thường', 'khoảng cách giữa hai người ngày càng gần']),
+        '{specific_detail}': getRandomElement(['chiếc khăn tay cùng dùng chung', 'ly cà phê uống chung', 'cách gọi điện thoại kín đáo', 'nhắn tin liên tục khi tôi vắng nhà']),
+        '{emotional_response}': getRandomElement(['bối rối', 'ghen tức', 'tò mò', 'đau khổ', 'phấn khích']),
+        '{contextual_detail}': getRandomElement(['trong khi vợ tôi đang ở nhà bếp', 'lúc cả hai tưởng tôi đã ngủ say', 'khi tôi giả vờ làm việc ở phòng khách', 'trong buổi tiệc gia đình']),
+        '{atmosphere}': getRandomElement(['căng thẳng', 'lãng mạn', 'bí ẩn', 'ngột ngạt', 'đầy dục vọng']),
+        '{psychological_analysis}': getRandomElement(['phân tích tâm lý cho thấy', 'suy diễn từ các dấu hiệu', 'theo hiểu biết tâm lý của tôi', 'dựa trên quan sát hành vi']),
+        '{deep_thought}': getRandomElement(['liệu đây có phải là mối quan hệ bình thường?', 'phải chăng tôi đang hoang tưởng?', 'tại sao họ lại có những cử chỉ như vậy?', 'điều gì thực sự đang xảy ra?']),
+        '{internal_struggle}': getRandomElement(['cuộc chiến nội tâm diễn ra dữ dội', 'mâu thuẫn giằng xé trong lòng', 'phân vân giữa nên im lặng hay lên tiếng', 'không biết nên làm gì']),
+        '{resulting_state}': getRandomElement(['bất an', 'trầm cảm', 'kích động', 'áp lực', 'cô đơn']),
+        '{rightWrong}': getRandomElement(['đúng và sai', 'thiện và ác', 'nên và không nên', 'phải và trái']),
+        '{blur}': getRandomElement(['mờ dần', 'khó phân biệt', 'không còn rõ ràng', 'nhạt nhòa']),
+        '{moral_dilemma}': getRandomElement(['tình thế tiến thoái lưỡng nan', 'khủng hoảng đạo đức', 'lựa chọn khó khăn', 'tình huống éo le']),
+        '{emotional_turmoil}': getRandomElement(['hỗn loạn cảm xúc', 'bão tố trong lòng', 'sóng gió nội tâm', 'biến động tâm trạng']),
+        '{guilty}': getRandomElement(['có lỗi', 'tội lỗi', 'ăn năn', 'hối hận']),
+        '{self_judgment}': getRandomElement(['tự trách bản thân', 'dằn vặt lương tâm', 'tự phê bình khắc nghiệt', 'hối tiếc']),
+        '{cope}': getRandomElement(['đối phó', 'xử lý', 'vượt qua', 'chấp nhận']),
+        '{trigger}': getRandomElement(['nhìn thấy họ cùng nhau', 'nghe giọng nói của họ', 'bắt gặp ánh mắt họ', 'chứng kiến cử chỉ thân mật']),
+        '{reaction}': getRandomElement(['tim đập nhanh', 'tay run rẩy', 'mặt nóng bừng', 'người bứt rứt']),
+        '{pattern_analysis}': getRandomElement(['phân tích hành vi lặp lại', 'nhận diện kiểu mẫu', 'theo dõi chu kỳ', 'ghi nhận xu hướng']),
+        '{self_discovery}': getRandomElement(['bản thân tôi cũng có ham muốn', 'tôi đang ghen', 'tôi thực ra quan tâm đến họ', 'tôi muốn biết sự thật']),
+        '{development_detail}': getRandomElement(['sự xuất hiện của những tin nhắn lạ', 'những buổi tối đi về trễ không giải thích', 'quà tặng đắt tiền bí ẩn', 'những cuộc gọi kín đáo']),
+        '{emotional_change}': getRandomElement(['phức tạp hơn', 'mãnh liệt hơn', 'rõ ràng hơn', 'khó kiểm soát hơn']),
+        '{realization}': getRandomElement(['sự thật phũ phàng', 'bí mật được hé lộ', 'manh mối quan trọng', 'bằng chứng không thể chối cãi']),
+        '{personal_insight}': getRandomElement(['bản thân tôi cũng có phần sai', 'tôi đã bỏ qua những dấu hiệu', 'tôi cần thay đổi cách nhìn', 'tôi phải đối mặt với sự thật']),
+        '{perspective_change}': getRandomElement(['góc nhìn của tôi', 'quan điểm về hôn nhân', 'cách nhìn về gia đình', 'nhận thức về bản thân']),
+        '{truth}': getRandomElement(['mối quan hệ bí mật', 'tình cảm đặc biệt giữa họ', 'sự lừa dối đã diễn ra lâu', 'những cuộc gặp gỡ không ngờ']),
+        '{evidence}': getRandomElement(['rõ ràng hơn', 'nhiều hơn', 'khó chối cãi hơn', 'xác thực hơn']),
+        '{increasing_evidence}': getRandomElement(['chồng chất', 'tăng lên', 'rõ rệt', 'đáng kể']),
+        '{behavioral_observation}': getRandomElement(['cách họ tránh nhìn nhau khi có mặt tôi', 'những cử chỉ vô tình nhưng lặp lại', 'khoảnh khắc lén lút trao nhau', 'sự im lặng đáng ngờ']),
+        '{implication}': getRandomElement(['mối quan hệ không còn trong sáng', 'điều gì đó đang diễn ra', 'tình cảm đặc biệt giữa họ', 'sự thật không mong đợi']),
+        '{change}': getRandomElement(['thay đổi', 'điều chỉnh', 'cập nhật', 'xem xét lại']),
+        '{relationship}': getRandomElement(['mối quan hệ gia đình', 'tình cảm vợ chồng', 'sự gắn kết giữa các thành viên', 'cách ứng xử trong nhà']),
+        '{transformative_thought}': getRandomElement(['quan điểm mới', 'cách hiểu khác', 'nhận thức biến chuyển', 'tư duy thay đổi']),
+        '{cognitive_shift}': getRandomElement(['thay đổi nhận thức', 'chuyển biến tư duy', 'biến động trong suy nghĩ', 'cách mạng tâm lý']),
+        '{new_perspective}': getRandomElement(['góc nhìn mới mẻ', 'quan điểm tích cực', 'cách tiếp cận khác', 'lập trường mới']),
+        '{intuitive_feeling}': getRandomElement(['linh cảm không lành', 'cảm giác bất an', 'trực giác mách bảo', 'đồn đoán nội tâm']),
+        '{subconscious_awareness}': getRandomElement(['nhận thức tiềm thức', 'hiểu biết vô thức', 'tri giác tiềm ẩn', 'cảm nhận sâu xa']),
+        '{psychological_state}': getRandomElement(['hoang mang', 'bất ổn', 'phấn khích', 'kích động']),
+        '{internal_process}': getRandomElement(['quá trình tự vấn', 'suy ngẫm nội tâm', 'đấu tranh tâm lý', 'xử lý cảm xúc']),
+        '{time_period}': getRandomElement(['thời gian qua', 'những ngày vừa rồi', 'mấy tháng gần đây', 'các sự kiện gần nhất']),
+        '{retrospective_insight}': getRandomElement(['bài học quý giá', 'kinh nghiệm xương máu', 'sự thấu hiểu muộn màng', 'nhận thức hối tiếc']),
+        '{hindsight}': getRandomElement(['nhìn lại quá khứ', 'hồi tưởng', 'suy ngẫm về những gì đã qua', 'đánh giá lại']),
+        '{lesson_learned}': getRandomElement(['bài học về lòng tin', 'kinh nghiệm trong hôn nhân', 'hiểu biết về con người', 'nhận thức về bản thân']),
+        '{past_event}': getRandomElement(['lần đầu gặp nhau', 'ngày cưới', 'kỷ niệm đáng nhớ', 'sự kiện quan trọng']),
+        '{memory_detail}': getRandomElement(['vẫn in đậm trong tâm trí', 'làm tôi day dứt', 'khiến tôi bồi hồi', 'làm tôi xúc động']),
+        '{alternative_action}': getRandomElement(['hành động khác đi', 'lựa chọn khác', 'quyết định khác', 'cách xử lý khác']),
+        '{hypothetical_outcome}': getRandomElement(['kết quả tốt đẹp hơn', 'tình hình khác đi', 'mọi chuyện không như hiện tại', 'cuộc sống bình yên hơn']),
+        '{life_aspect}': getRandomElement(['hôn nhân', 'gia đình', 'tình yêu', 'lòng tin']),
+        '{philosophical_understanding}': getRandomElement(['bản chất con người là phức tạp', 'không có gì là hoàn hảo', 'sự thật đôi khi gây tổn thương', 'cuộc sống luôn tồn tại những bí ẩn']),
+        '{environment_description}': getRandomElement(['yên tĩnh đến lạ thường', 'căng thẳng như sắp có bão', 'ấm áp nhưng đầy ẩn ý', 'lạnh lẽo và xa cách']),
+        '{sensory_detail}': getRandomElement(['mùi nước hoa thoang thoảng', 'ánh đèn vàng mờ ảo', 'tiếng bước chân khẽ khàng', 'hơi thở ấm áp']),
+        '{eye_description}': getRandomElement(['long lanh đầy tâm sự', 'sâu thẳm khó dò', 'ánh lên sự bí ẩn', 'chứa đựng nỗi niềm']),
+        '{metaphorical_comparison}': getRandomElement(['như những vì sao đêm', 'tựa mặt hồ mùa thu', 'như ngọn lửa âm ỉ', 'tựa cánh rừng bí ẩn']),
+        '{resulting_feeling}': getRandomElement(['bồi hồi khó tả', 'xao xuyến lạ kỳ', 'bất an khó hiểu', 'phấn khích khó kiềm']),
+        '{gesture_description}': getRandomElement(['vuốt nhẹ mái tóc', 'chạm tay vô tình', 'cái nhíu mày thoáng qua', 'nụ cười nửa miệng']),
+        '{significance}': getRandomElement(['ý nghĩa sâu xa', 'tầm quan trọng', 'ẩn ý khó lòng', 'thông điệp ngầm']),
+        '{atmosphere_description}': getRandomElement(['đầy quyến rũ nguy hiểm', 'căng thẳng tình dục', 'lãng mạn đầy mê hoặc', 'bí ẩn khó cưỡng']),
+        '{environmental_factor}': getRandomElement(['ánh đèn mờ ảo', 'không gian chật hẹp', 'hương thơm nồng nàn', 'tiếng nhạc du dương']),
+        '{overall_mood}': getRandomElement(['quyến rũ', 'bí ẩn', 'căng thẳng', 'lãng mạn']),
+        '{visual_detail}': getRandomElement(['đường cong cơ thể', 'ánh mắt đầy dục vọng', 'cử chỉ gợi cảm', 'vẻ đẹp mê hồn']),
+        '{movement_description}': getRandomElement(['uyển chuyển đầy quyến rũ', 'mềm mại như sóng', 'nhịp nhàng đầy ma lực', 'khêu gợi khó cưỡng']),
+        '{gaze_interpretation}': getRandomElement(['như muốn chiếm hữu', 'đầy thách thức', 'ngập tràn ham muốn', 'thể hiện sự khao khát']),
+        '{self_realization}': getRandomElement(['tôi cũng có ham muốn', 'bản thân không hoàn hảo', 'tôi cần thay đổi', 'mình cũng có lỗi']),
+        '{self_analysis}': getRandomElement(['tự phân tích bản thân', 'mổ xẻ tâm can', 'giải mã cảm xúc', 'thấu hiểu chính mình']),
+        '{room_atmosphere}': getRandomElement(['ngột ngạt dục vọng', 'ấm áp tình tứ', 'bí ẩn khó hiểu', 'căng thẳng đầy kích tính']),
+        '{light_description}': getRandomElement(['vàng ấm áp', 'mờ ảo huyền diệu', 'đỏ rực đam mê', 'xanh biếc bí ẩn']),
+        '{window_position}': getRandomElement(['cửa sổ phía đông', 'khe hở rèm cửa', 'ô kính màu', 'khung cửa sổ nhỏ']),
+        '{light_effect}': getRandomElement(['tạo nên những vệt sáng ma mị', 'làm nổi bật đường cong', 'tô điểm thêm sự quyến rũ', 'khắc họa vẻ đẹp huyền bí']),
+        '{visual_impact}': getRandomElement(['quyến rũ khó cưỡng', 'đẹp mê hồn', 'kích thích giác quan', 'gợi cảm vô cùng']),
+        '{previous_occasion}': getRandomElement(['lần gặp trước', 'dịp đặc biệt', 'sự kiện quan trọng', 'khoảnh khắc đáng nhớ']),
+        '{comparison_to_present}': getRandomElement(['hoàn toàn khác biệt', 'tương phản rõ rệt', 'có nhiều điểm chung', 'đối lập một trời một vực']),
+        '{arousal_state}': getRandomElement(['kích động mạnh', 'nóng bừng cả người', 'run rẩy vì ham muốn', 'mê đắm không lối thoát'])
     };
     
     Object.keys(replacements).forEach(placeholder => {
@@ -1698,9 +1702,7 @@ function displayHistory() {
 
 function displayFolders() {
     const folderList = document.getElementById('folderList');
-    const existingStory = document.getElementById('existingStory');
     folderList.innerHTML = '';
-    existingStory.innerHTML = '<option value="">-- Chọn truyện --</option>';
     
     if (storyHistory.length === 0) {
         folderList.innerHTML = '<div class="history-item">Chưa có thư mục nào.</div>';
@@ -1716,11 +1718,6 @@ function displayFolders() {
             <div class="story-chapter">${story.chapters.length} chương</div>
         `;
         folderList.appendChild(item);
-        
-        const option = document.createElement('option');
-        option.value = story.folderId;
-        option.textContent = story.storyTitle;
-        existingStory.appendChild(option);
     });
 }
 
@@ -1760,6 +1757,8 @@ async function handleStoryFormSubmit(e) {
         }
         
         await saveStoryContent(storyTitle, chapterTitle, storyContent, storyFolderId);
+        
+        // CẬP NHẬT: Load lại lịch sử và làm mới giao diện
         await loadStoryHistory();
         
         document.getElementById('storyForm').reset();
@@ -1878,10 +1877,22 @@ function viewAiStories() {
     
     aiStoryList.innerHTML = '';
     
-    if (aiGeneratedStories.length === 0) {
+    // Lọc ra các truyện được tạo bởi AI
+    const aiStories = storyHistory.filter(story => 
+        story.storyTitle.includes("Những Điều Tôi Thầm Biết") ||
+        story.storyTitle.includes("Bí Mật Trong Gia Đình") ||
+        story.storyTitle.includes("Góc Nhìn Của Người Chồng") ||
+        story.storyTitle.includes("Quan Sát Trong Thầm Lặng") ||
+        story.storyTitle.includes("Những Gì Tôi Không Nói Ra") ||
+        story.storyTitle.includes("Ranh Giới Mờ Nhạt") ||
+        story.storyTitle.includes("Câu Chuyện Chưa Kể") ||
+        story.storyTitle.includes("Trong Sự Im Lặng")
+    );
+    
+    if (aiStories.length === 0) {
         aiStoryList.innerHTML = '<div class="history-item">Chưa có truyện nào được AI tạo.</div>';
     } else {
-        aiGeneratedStories.forEach(story => {
+        aiStories.forEach(story => {
             const item = document.createElement('div');
             item.className = 'history-item';
             item.onclick = () => {
@@ -1905,6 +1916,7 @@ function updateAiStats() {
     document.getElementById('sentenceStructures').textContent = aiKnowledge.sentenceStructures.size;
     document.getElementById('plotPoints').textContent = aiKnowledge.plotPoints.size;
     document.getElementById('emotionalPatterns').textContent = aiKnowledge.emotionalPatterns.size;
+    document.getElementById('dialoguesCount').textContent = aiKnowledge.dialogues.length;
 }
 
 // Menu Navigation
