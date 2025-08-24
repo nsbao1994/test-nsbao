@@ -411,6 +411,108 @@
             margin-top: 15px;
         }
         
+        /* Thêm style cho nút viết lại */
+        .rewrite-btn {
+            background: linear-gradient(45deg, #ff9a3d, #ff6b6b);
+            margin-left: 10px;
+            padding: 8px 15px;
+            font-size: 12px;
+        }
+        
+        .chapter-version {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .version-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Style cho chế độ chọn chủ đề */
+        .theme-selector {
+            margin-bottom: 20px;
+        }
+        .theme-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .theme-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .theme-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+        
+        /* Thêm style cho cảnh báo nội dung 18+ */
+        .adult-warning {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.5);
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .adult-toggle {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        
+        .adult-toggle label {
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        
+        .adult-content {
+            display: none;
+        }
+        
+        .adult-content.active {
+            display: block;
+        }
+
+        /* Ẩn nội dung nhạy cảm mặc định */
+        .sensitive-content {
+            filter: blur(8px);
+            transition: filter 0.3s ease;
+            user-select: none;
+        }
+        
+        .sensitive-content.revealed {
+            filter: none;
+            user-select: text;
+        }
+        
+        .reveal-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .header h1 { font-size: 1.6em; }
@@ -496,6 +598,26 @@
                 <div id="generationSection" class="content-section">
                     <div class="ai-generated-section">
                         <h2>📖 AI Tạo Truyện Tự Động</h2>
+                        
+                        <div class="theme-selector">
+                            <label>Chọn chủ đề:</label>
+                            <div class="theme-buttons">
+                                <button class="theme-btn active" data-theme="sad">😔 Buồn, Bi thảm</button>
+                                <button class="theme-btn" data-theme="romance">💖 Tình yêu lãng mạn</button>
+                                <button class="theme-btn" data-theme="adult">🔞 Người lớn (18+)</button>
+                                <button class="theme-btn" data-theme="mixed">🔀 Pha trộn ngẫu nhiên</button>
+                            </div>
+                        </div>
+                        
+                        <div class="adult-warning" id="adultWarning" style="display: none;">
+                            ⚠️ Cảnh báo: Chế độ này tạo nội dung dành cho người lớn. Bạn phải từ 18 tuổi trở lên để sử dụng.
+                        </div>
+                        
+                        <div class="adult-toggle" id="adultToggle" style="display: none;">
+                            <input type="checkbox" id="adultConsent">
+                            <label for="adultConsent">Tôi xác nhận đã đủ 18 tuổi và đồng ý xem nội dung người lớn</label>
+                        </div>
+                        
                         <div class="ai-story-controls">
                             <input type="number" id="chapterCount" placeholder="Số chương (100-150)" min="100" max="150" value="100">
                             <button id="generateStoryButton" class="btn success">🚀 AI Tạo Truyện Mới</button>
@@ -582,9 +704,14 @@
             </div>
             <div class="chapter-actions" id="chapterActions" style="display: none;">
                 <button class="btn" onclick="editChapter()">✏️ Sửa Chương</button>
+                <button class="btn rewrite-btn" onclick="rewriteChapter()">🔄 Viết Lại</button>
                 <button class="btn danger" onclick="deleteChapter()">🗑️ Xóa Chương</button>
                 <button class="btn" onclick="saveChapterChanges()">💾 Lưu Thay Đổi</button>
                 <button class="btn" onclick="cancelEdit()">❌ Hủy</button>
+            </div>
+            <div id="chapterVersions" style="display: none; margin-top: 20px;">
+                <h3>Phiên bản khác</h3>
+                <div id="versionsList"></div>
             </div>
         </div>
     </div>
@@ -599,6 +726,98 @@ let tokenClient, gapi_inited = false, gis_inited = false, mainFolderId = null, s
 let aiKnowledge = { vocabulary: new Set(), stories: [], trainedFiles: 0 };
 let aiGeneratedStories = [];
 let currentEditingChapter = null;
+let currentTheme = 'sad';
+
+// Từ vựng và cấu trúc câu cho giọng buồn, bi thảm
+const sadVocabulary = {
+    emotions: ['buồn', 'đau khổ', 'cô đơn', 'tuyệt vọng', 'xót xa', 'đau đớn', 'lẻ loi', 
+               'trống vắng', 'thất vọng', 'chán nản', 'sầu muộn', 'u uất', 'nặng nề', 'tan nát'],
+    introspective: ['tôi cảm thấy', 'tôi nhận ra', 'trong lòng tôi', 'tâm trí tôi', 'ký ức tôi',
+                   'nỗi nhớ', 'nỗi cô đơn', 'nỗi đau', 'cảm giác', 'tận sâu trong tim'],
+    metaphors: ['bóng tối', 'cơn mưa', 'giọt nước mắt', 'vết sẹo', 'vòng xoáy', 'vực sâu',
+               'màn đêm', 'bão tố', 'tro tàn', 'hoàng hôn', 'bình minh u tối'],
+    verbs: ['khóc', 'thổn thức', 'nghẹn ngào', 'thở dài', 'lặng im', 'trốn chạy', 'chìm đắm',
+           'vỡ tan', 'mong manh', 'lạc lối', 'quên lãng', 'chôn vùi']
+};
+
+// Từ vựng cho chủ đề tình yêu lãng mạn
+const romanceVocabulary = {
+    emotions: ['yêu', 'thương', 'say đắm', 'ngọt ngào', 'lãng mạn', 'đam mê', 'rung động', 
+               'thổn thức', 'hạnh phúc', 'ấm áp', 'ngây ngất', 'say mê', 'cuồng nhiệt'],
+    introspective: ['trái tim tôi', 'cảm xúc của tôi', 'tâm hồn tôi', 'tình yêu', 'nỗi nhớ',
+                   'khát khao', 'ước mong', 'hy vọng', 'cảm giác', 'xúc động'],
+    metaphors: ['ánh trăng', 'bầu trời sao', 'cơn gió', 'ánh nắng', 'bông hoa', 'dòng sông',
+               'ngọn lửa', 'vầng trăng', 'biển cả', 'cánh đồng', 'cơn mưa'],
+    verbs: ['ôm', 'hôn', 'nắm tay', 'thì thầm', 'yêu', 'say', 'mơ', 'nhớ', 'mong', 'chờ',
+           'đợi', 'trao', 'nhận', 'chia sẻ']
+};
+
+// TỪ VỰNG VÀ CẤU TRÚC CHO NỘI DUNG 18+ - THÊM MỚI
+const adultVocabulary = {
+    emotions: ['dục vọng', 'khao khát', 'say đắm', 'nóng bỏng', 'cuồng nhiệt', 'thèm muốn', 
+               'phấn khích', 'kích động', 'mãn nguyện', 'thỏa mãn', 'sung sướng', 'đê mê'],
+    introspective: ['cơ thể tôi', 'cảm giác', 'ham muốn', 'kích thích', 'dâng trào', 'cơn sóng',
+                   'đỉnh điểm', 'khoái cảm', 'xúc giác', 'cảm nhận'],
+    metaphors: ['ngọn lửa', 'cơn bão', 'biển cả', 'vực sâu', 'ánh chớp', 'cơn lốc',
+               'dòng thác', 'nguồn năng lượng', 'ánh sáng', 'bóng tối'],
+    verbs: ['chạm', 'vuốt ve', 'hôn', 'cắn', 'ôm', 'siết chặt', 'ăn', 'uống', 'khám phá',
+           'thử nghiệm', 'trải nghiệm', 'thưởng thức', 'đam mê', 'choáng ngợp'],
+    bodyParts: ['môi', 'cổ', 'vai', 'ngực', 'bụng', 'đùi', 'hông', 'lưng', 'tay', 'chân'],
+    sensations: ['ấm áp', 'nóng bỏng', 'lạnh giá', 'mềm mại', 'mịn màng', 'thô ráp', 'ẩm ướt', 'khô ráo']
+};
+
+// Cấu trúc câu cho độc thoại nội tâm
+const sentencePatterns = {
+    sad: [
+        "Tôi cảm thấy {emotion} khi {event}.",
+        "Trong {moment}, {introspective} lại ùa về.",
+        "{Emotion} {metaphor} cứ bám lấy tôi.",
+        "Tôi {verb} trong {state} của chính mình.",
+        "Tại sao {question}? Có lẽ tôi sẽ không bao giờ biết được.",
+        "Ký ức về {memory} khiến tôi {emotion}.",
+        "Tôi tự hỏi liệu {thought} có còn ý nghĩa gì không.",
+        "Trái tim tôi như {metaphor} {emotion}.",
+        "Tôi muốn {desire} nhưng chỉ có thể {reality}.",
+        "Mỗi {time} trôi qua, tôi lại cảm thấy {emotion} hơn."
+    ],
+    romance: [
+        "Tôi cảm thấy {emotion} khi ở bên người ấy.",
+        "Trong {moment}, {introspective} trào dâng.",
+        "{Emotion} {metaphor} bao trùm lấy chúng tôi.",
+        "Tôi {verb} trong vòng tay của người ấy.",
+        "Tại sao {question}? Có lẽ vì tình yêu quá lớn.",
+        "Ký ức về {memory} khiến tôi {emotion}.",
+        "Tôi tự hỏi liệu {thought} có phải là định mệnh.",
+        "Trái tim tôi như {metaphor} {emotion}.",
+        "Tôi muốn {desire} cùng người ấy mãi mãi.",
+        "Mỗi {time} trôi qua, tình yêu lại thêm {emotion}."
+    ],
+    adult: [
+        "Cơ thể tôi {verb} với {emotion} khi {event}.",
+        "Trong {moment}, {introspective} trào dâng {emotion}.",
+        "{Emotion} {metaphor} bao trùm lấy chúng tôi.",
+        "Tôi {verb} {bodyPart} của người ấy với {sensation} cảm giác.",
+        "Tại sao {question}? Có lẽ vì {emotion} quá lớn.",
+        "Cảm giác {sensation} ở {bodyPart} khiến tôi {emotion}.",
+        "Tôi tự hỏi liệu {thought} có phải là điều tôi thực sự muốn.",
+        "Cơ thể tôi như {metaphor} {emotion}.",
+        "Tôi muốn {desire} cùng người ấy mãi mãi.",
+        "Mỗi {time} trôi qua, {introspective} lại thêm {emotion}."
+    ]
+};
+
+// Sự kiện và ký ức cho cốt truyện
+const storyElements = {
+    events: ["ngày đó", "lời nói dối", "sự ra đi", "lời hứa", "ánh mắt", "nụ cười", 
+            "cuộc gặp gỡ", "biến cố", "quyết định", "lời từ chối"],
+    memories: ["người ấy", "quá khứ", "tuổi thơ", "gia đình", "tình yêu", "ước mơ",
+              "ngôi nhà cũ", "con đường", "khu vườn", "bài hát"],
+    thoughts: ["cuộc đời", "tương lai", 'ý nghĩa', "sự tồn tại", "số phận", "hạnh phúc",
+              "nỗi đau", "sự thật", "lựa chọn", "con người thật"],
+    desires: ["quay lại", "thay đổi", "quên đi", "yêu thương", "tha thứ", "tìm thấy",
+             "giải thoát", "bình yên", "hiểu được", "chấp nhận"],
+    times: ["giây phút", "phút giây", "khoảnh khắc", "ngày", "đêm", "tháng năm", "mùa"]
+};
 
 // Initialize Google API
 async function initializeGapi() {
@@ -854,21 +1073,74 @@ async function trainAI() {
     showStatus(`Huấn luyện hoàn thành! Đã xử lý ${processedFiles} file.`, 'success');
 }
 
+// Hàm huấn luyện AI - CẢI TIẾN ĐỂ HỌC NỘI DUNG 18+
 function processContent(content, storyTitle, fileName) {
-    // Simple text processing for AI learning
-    const words = content.toLowerCase()
-        .replace(/[^\w\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/g, '')
-        .split(/\s+/);
+    // Phân tích nội dung để học cấu trúc câu và từ vựng
+    const sentences = content.split(/[.!?]+/).filter(s => s.length > 5);
     
-    words.forEach(word => {
-        if (word.length > 2) { // Only add words with more than 2 characters
-            aiKnowledge.vocabulary.add(word);
+    sentences.forEach(sentence => {
+        // Thêm từ vào từ điển
+        const words = sentence.toLowerCase()
+            .replace(/[^\w\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/g, '')
+            .split(/\s+/);
+        
+        words.forEach(word => {
+            if (word.length > 2) {
+                aiKnowledge.vocabulary.add(word);
+            }
+        });
+        
+        // Phát hiện và lưu đoạn hội thoại
+        if (sentence.includes(':"') || sentence.includes(':"') || sentence.match(/["'].*?["']/)) {
+            if (!aiKnowledge.dialogues) aiKnowledge.dialogues = [];
+            const dialogueMatch = sentence.match(/["'](.*?)["']/);
+            if (dialogueMatch) {
+                aiKnowledge.dialogues.push(dialogueMatch[1]);
+            }
+        }
+        
+        // Phát hiện và lưu ngữ cảnh
+        if (sentence.match(/trong|khi|lúc|sau|trước|vào|giữa/)) {
+            if (!aiKnowledge.contexts) aiKnowledge.contexts = [];
+            aiKnowledge.contexts.push(sentence);
+        }
+        
+        // Phân loại câu theo cảm xúc
+        if (sentence.match(/buồn|đau|khổ|tuyệt vọng|sầu|u uất/i)) {
+            if (!aiKnowledge.sadSentences) aiKnowledge.sadSentences = [];
+            aiKnowledge.sadSentences.push(sentence);
+        }
+        
+        // Phát hiện chủ đề tình yêu
+        if (sentence.match(/yêu|thương|tình cảm|trái tim|hạnh phúc|đam mê/i)) {
+            if (!aiKnowledge.romanceSentences) aiKnowledge.romanceSentences = [];
+            aiKnowledge.romanceSentences.push(sentence);
+        }
+        
+        // PHÁT HIỆN NỘI DUNG 18+ - THÊM MỚI
+        if (sentence.match(/dục|khao khát|ham muốn|thân mật|gối chăn|ân ái|kích dục|khoái cảm/i)) {
+            if (!aiKnowledge.adultSentences) aiKnowledge.adultSentences = [];
+            aiKnowledge.adultSentences.push(sentence);
+            
+            // Đánh dấu truyện có nội dung nhạy cảm
+            if (!aiKnowledge.adultStories) aiKnowledge.adultStories = new Set();
+            aiKnowledge.adultStories.add(storyTitle);
         }
     });
     
-    // Store story information
+    // Lưu thông tin truyện
     if (!aiKnowledge.stories.includes(storyTitle)) {
         aiKnowledge.stories.push(storyTitle);
+    }
+    
+    // Phân tích cấu trúc truyện
+    if (!aiKnowledge.storyStructures) aiKnowledge.storyStructures = {};
+    if (!aiKnowledge.storyStructures[storyTitle]) {
+        aiKnowledge.storyStructures[storyTitle] = {
+            themes: [],
+            characters: [],
+            plotPoints: []
+        };
     }
 }
 
@@ -880,7 +1152,13 @@ async function saveAiKnowledge() {
     const knowledgeStr = JSON.stringify({
         vocabulary: Array.from(aiKnowledge.vocabulary),
         stories: aiKnowledge.stories,
-        trainedFiles: aiKnowledge.trainedFiles
+        trainedFiles: aiKnowledge.trainedFiles,
+        dialogues: aiKnowledge.dialogues || [],
+        contexts: aiKnowledge.contexts || [],
+        sadSentences: aiKnowledge.sadSentences || [],
+        romanceSentences: aiKnowledge.romanceSentences || [],
+        adultSentences: aiKnowledge.adultSentences || [],
+        adultStories: aiKnowledge.adultStories ? Array.from(aiKnowledge.adultStories) : []
     });
     
     // Save to a file in the main folder
@@ -937,6 +1215,12 @@ async function loadAiKnowledge() {
             aiKnowledge.vocabulary = new Set(knowledge.vocabulary);
             aiKnowledge.stories = knowledge.stories;
             aiKnowledge.trainedFiles = knowledge.trainedFiles;
+            aiKnowledge.dialogues = knowledge.dialogues || [];
+            aiKnowledge.contexts = knowledge.contexts || [];
+            aiKnowledge.sadSentences = knowledge.sadSentences || [];
+            aiKnowledge.romanceSentences = knowledge.romanceSentences || [];
+            aiKnowledge.adultSentences = knowledge.adultSentences || [];
+            aiKnowledge.adultStories = new Set(knowledge.adultStories || []);
         }
     } catch (error) {
         console.error('Error loading AI knowledge:', error);
@@ -952,7 +1236,241 @@ function resetAI() {
     }
 }
 
-// AI Story Generation
+// Hàm lấy ngẫu nhiên phần tử từ mảng
+function getRandomElement(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+// Hàm tạo nội dung chương
+function generateChapterContent(titleWords, theme = 'sad') {
+    // Xác định độ dài chương
+    const minWords = 1500;
+    const maxWords = 2000;
+    const targetWords = minWords + Math.floor(Math.random() * (maxWords - minWords + 1));
+    
+    let content = "";
+    let wordCount = 0;
+    
+    // Tạo tiêu đề chương
+    const chapterIntro = generateChapterIntro(theme);
+    content += chapterIntro + "\n\n";
+    wordCount += chapterIntro.split(/\s+/).length;
+    
+    // Tạo nội dung chính
+    while (wordCount < targetWords) {
+        const paragraph = generateParagraph(theme);
+        content += paragraph + "\n\n";
+        wordCount += paragraph.split(/\s+/).length;
+    }
+    
+    return content;
+}
+
+// Tạo đoạn văn có ý nghĩa
+function generateParagraph(theme) {
+    const sentences = [];
+    const sentenceCount = 3 + Math.floor(Math.random() * 4);
+    
+    for (let i = 0; i < sentenceCount; i++) {
+        sentences.push(generateSentence(theme));
+    }
+    
+    return sentences.join(" ");
+}
+
+// Tạo câu có ý nghĩa - CẢI TIẾN CHO NỘI DUNG 18+
+function generateSentence(theme) {
+    let pattern, sentence;
+    let vocabulary = sadVocabulary;
+    let patterns = sentencePatterns.sad;
+    
+    if (theme === 'romance') {
+        vocabulary = romanceVocabulary;
+        patterns = sentencePatterns.romance;
+    } else if (theme === 'adult') {
+        vocabulary = adultVocabulary;
+        patterns = sentencePatterns.adult;
+    } else if (theme === 'mixed') {
+        // Randomly choose between themes for mixed theme
+        const randomThemes = ['sad', 'romance', 'adult'];
+        const randomTheme = randomThemes[Math.floor(Math.random() * randomThemes.length)];
+        vocabulary = randomTheme === 'sad' ? sadVocabulary : 
+                    randomTheme === 'romance' ? romanceVocabulary : adultVocabulary;
+        patterns = randomTheme === 'sad' ? sentencePatterns.sad : 
+                  randomTheme === 'romance' ? sentencePatterns.romance : sentencePatterns.adult;
+    }
+    
+    pattern = getRandomElement(patterns);
+    sentence = pattern;
+    
+    // Thay thế các placeholder
+    sentence = sentence.replace(/{emotion}/gi, getRandomElement(vocabulary.emotions));
+    sentence = sentence.replace(/{introspective}/gi, getRandomElement(vocabulary.introspective));
+    sentence = sentence.replace(/{metaphor}/gi, getRandomElement(vocabulary.metaphors));
+    sentence = sentence.replace(/{verb}/gi, getRandomElement(vocabulary.verbs));
+    sentence = sentence.replace(/{event}/gi, getRandomElement(storyElements.events));
+    sentence = sentence.replace(/{memory}/gi, getRandomElement(storyElements.memories));
+    sentence = sentence.replace(/{thought}/gi, getRandomElement(storyElements.thoughts));
+    sentence = sentence.replace(/{desire}/gi, getRandomElement(storyElements.desires));
+    sentence = sentence.replace(/{reality}/gi, getRandomElement(vocabulary.verbs));
+    sentence = sentence.replace(/{moment}/gi, getRandomElement(storyElements.times));
+    sentence = sentence.replace(/{time}/gi, getRandomElement(storyElements.times));
+    sentence = sentence.replace(/{state}/gi, getRandomElement(vocabulary.metaphors));
+    sentence = sentence.replace(/{bodyPart}/gi, getRandomElement(adultVocabulary.bodyParts));
+    sentence = sentence.replace(/{sensation}/gi, getRandomElement(adultVocabulary.sensations));
+    sentence = sentence.replace(/{question}/gi, getRandomElement([
+        "tôi lại khao khát điều này",
+        "mọi thứ lại cuốn tôi vào",
+        "tôi không thể cưỡng lại được",
+        "người ấy lại khiến tôi say đắm",
+        "ham muốn không bao giờ ngừng lại"
+    ]));
+    
+    // Đảm bảo câu bắt đầu bằng chữ hoa và kết thúc bằng dấu câu
+    if (!/[.!?]$/.test(sentence)) {
+        sentence += ".";
+    }
+    
+    return sentence.charAt(0).toUpperCase() + sentence.slice(1);
+}
+
+// Tạo phần mở đầu chương - CẢI TIẾN CHO NỘI DUNG 18+
+function generateChapterIntro(theme) {
+    let intro;
+    
+    if (theme === 'romance') {
+        const romanceIntros = [
+            `Tôi ngồi đây, nhớ về người ấy và những kỷ niệm đẹp.`,
+            `Tình yêu đến với tôi như một phép màu.`,
+            `Trái tim tôi rung động mỗi khi nghĩ về người ấy.`,
+            `Tôi nhớ lại ngày đầu tiên chúng tôi gặp nhau.`,
+            `Tình yêu của chúng tôi như câu chuyện cổ tích.`,
+            `Mỗi khi ở bên người ấy, tôi cảm thấy hạnh phúc tràn đầy.`,
+            `Tôi biết mình đã yêu từ cái nhìn đầu tiên.`
+        ];
+        intro = getRandomElement(romanceIntros);
+    } else if (theme === 'adult') {
+        const adultIntros = [
+            `Đêm đó, mọi thứ bắt đầu thay đổi giữa chúng tôi.`,
+            `Tôi không thể ngừng nghĩ về khoảnh khắc thân mật ấy.`,
+            `Cơ thể tôi khao khát sự chạm vào từ người ấy.`,
+            `Mỗi lần gần nhau, cảm giác lại trào dâng mãnh liệt.`,
+            `Tôi nhớ lại đêm đầu tiên chúng tôi ở bên nhau.`,
+            `Không gì có thể ngăn được ham muốn của chúng tôi.`,
+            `Khoảnh khắc ấy in sâu trong tâm trí tôi không thể phai mờ.`
+        ];
+        intro = getRandomElement(adultIntros);
+    } else {
+        const sadIntros = [
+            `Tôi ngồi đây, một mình với những suy nghĩ về ${getRandomElement(storyElements.memories)}.`,
+            `Ký ức về ${getRandomElement(storyElements.memories)} lại ùa về trong tâm trí tôi.`,
+            `Có những điều tôi chưa từng kể với ai về ${getRandomElement(storyElements.memories)}.`,
+            `Đã bao lâu rồi kể từ ngày ${getRandomElement(storyElements.memories)} trở thành nỗi ám ảnh của tôi?`,
+            `Tôi nhớ lại ${getRandomElement(storyElements.memories)} như thể nó vừa mới xảy ra ngày hôm qua.`,
+            `Trong im lặng của đêm khuya, tôi nghị về ${getRandomElement(storyElements.memories)}.`,
+            `Đôi khi tôi tự hỏi, liệu ${getRandomElement(storyElements.memories)} có đáng để tôi đau khổ?`
+        ];
+        intro = getRandomElement(sadIntros);
+    }
+    
+    return intro;
+}
+
+// Hàm viết lại chương
+async function rewriteChapter() {
+    if (!currentEditingChapter) return;
+    
+    showLoading(true);
+    const chapterContent = document.getElementById('chapterContent');
+    
+    try {
+        // Tạo phiên bản mới của chương với cùng chủ đề
+        const newContent = generateChapterContent(Array.from(aiKnowledge.vocabulary), currentTheme);
+        
+        // Lưu phiên bản mới dưới dạng file mới
+        const originalName = currentEditingChapter.name.replace('.txt', '');
+        const newFileName = `${originalName}_v${Date.now()}.txt`;
+        
+        // Lấy folderId từ chapter đang xem
+        const response = await gapi.client.drive.files.get({
+            fileId: currentEditingChapter.id,
+            fields: 'parents'
+        });
+        
+        const folderId = response.result.parents[0];
+        
+        // Lưu phiên bản mới
+        await saveStoryContent("", newFileName, newContent, folderId, true);
+        
+        // Hiển thị nội dung mới
+        chapterContent.textContent = newContent;
+        
+        // Tải lại lịch sử để cập nhật
+        await loadStoryHistory();
+        await loadAiGeneratedStories();
+        
+        showStatus('Đã tạo phiên bản mới của chương!', 'success');
+    } catch (error) {
+        console.error('Error rewriting chapter:', error);
+        showStatus('Có lỗi khi viết lại chương!', 'error');
+    }
+    showLoading(false);
+}
+
+// Hàm xem các phiên bản của chương
+async function viewChapterVersions(chapterId, folderId) {
+    const versionsList = document.getElementById('versionsList');
+    versionsList.innerHTML = '';
+    
+    try {
+        // Tìm tất cả các file trong folder có tên bắt đầu giống chapterId
+        const chapterName = currentEditingChapter.name.replace('.txt', '').split('_v')[0];
+        const response = await gapi.client.drive.files.list({
+            q: `'${folderId}' in parents and name contains '${chapterName}' and trashed=false`,
+            fields: 'files(id, name, createdTime, description)'
+        });
+        
+        const versions = response.result.files;
+        if (versions.length > 1) {
+            document.getElementById('chapterVersions').style.display = 'block';
+            
+            versions.forEach(version => {
+                if (version.id !== chapterId) { // Bỏ qua phiên bản hiện tại
+                    const versionEl = document.createElement('div');
+                    versionEl.className = 'chapter-version';
+                    versionEl.innerHTML = `
+                        <div class="version-header">
+                            <span>${version.name}</span>
+                            <span>${new Date(version.createdTime).toLocaleDateString('vi-VN')}</span>
+                        </div>
+                        <button class="btn" onclick="loadVersion('${version.id}')">Xem phiên bản này</button>
+                    `;
+                    versionsList.appendChild(versionEl);
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading versions:', error);
+    }
+}
+
+// Hàm tải phiên bản chương
+async function loadVersion(versionId) {
+    try {
+        const response = await gapi.client.drive.files.get({
+            fileId: versionId,
+            alt: 'media'
+        });
+        
+        document.getElementById('chapterContent').textContent = response.body;
+        showStatus('Đã tải phiên bản khác của chương!', 'success');
+    } catch (error) {
+        console.error('Error loading version:', error);
+        showStatus('Có lỗi khi tải phiên bản!', 'error');
+    }
+}
+
+// Hàm tạo truyện
 async function generateStory() {
     const chapterCount = parseInt(document.getElementById('chapterCount').value) || 100;
     if (chapterCount < 100 || chapterCount > 150) {
@@ -968,9 +1486,12 @@ async function generateStory() {
     showLoading(true);
     showStatus('AI đang tạo truyện mới...', 'success');
     
-    // Generate a story title
-    const titleWords = Array.from(aiKnowledge.vocabulary).filter(word => word.length > 3);
-    const title = generateTitle(titleWords);
+    // Xác định chủ đề
+    const activeThemeBtn = document.querySelector('.theme-btn.active');
+    currentTheme = activeThemeBtn ? activeThemeBtn.dataset.theme : 'sad';
+    
+    // Generate a story title based on theme
+    const title = generateTitle(Array.from(aiKnowledge.vocabulary), currentTheme);
     
     // Create folder for the new story
     const storyFolderId = await createStoryFolder(title, true);
@@ -980,8 +1501,8 @@ async function generateStory() {
     const totalChapters = chapterCount;
     
     for (let i = 1; i <= totalChapters; i++) {
-        const chapterTitle = `Chương ${i}: ${generateChapterTitle(titleWords)}`;
-        const chapterContent = generateChapterContent(titleWords);
+        const chapterTitle = `Chương ${i}: ${generateChapterTitle(Array.from(aiKnowledge.vocabulary), currentTheme)}`;
+        const chapterContent = generateChapterContent(Array.from(aiKnowledge.vocabulary), currentTheme);
         
         // Save chapter to Google Drive
         await saveStoryContent(title, chapterTitle, chapterContent, storyFolderId, true);
@@ -1000,13 +1521,40 @@ async function generateStory() {
     
     // Reload AI generated stories
     await loadAiGeneratedStories();
+    // CẬP NHẬT LỊCH SỬ ĐỂ HIỂN THỊ TRUYỆN AI
+    await loadStoryHistory();
     showLoading(false);
     showStatus(`Đã tạo thành công truyện "${title}" với ${totalChapters} chương!`, 'success');
     document.getElementById('generationStatus').innerHTML = '';
 }
 
-function generateTitle(words) {
-    // Simple title generation based on learned vocabulary
+// Hàm tạo tiêu đề dựa trên chủ đề - CẢI TIẾN CHO NỘI DUNG 18+
+function generateTitle(words, theme) {
+    if (theme === 'romance') {
+        const romanceTitles = [
+            "Chuyện Tình Của Chúng Tôi",
+            "Trái Tim Yêu Thương",
+            "Tình Yêu Bất Diệt",
+            "Mối Tình Đầu",
+            "Ánh Trăng Và Tình Yêu",
+            "Trái Tim Rung Động",
+            "Tình Yêu Muôn Màu"
+        ];
+        return getRandomElement(romanceTitles);
+    } else if (theme === 'adult') {
+        const adultTitles = [
+            "Đêm Khó Quên",
+            "Những Kỷ Niệm Đêm",
+            "Khát Vọng Tình Yêu",
+            "Bí Mật Phòng The",
+            "Những Lần Đầu Tiên",
+            "Mật Ngọt Tình Yêu",
+            "Đam Mê Bí Ẩn"
+        ];
+        return getRandomElement(adultTitles);
+    }
+    
+    // Simple title generation based on learned vocabulary for other themes
     const titleLength = 2 + Math.floor(Math.random() * 3);
     let title = '';
     
@@ -1019,8 +1567,39 @@ function generateTitle(words) {
     return title.trim();
 }
 
-function generateChapterTitle(words) {
-    // Generate a chapter title
+// Hàm tạo tiêu đề chương dựa trên chủ đề - CẢI TIẾN CHO NỘI DUNG 18+
+function generateChapterTitle(words, theme) {
+    if (theme === 'romance') {
+        const romanceTitles = [
+            "Lần Đầu Gặp Gỡ",
+            "Ánh Mắt Định Mệnh",
+            "Lời Tỏ Tình",
+            "Nụ Hôn Đầu",
+            "Ngày Đẹp Trời",
+            "Bên Nhau Trọn Đời",
+            "Hạnh Phúc Tròn Đầy",
+            "Lời Hứa Yêu Thương",
+            "Chuyến Đi Đáng Nhớ",
+            "Kỷ Niệm Ngọt Ngào"
+        ];
+        return getRandomElement(romanceTitles);
+    } else if (theme === 'adult') {
+        const adultTitles = [
+            "Đêm Đầu Tiên",
+            "Khát Vọng Dâng Trào",
+            "Bí Mật Đêm Khuya",
+            "Khoảnh Khắc Say Đắm",
+            "Những Vuốt Ve Đầu Tiên",
+            "Đam Mê Bừng Cháy",
+            "Ranh Giới Mong Manh",
+            "Vượt Qua Giới Hạn",
+            "Khám Phá Cơ Thể",
+            "Đỉnh Cao Khoái Cảm"
+        ];
+        return getRandomElement(adultTitles);
+    }
+    
+    // Generate a chapter title for other themes
     const titleLength = 3 + Math.floor(Math.random() * 4);
     let title = '';
     
@@ -1033,43 +1612,79 @@ function generateChapterTitle(words) {
     return title.trim();
 }
 
-function generateChapterContent(words) {
-    // Generate chapter content with 1500-2000 words
-    const minWords = 1500;
-    const maxWords = 2000;
-    const targetWords = minWords + Math.floor(Math.random() * (maxWords - minWords + 1));
+// Hàm xử lý khi chọn chủ đề - THÊM KIỂM SOÁT NỘI DUNG 18+
+function handleThemeSelection(theme) {
+    currentTheme = theme;
     
-    let content = '';
-    let wordCount = 0;
-    
-    while (wordCount < targetWords) {
-        const sentenceLength = 5 + Math.floor(Math.random() * 10);
-        let sentence = '';
-        
-        for (let i = 0; i < sentenceLength; i++) {
-            const randomIndex = Math.floor(Math.random() * words.length);
-            const word = words[randomIndex];
-            
-            if (i === 0) {
-                sentence += word.charAt(0).toUpperCase() + word.slice(1);
-            } else {
-                sentence += ' ' + word;
-            }
-            
-            wordCount++;
-            if (wordCount >= targetWords) break;
-        }
-        
-        sentence += '. ';
-        content += sentence;
-        
-        // Add paragraph breaks occasionally
-        if (Math.random() < 0.1) {
-            content += '\n\n';
-        }
+    // Hiển thị cảnh báo nếu chọn chủ đề người lớn
+    if (theme === 'adult') {
+        document.getElementById('adultWarning').style.display = 'block';
+        document.getElementById('adultToggle').style.display = 'flex';
+        document.getElementById('generateStoryButton').disabled = true;
+    } else {
+        document.getElementById('adultWarning').style.display = 'none';
+        document.getElementById('adultToggle').style.display = 'none';
+        document.getElementById('generateStoryButton').disabled = false;
     }
+}
+
+// Hàm kiểm tra xem nội dung có nhạy cảm không - MỚI
+function isSensitiveContent(content) {
+    const sensitiveKeywords = [
+        'dục', 'khao khát', 'ham muốn', 'thân mật', 'gối chăn', 'ân ái', 
+        'kích dục', 'khoái cảm', 'dâm', 'loạn', 'luyến', 'ấu dâm', 
+        'cơ thể', 'chạm', 'vuốt ve', 'hôn', 'cắn', 'ôm', 'siết chặt'
+    ];
     
-    return content;
+    return sensitiveKeywords.some(keyword => 
+        content.toLowerCase().includes(keyword.toLowerCase())
+    );
+}
+
+// Hàm hiển thị nội dung chương với kiểm soát nội dung nhạy cảm - MỚI
+async function viewChapterContent(chapter, folderId) {
+    const chapterContent = document.getElementById('chapterContent');
+    const chapterActions = document.getElementById('chapterActions');
+    const chapterVersions = document.getElementById('chapterVersions');
+    
+    try {
+        const response = await gapi.client.drive.files.get({
+            fileId: chapter.id,
+            alt: 'media'
+        });
+        
+        const content = response.body;
+        chapterContent.textContent = content;
+        chapterContent.style.display = 'block';
+        chapterActions.style.display = 'block';
+        currentEditingChapter = { id: chapter.id, content: content, name: chapter.name };
+        
+        // Kiểm tra và xử lý nội dung nhạy cảm
+        if (isSensitiveContent(content)) {
+            chapterContent.classList.add('sensitive-content');
+            
+            // Thêm nút hiển thị nội dung
+            const revealBtn = document.createElement('button');
+            revealBtn.className = 'reveal-btn';
+            revealBtn.textContent = '👁️ Hiển thị nội dung nhạy cảm';
+            revealBtn.onclick = function() {
+                chapterContent.classList.toggle('revealed');
+                this.textContent = chapterContent.classList.contains('revealed') ? 
+                    '🙈 Ẩn nội dung nhạy cảm' : '👁️ Hiển thị nội dung nhạy cảm';
+            };
+            
+            chapterContent.parentNode.insertBefore(revealBtn, chapterContent);
+        }
+        
+        // Ẩn phần phiên bản trước khi tải mới
+        chapterVersions.style.display = 'none';
+        
+        // Tải các phiên bản khác của chương này
+        await viewChapterVersions(chapter.id, folderId);
+    } catch (error) {
+        console.error('Error loading chapter content:', error);
+        showStatus('Có lỗi khi tải nội dung chương!', 'error');
+    }
 }
 
 // UI Functions
@@ -1077,17 +1692,20 @@ function displayHistory() {
     const historyList = document.getElementById('historyList');
     historyList.innerHTML = '';
     
-    if (storyHistory.length === 0) {
+    // Hiển thị cả truyện người dùng và truyện AI
+    const allStories = [...storyHistory, ...aiGeneratedStories];
+    
+    if (allStories.length === 0) {
         historyList.innerHTML = '<div class="history-item">Chưa có truyện nào.</div>';
         return;
     }
     
-    storyHistory.forEach(story => {
+    allStories.forEach(story => {
         const item = document.createElement('div');
         item.className = 'history-item';
         item.onclick = () => viewStoryChapters(story);
         item.innerHTML = `
-            <div class="story-title">${story.storyTitle}</div>
+            <div class="story-title">${story.storyTitle} ${story.isAiGenerated ? '(AI Tạo)' : ''}</div>
             <div class="story-chapter">${story.chapters.length} chương</div>
             <div class="story-date">${new Date(story.createdTime).toLocaleDateString('vi-VN')}</div>
         `;
@@ -1205,26 +1823,6 @@ function viewStoryChapters(story) {
     });
     
     modal.style.display = 'block';
-}
-
-async function viewChapterContent(chapter, folderId) {
-    const chapterContent = document.getElementById('chapterContent');
-    const chapterActions = document.getElementById('chapterActions');
-    
-    try {
-        const response = await gapi.client.drive.files.get({
-            fileId: chapter.id,
-            alt: 'media'
-        });
-        
-        chapterContent.textContent = response.body;
-        chapterContent.style.display = 'block';
-        chapterActions.style.display = 'block';
-        currentEditingChapter = { id: chapter.id, content: response.body, name: chapter.name };
-    } catch (error) {
-        console.error('Error loading chapter content:', error);
-        showStatus('Có lỗi khi tải nội dung chương!', 'error');
-    }
 }
 
 function editChapter() {
@@ -1352,6 +1950,20 @@ document.getElementById('menuTraining').setAttribute('data-section', 'trainingSe
 document.getElementById('menuGeneration').setAttribute('data-section', 'generationSection');
 document.getElementById('menuManagement').setAttribute('data-section', 'managementSection');
 document.getElementById('menuHistory').setAttribute('data-section', 'historySection');
+
+// CẬP NHẬT SỰ KIỆN CHỌN CHỦ ĐỀ
+document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        handleThemeSelection(this.dataset.theme);
+    });
+});
+
+// THÊM SỰ KIỆN CHO CHECKBOX ĐỒNG Ý NỘI DUNG 18+
+document.getElementById('adultConsent').addEventListener('change', function() {
+    document.getElementById('generateStoryButton').disabled = !this.checked;
+});
 
 // Initialize the app
 window.onload = () => {
