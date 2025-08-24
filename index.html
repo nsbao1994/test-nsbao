@@ -13,6 +13,8 @@
 </head>
 <body>
   <h2>📚 Nhập truyện</h2>
+  <button id="loginBtn" disabled>🔑 Đăng nhập Google</button>
+
   <input type="text" id="storyName" placeholder="Tên truyện">
   <input type="text" id="chapterName" placeholder="Tên chương">
   <textarea id="chapterContent" placeholder="Nội dung chương..."></textarea>
@@ -29,6 +31,7 @@
     let gapiInited = false;
     let gisInited = false;
 
+    // Load gapi
     function gapiLoaded() {
       gapi.load('client', initializeGapiClient);
     }
@@ -38,39 +41,46 @@
         discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
       });
       gapiInited = true;
-      maybeEnableButtons();
+      maybeEnableLogin();
     }
 
+    // Load GIS
     function gisLoaded() {
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
-        callback: '', // sẽ set sau khi login
+        callback: '', // gán sau
       });
       gisInited = true;
-      maybeEnableButtons();
+      maybeEnableLogin();
     }
 
-    function maybeEnableButtons() {
+    function maybeEnableLogin() {
       if (gapiInited && gisInited) {
-        handleAuthClick(); // auto login
+        document.getElementById("loginBtn").disabled = false;
       }
     }
 
-    function handleAuthClick() {
+    document.getElementById("loginBtn").onclick = () => {
       tokenClient.callback = async (resp) => {
-        if (resp.error !== undefined) throw(resp);
+        if (resp.error !== undefined) {
+          console.error(resp);
+          return;
+        }
+        alert("✅ Đăng nhập thành công!");
         await loadHistory();
       };
 
       if (gapi.client.getToken() === null) {
-        tokenClient.requestAccessToken({prompt: 'consent'});
+        // yêu cầu consent khi login lần đầu
+        tokenClient.requestAccessToken({ prompt: "consent" });
       } else {
-        tokenClient.requestAccessToken({prompt: ''});
+        // lấy token lại nếu đã login
+        tokenClient.requestAccessToken({ prompt: "" });
       }
-    }
+    };
 
-    // 2. Tạo thư mục
+    // === Tạo thư mục nếu chưa có ===
     async function createFolderIfNotExist(folderName) {
       let res = await gapi.client.drive.files.list({
         q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
@@ -85,14 +95,14 @@
       return folder.result.id;
     }
 
-    // 3. Lưu chương vào file
+    // === Lưu chương ===
     async function saveChapter() {
       let storyName = document.getElementById("storyName").value;
       let chapterName = document.getElementById("chapterName").value;
       let content = document.getElementById("chapterContent").value;
 
       if (!storyName || !chapterName || !content) {
-        alert("Vui lòng nhập đầy đủ thông tin!");
+        alert("⚠️ Vui lòng nhập đầy đủ thông tin!");
         return;
       }
 
@@ -101,7 +111,7 @@
       const fileMetadata = { name: chapterName + ".txt", parents: [folderId] };
       const media = new Blob([content], { type: 'text/plain' });
       const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
+      form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
       form.append('file', media);
 
       await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
@@ -110,11 +120,11 @@
         body: form
       });
 
-      alert("Đã lưu chương!");
+      alert("✅ Đã lưu chương!");
       loadHistory();
     }
 
-    // 4. Xem lại lịch sử truyện
+    // === Lịch sử truyện ===
     async function loadHistory() {
       let res = await gapi.client.drive.files.list({
         q: "mimeType='application/vnd.google-apps.folder' and trashed=false",
@@ -149,15 +159,6 @@
 
     gapiLoaded();
     window.gisLoaded = gisLoaded;
-  </script>
-
-  <!-- callback khi GIS load -->
-  <script>
-    window.onload = () => {
-      if (typeof google !== "undefined" && google.accounts) {
-        gisLoaded();
-      }
-    };
   </script>
 </body>
 </html>
