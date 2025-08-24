@@ -9,11 +9,13 @@
     body { font-family: Arial; margin: 20px; }
     input, textarea, button { display: block; margin: 10px 0; width: 100%; }
     #history { margin-top: 20px; border: 1px solid #ccc; padding: 10px; }
+    #status { margin: 10px 0; font-weight: bold; color: blue; }
   </style>
 </head>
 <body>
   <h2>📚 Nhập truyện</h2>
   <button id="loginBtn" disabled>🔑 Đăng nhập Google</button>
+  <div id="status">Chưa đăng nhập</div>
 
   <input type="text" id="storyName" placeholder="Tên truyện">
   <input type="text" id="chapterName" placeholder="Tên chương">
@@ -49,7 +51,22 @@
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
-        callback: '', // gán sau
+        callback: (resp) => {
+          if (resp.error) {
+            console.error("❌ Lỗi đăng nhập:", resp);
+            document.getElementById("status").textContent = "❌ Đăng nhập thất bại!";
+            return;
+          }
+          console.log("✅ Token nhận được:", resp);
+          document.getElementById("status").textContent = "✅ Đăng nhập thành công!";
+          // thử gọi API Drive để lấy thông tin user
+          gapi.client.drive.about.get({fields: "user"}).then(res => {
+            let user = res.result.user;
+            document.getElementById("status").textContent =
+              `✅ Đăng nhập: ${user.displayName} (${user.emailAddress})`;
+          });
+          loadHistory();
+        },
       });
       gisInited = true;
       maybeEnableLogin();
@@ -62,20 +79,9 @@
     }
 
     document.getElementById("loginBtn").onclick = () => {
-      tokenClient.callback = async (resp) => {
-        if (resp.error !== undefined) {
-          console.error(resp);
-          return;
-        }
-        alert("✅ Đăng nhập thành công!");
-        await loadHistory();
-      };
-
       if (gapi.client.getToken() === null) {
-        // yêu cầu consent khi login lần đầu
         tokenClient.requestAccessToken({ prompt: "consent" });
       } else {
-        // lấy token lại nếu đã login
         tokenClient.requestAccessToken({ prompt: "" });
       }
     };
