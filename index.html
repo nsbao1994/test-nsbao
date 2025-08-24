@@ -312,12 +312,125 @@
             width: 0%;
         }
         
+        /* AI Generated Stories Section */
+        .ai-generated-section {
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.1), rgba(44, 160, 141, 0.1));
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .ai-generated-section h2 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .ai-story-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .ai-story-controls input {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+        .ai-story-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .ai-story-item {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .ai-story-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .ai-story-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .ai-story-info {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        /* Modal for viewing chapters */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            margin: 40px auto;
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 800px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #fff;
+        }
+        .chapter-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        .chapter-item {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+        .chapter-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .chapter-content {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .chapter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .header h1 { font-size: 1.6em; }
             .main-content { padding: 10px; }
             .form-section, .history-section { margin-bottom: 15px; }
             .btn { font-size: 14px; padding: 10px 16px; }
+            .modal-content { margin: 20px 10px; padding: 15px; }
         }
         
         /* Safe area for iPhone */
@@ -381,6 +494,20 @@
                     <button id="resetAiButton" class="btn danger">🔄 Reset AI</button>
                 </div>
 
+                <!-- AI Story Generation Section -->
+                <div class="ai-generated-section">
+                    <h2>📖 AI Tạo Truyện Tự Động</h2>
+                    <div class="ai-story-controls">
+                        <input type="number" id="chapterCount" placeholder="Số chương (100-150)" min="100" max="150" value="100">
+                        <button id="generateStoryButton" class="btn success">🚀 AI Tạo Truyện Mới</button>
+                        <button id="viewAiStoriesButton" class="btn">📚 Xem Truyện AI Đã Tạo</button>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="generationProgressFill"></div>
+                    </div>
+                    <div id="generationStatus"></div>
+                </div>
+
                 <!-- Chat with AI -->
                 <div class="form-section">
                     <h2>💬 Trò chuyện với AI</h2>
@@ -438,6 +565,37 @@
         </div>
     </div>
 
+    <!-- Modal for AI Generated Stories -->
+    <div id="aiStoriesModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('aiStoriesModal')">&times;</span>
+            <h2>📚 Truyện Được Tạo Bởi AI</h2>
+            <div class="ai-story-list" id="aiStoryList">
+                <!-- AI stories will be listed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Viewing Chapters -->
+    <div id="chaptersModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('chaptersModal')">&times;</span>
+            <h2 id="chaptersModalTitle">Chương Truyện</h2>
+            <div class="chapter-list" id="chapterList">
+                <!-- Chapters will be listed here -->
+            </div>
+            <div class="chapter-content" id="chapterContent" style="display: none;">
+                <!-- Chapter content will be displayed here -->
+            </div>
+            <div class="chapter-actions" id="chapterActions" style="display: none;">
+                <button class="btn" onclick="editChapter()">✏️ Sửa Chương</button>
+                <button class="btn danger" onclick="deleteChapter()">🗑️ Xóa Chương</button>
+                <button class="btn" onclick="saveChapterChanges()">💾 Lưu Thay Đổi</button>
+                <button class="btn" onclick="cancelEdit()">❌ Hủy</button>
+            </div>
+        </div>
+    </div>
+
 <script>
 const CLIENT_ID = '199144324956-rsc4tttep6uq67poepa2nclieqi82avj.apps.googleusercontent.com';
 const API_KEY = 'AIzaSyBGHB5FnrtMXliWtk3X6FZAl0CE2neNgZM';
@@ -446,6 +604,8 @@ const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 let tokenClient, gapi_inited = false, gis_inited = false, mainFolderId = null, storyHistory = [];
 let aiKnowledge = { vocabulary: new Set(), stories: [], trainedFiles: 0 };
+let aiGeneratedStories = [];
+let currentEditingChapter = null;
 
 // Initialize Google API
 async function initializeGapi() {
@@ -503,6 +663,7 @@ async function initializeApp() {
     await createMainFolder(); 
     await loadStoryHistory();
     await loadAiKnowledge();
+    await loadAiGeneratedStories();
     updateAiStats();
     document.getElementById('mainApp').style.display = 'block';
     showStatus('Khởi tạo ứng dụng thành công!', 'success');
@@ -524,18 +685,58 @@ async function createMainFolder() {
         });
         mainFolderId = folder.result.id;
     }
+    
+    // Create AI Stories folder if it doesn't exist
+    const aiFolderName = 'AI_Generated_Stories';
+    const aiResponse = await gapi.client.drive.files.list({
+        q: `name='${aiFolderName}' and mimeType='application/vnd.google-apps.folder' and '${mainFolderId}' in parents and trashed=false`,
+        fields: 'files(id, name)'
+    });
+    if (aiResponse.result.files.length === 0) {
+        const aiFolder = await gapi.client.drive.files.create({ 
+            resource: {
+                name: aiFolderName, 
+                mimeType: 'application/vnd.google-apps.folder', 
+                parents: [mainFolderId]
+            }, 
+            fields: 'id' 
+        });
+    }
 }
 
-async function createStoryFolder(storyTitle) {
+async function createStoryFolder(storyTitle, isAiGenerated = false) {
+    let parentId = mainFolderId;
+    
+    if (isAiGenerated) {
+        // Find AI Stories folder
+        const aiFolderName = 'AI_Generated_Stories';
+        const response = await gapi.client.drive.files.list({
+            q: `name='${aiFolderName}' and mimeType='application/vnd.google-apps.folder' and '${mainFolderId}' in parents and trashed=false`,
+            fields: 'files(id, name)'
+        });
+        if (response.result.files.length > 0) {
+            parentId = response.result.files[0].id;
+        }
+    }
+    
     const folder = await gapi.client.drive.files.create({
-        resource: { name: storyTitle, mimeType: 'application/vnd.google-apps.folder', parents: [mainFolderId] }, 
+        resource: { 
+            name: storyTitle, 
+            mimeType: 'application/vnd.google-apps.folder', 
+            parents: [parentId] 
+        }, 
         fields: 'id'
     });
     return folder.result.id;
 }
 
-async function saveStoryContent(storyTitle, chapterTitle, content, storyFolderId) {
-    const fileMetadata = { name: `${chapterTitle}.txt`, parents: [storyFolderId] };
+async function saveStoryContent(storyTitle, chapterTitle, content, storyFolderId, isAiGenerated = false) {
+    const fileMetadata = { 
+        name: `${chapterTitle}.txt`, 
+        parents: [storyFolderId],
+        description: isAiGenerated ? "AI-Generated" : "User-Created"
+    };
+    
     await gapi.client.request({
         path: 'https://www.googleapis.com/upload/drive/v3/files', 
         method: 'POST',
@@ -557,19 +758,61 @@ async function loadStoryHistory() {
     storyHistory = [];
     
     for (let folder of folders) {
+        // Skip AI Generated Stories folder
+        if (folder.name === 'AI_Generated_Stories') continue;
+        
         const filesResponse = await gapi.client.drive.files.list({
             q: `'${folder.id}' in parents and trashed=false`,
-            fields: 'files(id, name, createdTime)'
+            fields: 'files(id, name, createdTime, description)'
         });
         storyHistory.push({ 
             storyTitle: folder.name, 
             folderId: folder.id, 
             createdTime: folder.createdTime, 
-            chapters: filesResponse.result.files 
+            chapters: filesResponse.result.files,
+            isAiGenerated: false
         });
     }
     displayHistory(); 
     displayFolders();
+}
+
+async function loadAiGeneratedStories() {
+    // Find AI Stories folder
+    const aiFolderName = 'AI_Generated_Stories';
+    const response = await gapi.client.drive.files.list({
+        q: `name='${aiFolderName}' and mimeType='application/vnd.google-apps.folder' and '${mainFolderId}' in parents and trashed=false`,
+        fields: 'files(id, name)'
+    });
+    
+    if (response.result.files.length === 0) {
+        aiGeneratedStories = [];
+        return;
+    }
+    
+    const aiFolderId = response.result.files[0].id;
+    const aiFoldersResponse = await gapi.client.drive.files.list({
+        q: `'${aiFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+        fields: 'files(id, name, createdTime)', 
+        orderBy: 'createdTime desc'
+    });
+    
+    const aiFolders = aiFoldersResponse.result.files;
+    aiGeneratedStories = [];
+    
+    for (let folder of aiFolders) {
+        const filesResponse = await gapi.client.drive.files.list({
+            q: `'${folder.id}' in parents and trashed=false`,
+            fields: 'files(id, name, createdTime, description)'
+        });
+        aiGeneratedStories.push({ 
+            storyTitle: folder.name, 
+            folderId: folder.id, 
+            createdTime: folder.createdTime, 
+            chapters: filesResponse.result.files,
+            isAiGenerated: true
+        });
+    }
 }
 
 // AI Training Functions
@@ -621,60 +864,239 @@ async function trainAI() {
 function processContent(content, storyTitle, fileName) {
     // Simple text processing for AI learning
     const words = content.toLowerCase()
-        .replace(/[^\w\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/g, ' ')
-        .split(/\s+/)
-        .filter(word => word.length > 2);
+        .replace(/[^\w\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/g, '')
+        .split(/\s+/);
     
-    words.forEach(word => aiKnowledge.vocabulary.add(word));
+    words.forEach(word => {
+        if (word.length > 2) { // Only add words with more than 2 characters
+            aiKnowledge.vocabulary.add(word);
+        }
+    });
     
-    // Store story context
-    aiKnowledge.stories.push({
-        title: storyTitle,
-        chapter: fileName,
-        content: content,
-        wordCount: words.length
-    });
-}
-
-function updateAiStats() {
-    document.getElementById('totalFiles').textContent = getTotalFiles();
-    document.getElementById('trainedFiles').textContent = aiKnowledge.trainedFiles;
-    document.getElementById('vocabularyCount').textContent = aiKnowledge.vocabulary.size;
-}
-
-function getTotalFiles() {
-    let total = 0;
-    storyHistory.forEach(story => {
-        total += story.chapters.filter(chapter => chapter.name.endsWith('.txt')).length;
-    });
-    return total;
-}
-
-function resetAI() {
-    if (confirm('Bạn có chắc muốn reset toàn bộ dữ liệu AI?')) {
-        aiKnowledge = { vocabulary: new Set(), stories: [], trainedFiles: 0 };
-        updateAiStats();
-        document.getElementById('progressFill').style.width = '0%';
-        clearChat();
-        showStatus('Đã reset AI thành công!', 'success');
-        saveAiKnowledge();
+    // Store story information
+    if (!aiKnowledge.stories.includes(storyTitle)) {
+        aiKnowledge.stories.push(storyTitle);
     }
 }
 
-// Chat Functions
-function sendMessage() {
+function updateAiStats() {
+    document.getElementById('vocabularyCount').textContent = aiKnowledge.vocabulary.size;
+}
+
+async function saveAiKnowledge() {
+    const knowledgeStr = JSON.stringify({
+        vocabulary: Array.from(aiKnowledge.vocabulary),
+        stories: aiKnowledge.stories,
+        trainedFiles: aiKnowledge.trainedFiles
+    });
+    
+    // Save to a file in the main folder
+    const fileName = 'ai_knowledge.json';
+    const response = await gapi.client.drive.files.list({
+        q: `name='${fileName}' and '${mainFolderId}' in parents and trashed=false`,
+        fields: 'files(id)'
+    });
+    
+    if (response.result.files.length > 0) {
+        // Update existing file
+        const fileId = response.result.files[0].id;
+        await gapi.client.request({
+            path: `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
+            method: 'PATCH',
+            params: { uploadType: 'media' },
+            body: knowledgeStr
+        });
+    } else {
+        // Create new file
+        const fileMetadata = { 
+            name: fileName, 
+            parents: [mainFolderId] 
+        };
+        
+        await gapi.client.request({
+            path: 'https://www.googleapis.com/upload/drive/v3/files', 
+            method: 'POST',
+            params: { uploadType: 'multipart' },
+            headers: { 'Content-Type': 'multipart/related; boundary="foo_bar_baz"' },
+            body: '--foo_bar_baz\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' +
+                  JSON.stringify(fileMetadata) + '\r\n--foo_bar_baz\r\nContent-Type: application/json\r\n\r\n' +
+                  knowledgeStr + '\r\n--foo_bar_baz--'
+        });
+    }
+}
+
+async function loadAiKnowledge() {
+    const fileName = 'ai_knowledge.json';
+    try {
+        const response = await gapi.client.drive.files.list({
+            q: `name='${fileName}' and '${mainFolderId}' in parents and trashed=false`,
+            fields: 'files(id)'
+        });
+        
+        if (response.result.files.length > 0) {
+            const fileId = response.result.files[0].id;
+            const fileResponse = await gapi.client.drive.files.get({
+                fileId: fileId,
+                alt: 'media'
+            });
+            
+            const knowledge = JSON.parse(fileResponse.body);
+            aiKnowledge.vocabulary = new Set(knowledge.vocabulary);
+            aiKnowledge.stories = knowledge.stories;
+            aiKnowledge.trainedFiles = knowledge.trainedFiles;
+        }
+    } catch (error) {
+        console.error('Error loading AI knowledge:', error);
+    }
+}
+
+function resetAI() {
+    if (confirm('Bạn có chắc chắn muốn reset toàn bộ kiến thức của AI?')) {
+        aiKnowledge = { vocabulary: new Set(), stories: [], trainedFiles: 0 };
+        updateAiStats();
+        saveAiKnowledge();
+        showStatus('Đã reset kiến thức của AI!', 'success');
+    }
+}
+
+// AI Story Generation
+async function generateStory() {
+    const chapterCount = parseInt(document.getElementById('chapterCount').value) || 100;
+    if (chapterCount < 100 || chapterCount > 150) {
+        showStatus('Số chương phải từ 100 đến 150!', 'error');
+        return;
+    }
+    
+    if (aiKnowledge.vocabulary.size < 100) {
+        showStatus('AI chưa được huấn luyện đủ! Hãy huấn luyện AI với ít nhất 100 từ vựng.', 'error');
+        return;
+    }
+    
+    showLoading(true);
+    showStatus('AI đang tạo truyện mới...', 'success');
+    
+    // Generate a story title
+    const titleWords = Array.from(aiKnowledge.vocabulary).filter(word => word.length > 3);
+    const title = generateTitle(titleWords);
+    
+    // Create folder for the new story
+    const storyFolderId = await createStoryFolder(title, true);
+    
+    // Generate chapters
+    let generatedChapters = 0;
+    const totalChapters = chapterCount;
+    
+    for (let i = 1; i <= totalChapters; i++) {
+        const chapterTitle = `Chương ${i}: ${generateChapterTitle(titleWords)}`;
+        const chapterContent = generateChapterContent(titleWords);
+        
+        // Save chapter to Google Drive
+        await saveStoryContent(title, chapterTitle, chapterContent, storyFolderId, true);
+        
+        generatedChapters++;
+        
+        // Update progress
+        const progress = (generatedChapters / totalChapters) * 100;
+        document.getElementById('generationProgressFill').style.width = progress + '%';
+        document.getElementById('generationStatus').innerHTML = 
+            `<div class="status success">Đang tạo chương ${generatedChapters}/${totalChapters}: ${chapterTitle}</div>`;
+        
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // Reload AI generated stories
+    await loadAiGeneratedStories();
+    showLoading(false);
+    showStatus(`Đã tạo thành công truyện "${title}" với ${totalChapters} chương!`, 'success');
+    document.getElementById('generationStatus').innerHTML = '';
+}
+
+function generateTitle(words) {
+    // Simple title generation based on learned vocabulary
+    const titleLength = 2 + Math.floor(Math.random() * 3);
+    let title = '';
+    
+    for (let i = 0; i < titleLength; i++) {
+        const randomIndex = Math.floor(Math.random() * words.length);
+        const word = words[randomIndex];
+        title += word.charAt(0).toUpperCase() + word.slice(1) + ' ';
+    }
+    
+    return title.trim();
+}
+
+function generateChapterTitle(words) {
+    // Generate a chapter title
+    const titleLength = 3 + Math.floor(Math.random() * 4);
+    let title = '';
+    
+    for (let i = 0; i < titleLength; i++) {
+        const randomIndex = Math.floor(Math.random() * words.length);
+        const word = words[randomIndex];
+        title += word.charAt(0).toUpperCase() + word.slice(1) + ' ';
+    }
+    
+    return title.trim();
+}
+
+function generateChapterContent(words) {
+    // Generate chapter content with 1500-2000 words
+    const minWords = 1500;
+    const maxWords = 2000;
+    const targetWords = minWords + Math.floor(Math.random() * (maxWords - minWords + 1));
+    
+    let content = '';
+    let wordCount = 0;
+    
+    while (wordCount < targetWords) {
+        const sentenceLength = 5 + Math.floor(Math.random() * 10);
+        let sentence = '';
+        
+        for (let i = 0; i < sentenceLength; i++) {
+            const randomIndex = Math.floor(Math.random() * words.length);
+            const word = words[randomIndex];
+            
+            if (i === 0) {
+                sentence += word.charAt(0).toUpperCase() + word.slice(1);
+            } else {
+                sentence += ' ' + word;
+            }
+            
+            wordCount++;
+            if (wordCount >= targetWords) break;
+        }
+        
+        sentence += '. ';
+        content += sentence;
+        
+        // Add paragraph breaks occasionally
+        if (Math.random() < 0.1) {
+            content += '\n\n';
+        }
+    }
+    
+    return content;
+}
+
+// Chat with AI
+async function sendChatMessage() {
     const input = document.getElementById('chatInput');
     const message = input.value.trim();
+    
     if (!message) return;
     
+    // Add user message to chat
     addChatMessage(message, 'user');
     input.value = '';
     
-    // Simple AI response based on trained data
+    // Generate AI response
+    const response = generateAiResponse(message);
+    
+    // Add AI response to chat with a small delay to simulate thinking
     setTimeout(() => {
-        const response = generateAIResponse(message);
         addChatMessage(response, 'ai');
-    }, 500);
+    }, 1000);
 }
 
 function addChatMessage(message, sender) {
@@ -686,270 +1108,294 @@ function addChatMessage(message, sender) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-function generateAIResponse(message) {
-    const lowerMessage = message.toLowerCase();
+function generateAiResponse(message) {
+    // Simple AI response based on learned vocabulary
+    const responses = [
+        "Tôi đã học được nhiều từ các truyện của bạn và có thể tạo ra những câu chuyện mới.",
+        "Dựa trên những gì tôi đã học, tôi có thể giúp bạn viết truyện hoặc tạo truyện tự động.",
+        "Hãy cho tôi biết thêm về câu chuyện bạn muốn viết, tôi sẽ cố gắng hỗ trợ bạn.",
+        "Tôi đã phân tích nhiều truyện và hiểu được cấu trúc câu chuyện, nhân vật và tình tiết.",
+        "Bạn muốn tôi tạo một câu chuyện mới dựa trên phong cách viết của những truyện đã có?"
+    ];
     
-    // Check if AI has been trained
-    if (aiKnowledge.vocabulary.size === 0) {
-        return "Tôi chưa được huấn luyện. Hãy nhấn 'Bắt đầu huấn luyện AI' để tôi có thể học từ các truyện của bạn!";
+    // Check if message contains specific keywords
+    if (message.toLowerCase().includes('truyện') || message.toLowerCase().includes('story')) {
+        return responses[Math.floor(Math.random() * responses.length)];
     }
     
-    // Simple keyword matching
-    if (lowerMessage.includes('truyện') || lowerMessage.includes('kể')) {
-        const randomStory = aiKnowledge.stories[Math.floor(Math.random() * aiKnowledge.stories.length)];
-        if (randomStory) {
-            return `Tôi có thể kể về "${randomStory.title}". Đây là một truyện hay với ${randomStory.wordCount} từ. Bạn muốn nghe không?`;
-        }
+    if (message.toLowerCase().includes('tạo') || message.toLowerCase().includes('generate')) {
+        return "Tôi có thể tạo một câu chuyện mới với 100-150 chương. Hãy nhấn nút 'AI Tạo Truyện Mới' để bắt đầu!";
     }
     
-    if (lowerMessage.includes('bao nhiêu') && lowerMessage.includes('truyện')) {
-        return `Tôi đã học được ${aiKnowledge.stories.length} chương truyện từ ${storyHistory.length} bộ truyện khác nhau!`;
-    }
-    
-    if (lowerMessage.includes('từ vựng') || lowerMessage.includes('từ')) {
-        return `Tôi đã học được ${aiKnowledge.vocabulary.size} từ vựng từ các truyện. Từ vựng này giúp tôi hiểu và trò chuyện tốt hơn!`;
-    }
-    
-    if (lowerMessage.includes('viết') || lowerMessage.includes('sáng tác')) {
-        const randomWords = Array.from(aiKnowledge.vocabulary).slice(0, 10).join(', ');
-        return `Tôi có thể giúp bạn sáng tác! Dựa trên những gì tôi đã học, tôi biết các từ như: ${randomWords}... Bạn muốn viết về chủ đề gì?`;
-    }
-    
-    if (lowerMessage.includes('chào') || lowerMessage.includes('hello')) {
-        return `Xin chào! Tôi đã học được từ ${aiKnowledge.trainedFiles} file truyện. Tôi có thể trò chuyện về truyện, giúp bạn sáng tác, hoặc kể về những gì tôi đã học!`;
+    if (message.toLowerCase().includes('huấn luyện') || message.toLowerCase().includes('train')) {
+        return `Tôi đã được huấn luyện với ${aiKnowledge.trainedFiles} file và học được ${aiKnowledge.vocabulary.size} từ vựng.`;
     }
     
     // Default response
-    const responses = [
-        "Điều đó rất thú vị! Từ những truyện tôi đã học, tôi nghĩ...",
-        "Dựa trên kiến thức từ các truyện, tôi có thể nói rằng...",
-        "Tôi đã học được nhiều điều từ các truyện. Bạn có thể hỏi tôi về truyện, sáng tác, hoặc từ vựng!",
-        "Hmm, có thể bạn muốn nói về truyện? Tôi rất thích trò chuyện về chủ đề này!"
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
+    return "Tôi là AI hỗ trợ viết truyện. Tôi có thể giúp bạn tạo truyện mới dựa trên các truyện đã có trong thư viện.";
 }
 
-function clearChat() {
-    const chatContainer = document.getElementById('chatContainer');
-    chatContainer.innerHTML = '<div class="chat-message ai">Xin chào! Tôi đã sẵn sàng trò chuyện. Hãy huấn luyện tôi với các file truyện để tôi có thể hỗ trợ bạn tốt hơn!</div>';
-}
-
-// Save/Load AI Knowledge (using memory storage)
-function saveAiKnowledge() {
-    // Convert Set to Array for storage
-    const knowledgeData = {
-        vocabulary: Array.from(aiKnowledge.vocabulary),
-        stories: aiKnowledge.stories,
-        trainedFiles: aiKnowledge.trainedFiles
-    };
-    // In a real app, this would be saved to a persistent storage
-    console.log('AI Knowledge saved:', knowledgeData);
-}
-
-function loadAiKnowledge() {
-    // In a real app, this would load from persistent storage
-    // For now, we'll start fresh each session
-    aiKnowledge = { vocabulary: new Set(), stories: [], trainedFiles: 0 };
-}
-
+// UI Functions
 function displayHistory() {
-    const historyList = document.getElementById('historyList'); 
+    const historyList = document.getElementById('historyList');
     historyList.innerHTML = '';
     
-    if (storyHistory.length === 0) { 
-        historyList.innerHTML = '<div class="history-item">Chưa có truyện nào</div>'; 
-        return; 
+    if (storyHistory.length === 0) {
+        historyList.innerHTML = '<div class="history-item">Chưa có truyện nào.</div>';
+        return;
     }
     
     storyHistory.forEach(story => {
-        const historyItem = document.createElement('div'); 
-        historyItem.className = 'history-item';
-        const chaptersText = story.chapters.map(ch => ch.name.replace('.txt', '')).join(', ');
-        const date = new Date(story.createdTime).toLocaleString('vi-VN');
-        historyItem.innerHTML = `
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.onclick = () => viewStoryChapters(story);
+        item.innerHTML = `
             <div class="story-title">${story.storyTitle}</div>
-            <div class="story-chapter">Chương: ${chaptersText || 'Chưa có chương'}</div>
-            <div class="story-date">${date}</div>
-            <button class="btn" onclick="openStoryDetail('${story.folderId}')">📖 Xem & Thêm chương</button>
+            <div class="story-chapter">${story.chapters.length} chương</div>
+            <div class="story-date">${new Date(story.createdTime).toLocaleDateString('vi-VN')}</div>
         `;
-        historyList.appendChild(historyItem);
+        historyList.appendChild(item);
     });
 }
 
-function openStoryDetail(folderId) {
-    const story = storyHistory.find(s => s.folderId === folderId);
-    if (!story) return;
-    
-    const detailHtml = `
-        <div style="padding: 15px;">
-            <h3 style="color: #ffffff; margin-bottom: 15px;">${story.storyTitle}</h3>
-            <p style="color: rgba(255,255,255,0.8); margin-bottom: 20px;"><b>Các chương:</b> ${story.chapters.map(ch => ch.name.replace('.txt', '')).join(', ') || 'Chưa có chương'}</p>
-            <form onsubmit="addChapter(event, '${story.folderId}', '${story.storyTitle}')">
-                <div class="form-group">
-                    <input type="text" id="newChapterTitle" placeholder="Tên chương mới" required style="margin-bottom: 10px;">
-                </div>
-                <div class="form-group">
-                    <textarea id="newChapterContent" placeholder="Nội dung chương..." required style="min-height: 100px;"></textarea>
-                </div>
-                <button type="submit" class="btn success">➕ Thêm chương</button>
-                <button type="button" class="btn" onclick="loadStoryHistory().then(displayHistory)">🔙 Quay lại</button>
-            </form>
-        </div>
-    `;
-    document.getElementById('historyList').innerHTML = detailHtml;
-}
-
-async function addChapter(e, folderId, storyTitle) {
-    e.preventDefault();
-    const chapterTitle = document.getElementById('newChapterTitle').value.trim();
-    const content = document.getElementById('newChapterContent').value.trim();
-    
-    if (!chapterTitle || !content) { 
-        showStatus("Vui lòng nhập đủ thông tin!", "error"); 
-        return; 
-    }
-    
-    showLoading(true);
-    try {
-        await saveStoryContent(storyTitle, chapterTitle, content, folderId);
-        await loadStoryHistory();
-        showStatus(`Đã thêm chương "${chapterTitle}" vào truyện "${storyTitle}" thành công!`, "success");
-        displayHistory(); // Return to main view
-    } catch (error) { 
-        showStatus("Lỗi thêm chương: " + error.message, "error"); 
-    }
-    showLoading(false);
-}
-
 function displayFolders() {
-    const folderList = document.getElementById('folderList'); 
+    const folderList = document.getElementById('folderList');
+    const existingStory = document.getElementById('existingStory');
     folderList.innerHTML = '';
+    existingStory.innerHTML = '<option value="">-- Chọn truyện --</option>';
     
-    if (storyHistory.length === 0) { 
-        folderList.innerHTML = '<div class="history-item">Chưa có thư mục nào</div>'; 
-        return; 
+    if (storyHistory.length === 0) {
+        folderList.innerHTML = '<div class="history-item">Chưa có thư mục nào.</div>';
+        return;
     }
     
     storyHistory.forEach(story => {
-        const folderItem = document.createElement('div'); 
-        folderItem.className = 'history-item';
-        folderItem.innerHTML = `
-            <div class="story-title">📁 ${story.storyTitle}</div>
-            <div class="story-chapter">${story.chapters.length} file(s)</div>
-            <div class="story-date">ID: ${story.folderId.substring(0, 20)}...</div>
+        // Add to folder list
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+            <div class="story-title">${story.storyTitle}</div>
+            <div class="story-chapter">${story.chapters.length} chương</div>
         `;
-        folderList.appendChild(folderItem);
+        folderList.appendChild(item);
+        
+        // Add to existing story dropdown
+        const option = document.createElement('option');
+        option.value = story.folderId;
+        option.textContent = story.storyTitle;
+        existingStory.appendChild(option);
     });
 }
 
 function toggleStoryMode() {
     const mode = document.getElementById('storyMode').value;
-    const newGroup = document.getElementById('newStoryGroup');
-    const existingGroup = document.getElementById('existingStoryGroup');
-    const submitText = document.getElementById('submitButtonText');
-    const existingSelect = document.getElementById('existingStory');
-    
-    if (mode === 'existing') {
-        newGroup.style.display = 'none';
-        existingGroup.style.display = 'block';
-        submitText.textContent = 'Thêm Chương Mới';
-        
-        // Populate existing stories
-        existingSelect.innerHTML = '<option value="">-- Chọn truyện --</option>';
-        storyHistory.forEach(story => {
-            const option = document.createElement('option');
-            option.value = story.storyTitle;
-            option.textContent = story.storyTitle;
-            existingSelect.appendChild(option);
-        });
+    if (mode === 'new') {
+        document.getElementById('newStoryGroup').style.display = 'block';
+        document.getElementById('existingStoryGroup').style.display = 'none';
+        document.getElementById('submitButtonText').textContent = 'Lưu Truyện Mới';
     } else {
-        newGroup.style.display = 'block';
-        existingGroup.style.display = 'none';
-        submitText.textContent = 'Lưu Truyện Mới';
+        document.getElementById('newStoryGroup').style.display = 'none';
+        document.getElementById('existingStoryGroup').style.display = 'block';
+        document.getElementById('submitButtonText').textContent = 'Thêm Chương Mới';
     }
 }
 
-// Event Listeners
-document.getElementById('storyForm').addEventListener('submit', async function(e) {
+async function handleStoryFormSubmit(e) {
     e.preventDefault();
+    showLoading(true);
     
     const mode = document.getElementById('storyMode').value;
-    const storyTitle = mode === 'new' ? 
-        document.getElementById('storyTitle').value.trim() : 
-        document.getElementById('existingStory').value;
-    const chapterTitle = document.getElementById('chapterTitle').value.trim();
-    const storyContent = document.getElementById('storyContent').value.trim();
+    const storyTitle = document.getElementById('storyTitle').value;
+    const chapterTitle = document.getElementById('chapterTitle').value;
+    const storyContent = document.getElementById('storyContent').value;
     
-    if (!storyTitle || !chapterTitle || !storyContent) { 
-        showStatus('Vui lòng điền đầy đủ thông tin!', 'error'); 
-        return; 
-    }
-    
-    showLoading(true);
     try {
-        let storyFolderId = null;
-        const existingStory = storyHistory.find(story => story.storyTitle === storyTitle);
-        
-        if (existingStory) {
-            storyFolderId = existingStory.folderId;
-        } else {
+        let storyFolderId;
+        if (mode === 'new') {
             storyFolderId = await createStoryFolder(storyTitle);
+        } else {
+            storyFolderId = document.getElementById('existingStory').value;
+            if (!storyFolderId) {
+                showStatus('Vui lòng chọn một truyện có sẵn!', 'error');
+                showLoading(false);
+                return;
+            }
         }
         
         await saveStoryContent(storyTitle, chapterTitle, storyContent, storyFolderId);
-        document.getElementById('storyForm').reset();
-        toggleStoryMode(); // Reset form display
         await loadStoryHistory();
-        showStatus(`Đã lưu truyện "${storyTitle}" - Chương "${chapterTitle}" thành công!`, 'success');
-    } catch (error) { 
-        showStatus('Lỗi lưu truyện: ' + error.message, 'error'); 
+        
+        document.getElementById('storyForm').reset();
+        showStatus('Đã lưu truyện thành công!', 'success');
+    } catch (error) {
+        console.error('Error saving story:', error);
+        showStatus('Có lỗi xảy ra khi lưu truyện!', 'error');
     }
     showLoading(false);
-});
-
-// AI Training Event Listeners
-document.getElementById('trainAiButton').addEventListener('click', trainAI);
-document.getElementById('resetAiButton').addEventListener('click', resetAI);
-
-// Chat Event Listeners
-document.getElementById('sendChatButton').addEventListener('click', sendMessage);
-document.getElementById('chatInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
-});
-
-// Utility Functions
-function showLoading(show) { 
-    document.getElementById('loading').style.display = show ? 'block' : 'none'; 
 }
 
 function showStatus(message, type) {
-    const status = document.getElementById('status');
-    status.textContent = message; 
-    status.className = `status ${type}`; 
-    status.style.display = 'block';
-    setTimeout(() => { 
-        status.style.display = 'none'; 
-    }, 5000);
+    const statusEl = document.getElementById('status');
+    statusEl.textContent = message;
+    statusEl.className = `status ${type}`;
+    statusEl.style.display = 'block';
+    setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
 }
 
-// Auth Event Listeners
+function showLoading(show) {
+    document.getElementById('loading').style.display = show ? 'block' : 'none';
+}
+
+// Modal Functions
+function viewStoryChapters(story) {
+    const modal = document.getElementById('chaptersModal');
+    const title = document.getElementById('chaptersModalTitle');
+    const chapterList = document.getElementById('chapterList');
+    const chapterContent = document.getElementById('chapterContent');
+    const chapterActions = document.getElementById('chapterActions');
+    
+    title.textContent = story.storyTitle;
+    chapterList.innerHTML = '';
+    chapterContent.style.display = 'none';
+    chapterActions.style.display = 'none';
+    
+    story.chapters.forEach(chapter => {
+        const item = document.createElement('div');
+        item.className = 'chapter-item';
+        item.onclick = () => viewChapterContent(chapter, story.folderId);
+        item.textContent = chapter.name.replace('.txt', '');
+        chapterList.appendChild(item);
+    });
+    
+    modal.style.display = 'block';
+}
+
+async function viewChapterContent(chapter, folderId) {
+    const chapterContent = document.getElementById('chapterContent');
+    const chapterActions = document.getElementById('chapterActions');
+    
+    try {
+        const response = await gapi.client.drive.files.get({
+            fileId: chapter.id,
+            alt: 'media'
+        });
+        
+        chapterContent.textContent = response.body;
+        chapterContent.style.display = 'block';
+        chapterActions.style.display = 'block';
+        currentEditingChapter = { id: chapter.id, content: response.body, name: chapter.name };
+    } catch (error) {
+        console.error('Error loading chapter content:', error);
+        showStatus('Có lỗi khi tải nội dung chương!', 'error');
+    }
+}
+
+function editChapter() {
+    const chapterContent = document.getElementById('chapterContent');
+    chapterContent.contentEditable = true;
+    chapterContent.focus();
+    chapterContent.style.background = 'rgba(255, 255, 255, 0.1)';
+    chapterContent.style.border = '1px solid rgba(102, 126, 234, 0.5)';
+}
+
+async function saveChapterChanges() {
+    if (!currentEditingChapter) return;
+    
+    const chapterContent = document.getElementById('chapterContent');
+    const newContent = chapterContent.textContent;
+    
+    try {
+        await gapi.client.request({
+            path: `https://www.googleapis.com/upload/drive/v3/files/${currentEditingChapter.id}`,
+            method: 'PATCH',
+            params: { uploadType: 'media' },
+            body: newContent
+        });
+        
+        chapterContent.contentEditable = false;
+        chapterContent.style.background = 'rgba(255, 255, 255, 0.05)';
+        chapterContent.style.border = 'none';
+        currentEditingChapter.content = newContent;
+        
+        showStatus('Đã lưu thay đổi thành công!', 'success');
+    } catch (error) {
+        console.error('Error saving chapter changes:', error);
+        showStatus('Có lỗi khi lưu thay đổi!', 'error');
+    }
+}
+
+function cancelEdit() {
+    const chapterContent = document.getElementById('chapterContent');
+    chapterContent.textContent = currentEditingChapter.content;
+    chapterContent.contentEditable = false;
+    chapterContent.style.background = 'rgba(255, 255, 255, 0.05)';
+    chapterContent.style.border = 'none';
+}
+
+async function deleteChapter() {
+    if (!currentEditingChapter || !confirm('Bạn có chắc chắn muốn xóa chương này?')) return;
+    
+    try {
+        await gapi.client.drive.files.delete({ fileId: currentEditingChapter.id });
+        closeModal('chaptersModal');
+        await loadStoryHistory();
+        showStatus('Đã xóa chương thành công!', 'success');
+    } catch (error) {
+        console.error('Error deleting chapter:', error);
+        showStatus('Có lỗi khi xóa chương!', 'error');
+    }
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+    currentEditingChapter = null;
+}
+
+function viewAiStories() {
+    const modal = document.getElementById('aiStoriesModal');
+    const aiStoryList = document.getElementById('aiStoryList');
+    
+    aiStoryList.innerHTML = '';
+    
+    if (aiGeneratedStories.length === 0) {
+        aiStoryList.innerHTML = '<div class="history-item">Chưa có truyện nào được AI tạo.</div>';
+    } else {
+        aiGeneratedStories.forEach(story => {
+            const item = document.createElement('div');
+            item.className = 'ai-story-item';
+            item.onclick = () => {
+                closeModal('aiStoriesModal');
+                viewStoryChapters(story);
+            };
+            item.innerHTML = `
+                <div class="ai-story-title">${story.storyTitle}</div>
+                <div class="ai-story-info">${story.chapters.length} chương - ${new Date(story.createdTime).toLocaleDateString('vi-VN')}</div>
+            `;
+            aiStoryList.appendChild(item);
+        });
+    }
+    
+    modal.style.display = 'block';
+}
+
+// Event Listeners
 document.getElementById('authorizeButton').addEventListener('click', handleAuthClick);
 document.getElementById('signoutButton').addEventListener('click', handleSignoutClick);
-
-// Initialize app when page loads
-window.addEventListener('load', function() { 
-    if (CLIENT_ID && API_KEY) { 
-        setTimeout(() => { 
-            initializeGapi(); 
-            initializeGis(); 
-        }, 1000); 
-    } 
+document.getElementById('storyForm').addEventListener('submit', handleStoryFormSubmit);
+document.getElementById('trainAiButton').addEventListener('click', trainAI);
+document.getElementById('resetAiButton').addEventListener('click', resetAI);
+document.getElementById('generateStoryButton').addEventListener('click', generateStory);
+document.getElementById('viewAiStoriesButton').addEventListener('click', viewAiStories);
+document.getElementById('sendChatButton').addEventListener('click', sendChatMessage);
+document.getElementById('chatInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendChatMessage();
 });
 
-// Prevent zoom on input focus (iOS)
-document.addEventListener('touchstart', function() {}, true);
+// Initialize the app
+window.onload = () => {
+    initializeGapi();
+    initializeGis();
+};
 </script>
 </body>
 </html>
