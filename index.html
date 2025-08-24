@@ -511,7 +511,7 @@
                         <h2>📖 AI Tạo Truyện Tự Động</h2>
                         
                         <div class="adult-warning">
-                            ⚠️ Cảnh báo: AI sẽ tạo nội dung theo ngôi thứ nhất.
+                            ⚠️ Cảnh báo: AI sẽ tạo nội dung theo ngôi thứ nhất và có thể chứa nội dung 18+.
                         </div>
                         
                         <div class="ai-story-controls">
@@ -624,64 +624,287 @@ let aiKnowledge = {
     dialogues: [],
     contexts: [],
     characterRelationships: new Set(),
-    narrativeStyles: new Set()
+    narrativeStyles: new Set(),
+    transitionWords: new Set(),
+    psychologicalTerms: new Set(),
+    descriptivePatterns: new Set(),
+    metaphors: new Set(),
+    adultTerms: new Set(), // Bổ sung từ vựng 18+
+    generationHistory: [],
+    qualityMetrics: {
+        complexityThreshold: 0.6,
+        coherenceThreshold: 0.7,
+        emotionThreshold: 0.65,
+        targetWordCount: 3500
+    }
 };
 let aiGeneratedStories = [];
 let currentEditingChapter = null;
 
-// Từ vựng và cấu trúc chuyên biệt cho chủ đề bố chồng con dâu
+// Từ vựng và cấu trúc chuyên biệt - MỞ RỘNG VỚI TỪ NGỮ 18+
 const specializedVocabulary = {
-    familyRelations: ['bố chồng', 'con dâu', 'chồng', 'vợ', 'gia đình', 'họ hàng', 'mối quan hệ', 'phép tắc', 'ranh giới'],
-    emotions: ['căng thẳng', 'bối rối', 'ghen tị', 'tò mò', 'lo lắng', 'thèm muốn', 'khao khát', 'tội lỗi', 'xấu hổ', 'kích thích', 'dục vọng', 'bất an'],
-    observations: ['quan sát', 'nhìn trộm', 'theo dõi', 'chú ý', 'phát hiện', 'để ý', 'nhận ra', 'thấy được', 'cảm nhận', 'nghe được'],
-    innerThoughts: ['tôi nghĩ', 'trong tâm trí tôi', 'tôi tự hỏi', 'có lẽ', 'liệu rằng', 'tôi không thể tin được', 'tôi cảm thấy', 'điều này khiến tôi'],
-    secretive: ['bí mật', 'giấu kín', 'che giấu', 'lén lút', 'thầm kín', 'kín đáo', 'âm thầm', 'không ai biết', 'chỉ mình tôi'],
-    physicalDescriptions: ['đôi mắt', 'nụ cười', 'cử chỉ', 'ánh mắt', 'cách di chuyển', 'giọng nói', 'cách cười', 'biểu cảm'],
-    situations: ['bữa cơm gia đình', 'khi vợ đi vắng', 'cuối tuần', 'những buổi tối', 'lúc một mình', 'khi không ai chú ý'],
-    adultElements: ['ham muốn', 'dục vọng', 'khát khao', 'bí mật cấm kị', 'ranh giới mờ nhạt', 'cám dỗ', 'sự quyến rũ', 'không thể cưỡng lại']
+    familyRelations: ['bố chồng', 'con dâu', 'chồng', 'vợ', 'gia đình', 'họ hàng', 'mối quan hệ', 'phép tắc', 'ranh giới', 
+                     'quyền lực gia trưởng', 'vai vế', 'tôn ti trật tự', 'nề nếp gia đình', 'quan hệ huyết thống'],
+    emotions: ['căng thẳng', 'bối rối', 'ghen tị', 'tò mò', 'lo lắng', 'thèm muốn', 'khao khát', 'tội lỗi', 'xấu hổ', 
+              'kích thích', 'dục vọng', 'bất an', 'day dứt', 'dằn vặt', 'giằng xé', 'ngờ vực', 'ám ảnh', 'khắc khoải',
+              'xót xa', 'đau đớn', 'tê tái', 'ngột ngạt', 'bức bối', 'rối bời', 'hoang mang'],
+    observations: ['quan sát', 'nhìn trộm', 'theo dõi', 'chú ý', 'phát hiện', 'để ý', 'nhận ra', 'thấy được', 'cảm nhận', 
+                  'nghe được', 'khám phá', 'vô tình chứng kiến', 'bắt gặp', 'nhận thấy', 'thấu hiểu', 'thấu cảm'],
+    innerThoughts: ['tôi nghĩ', 'trong tâm trí tôi', 'tôi tự hỏi', 'có lẽ', 'liệu rằng', 'tôi không thể tin được', 
+                   'tôi cảm thấy', 'điều này khiến tôi', 'tôi nhận ra', 'tôi chợt hiểu', 'tôi ngỡ ngàng', 
+                   'tôi giật mình nhận thấy', 'tôi bàng hoàng', 'tôi sửng sốt'],
+    secretive: ['bí mật', 'giấu kín', 'che giấu', 'lén lút', 'thầm kín', 'kín đáo', 'âm thầm', 'không ai biết', 
+               'chỉ mình tôi', 'im lặng', 'nén chặt', 'giữ kín trong lòng', 'không dám thổ lộ'],
+    physicalDescriptions: ['đôi mắt', 'nụ cười', 'cử chỉ', 'ánh mắt', 'cách di chuyển', 'giọng nói', 'cách cười', 
+                          'biểu cảm', 'dáng vẻ', 'bờ môi', 'mái tóc', 'bàn tay', 'vòng eo', 'cử động', 'hơi thở',
+                          'nhịp tim', 'làn da', 'nét mặt', 'cơ thể', 'vòng một', 'vòng ba', 'vóc dáng', 'đường cong'],
+    situations: ['bữa cơm gia đình', 'khi vợ đi vắng', 'cuối tuần', 'những buổi tối', 'lúc một mình', 'khi không ai chú ý',
+                'đêm khuya', 'sáng sớm', 'khi tắm rửa', 'lúc thay đồ', 'khi uống rượu', 'trong phòng ngủ', 
+                'ngoài vườn', 'trong bếp', 'trên ghế sofa', 'trong phòng tắm', 'khi say rượu'],
+    adultElements: ['ham muốn', 'dục vọng', 'khát khao', 'bí mật cấm kị', 'ranh giới mờ nhạt', 'cám dỗ', 'sự quyến rũ', 
+                   'không thể cưỡng lại', 'khoái cảm', 'say đắm', 'mê hoặc', 'thân thể', 'gợi cảm', 'quyến rũ',
+                   'dục tính', 'kích động', 'mơn trớn', 'vuốt ve', 'thân mật', 'gần gũi', 'sờ soạng', 'ôm ấp',
+                   'hôn', 'hôn nồng cháy', 'ân ái', 'làm tình', 'quan hệ', 'yêu đương', 'âm đạo', 'dương vật',
+                   'ngực', 'vú', 'nhũ hoa', 'hông', 'mông', 'đùi', 'cặp đùi', 'bộ phận sinh dục', 'kích thích',
+                   'khoái lạc', 'cực khoái', 'lên đỉnh', 'thăng hoa', 'sung sướng', 'đam mê', 'nứng', 'cương',
+                   'ướt át', 'ẩm ướt', 'se khít', 'căng tròn', 'nở nang', 'quyến rũ', 'gợi tình', 'dâm dục'],
+    psychologicalTerms: ['vô thức', 'tiềm thức', 'bản năng', 'ức chế', 'dồn nén', 'phòng thủ', 'phủ nhận', 'chiếu diễn',
+                        'đồng nhất hóa', 'mặc cảm', 'mâu thuẫn nội tâm', 'xung đột tâm lý', 'ámm ảnh', 'dằn vặt'],
+    transitionWords: ['tuy nhiên', 'bên cạnh đó', 'ngoài ra', 'hơn nữa', 'đặc biệt là', 'thêm vào đó', 'mặt khác',
+                     'ngược lại', 'thực tế thì', 'quả thật', 'chắc chắn', 'có lẽ', 'dường như', 'rõ ràng là',
+                     'cuối cùng thì', 'kết quả là', 'vì vậy', 'do đó', 'cho nên', 'đồng thời']
 };
 
-// Cấu trúc câu chuyển biệt cho ngôi thứ nhất của người chồng
+// CẢI TIẾN: Cấu trúc câu phức tạp hơn với nhiều tầng nghĩa
 const narrativePatterns = {
     observation: [
-        "Tôi để ý thấy {situation} giữa bố và {wife}.",
-        "Trong {timeFrame}, tôi nhận ra {observation} về mối quan hệ của họ.",
-        "Tôi không thể không chú ý đến {physicalDescription} khi {situation}.",
-        "Có điều gì đó trong {observation} khiến tôi {emotion}.",
-        "Tôi thấy {wife} và bố {action} một cách {manner}."
+        "Tôi để ý thấy {situation} giữa bố và {wife}, {detailed_observation} khiến tôi {emotion} một cách {intensity}.",
+        "Trong {timeFrame}, tôi nhận ra {observation} về mối quan hệ của họ, {specific_detail} làm tôi {emotional_response}.",
+        "Tôi không thể không chú ý đến {physicalDescription} khi {situation}, {additional_detail} càng khiến tôi {feeling}.",
+        "Có điều gì đó trong {observation} khiến tôi {emotion}, {psychological_insight} cứ ám ảnh tâm trí tôi.",
+        "Tôi thấy {wife} và bố {action} một cách {manner}, {contextual_detail} khiến bầu không khí trở nên {atmosphere}."
     ],
     innerMonologue: [
-        "Trong tâm trí tôi, {innerThought} về những gì đang diễn ra.",
-        "Tôi tự hỏi liệu {question} có phải là điều tôi nghĩ không.",
-        "Cảm giác {emotion} cứ ám ảnh tôi khi {situation}.",
-        "Tôi không thể ngừng nghĩ về {observation} mà tôi đã thấy.",
-        "Điều này khiến tôi {emotion} một cách {intensity}.",
-        "Có lẽ tôi đang {doubt} nhưng {feeling} này không thể phủ nhận."
+        "Trong tâm trí tôi, {innerThought} về những gì đang diễn ra, {psychological_analysis} khiến tôi {emotional_state}.",
+        "Tôi tự hỏi liệu {question} có phải là điều tôi nghĩ không, {self_reflection} làm tôi {resulting_emotion}.",
+        "Cảm giác {emotion} cứ ám ảnh tôi khi {situation}, {deep_thought} cứ vang vọng trong đầu.",
+        "Tôi không thể ngừng nghĩ về {observation} mà tôi đã thấy, {interpretation} cứ xoáy sâu vào tâm trí.",
+        "Điều này khiến tôi {emotion} một cách {intensity}, {introspection} khiến tôi nhận ra {realization}.",
+        "Có lẽ tôi đang {doubt} nhưng {feeling} này không thể phủ nhận, {psychological_awareness} ngày càng rõ rệt."
     ],
     conflict: [
-        "Tôi biết mình không nên {action} nhưng {desire} quá mạnh.",
-        "Ranh giới giữa {rightWrong} ngày càng {blur}.",
-        "Tôi cảm thấy {guilty} vì {thought} về {situation}.",
-        "Làm thế nào để tôi có thể {cope} với {feeling} này?",
-        "Mỗi lần {trigger}, tôi lại {reaction}."
+        "Tôi biết mình không nên {action} nhưng {desire} quá mạnh, {internal_struggle} khiến tôi {resulting_state}.",
+        "Ranh giới giữa {rightWrong} ngày càng {blur}, {moral_dilemma} làm tôi {emotional_turmoil}.",
+        "Tôi cảm thấy {guilty} vì {thought} về {situation}, {self_judgment} cứ dày vò tâm can tôi.",
+        "Làm thế nào để tôi có thể {cope} với {feeling} này? {existential_question} cứ treo lơ lửng không lời giải.",
+        "Mỗi lần {trigger}, tôi lại {reaction}, {pattern_analysis} khiến tôi nhận ra {self_discovery}."
     ],
     escalation: [
-        "Những {timeFrame} gần đây, {situation} ngày càng {intensity}.",
-        "Tôi nhận ra {realization} về bản thân mình.",
-        "Không thể phủ nhận rằng {truth} đang xảy ra.",
-        "Cách {wife} {action} với bố khiến tôi {emotion}.",
-        "Tôi bắt đầu {change} cách nhìn về {relationship}."
+        "Những {timeFrame} gần đây, {situation} ngày càng {intensity}, {development_detail} khiến tôi {emotional_change}.",
+        "Tôi nhận ra {realization} về bản thân mình, {personal_insight} làm thay đổi {perspective_change}.",
+        "Không thể phủ nhận rằng {truth} đang xảy ra, {evidence} ngày càng {increasing_evidence}.",
+        "Cách {wife} {action} với bố khiến tôi {emotion}, {behavioral_observation} cho thấy {implication}.",
+        "Tôi bắt đầu {change} cách nhìn về {relationship}, {transformative_thought} dần hình thành trong tôi."
+    ],
+    // THÊM MỚI: Các loại đoạn văn chuyên sâu
+    psychological: [
+        "Trong sâu thẳm tâm trí, {psychological_insight} khiến tôi {emotional_response}, {deep_analysis} hé lộ {revelation}.",
+        "Nhận thức của tôi về {situation} dần thay đổi, {cognitive_shift} mang đến {new_perspective}.",
+        "Bản năng mách bảo tôi rằng {intuitive_feeling}, {subconscious_awareness} dần trỗi dậy mạnh mẽ.",
+        "Tâm lý tôi rơi vào trạng thái {psychological_state}, {internal_process} diễn ra phức tạp khôn lường."
+    ],
+    reflective: [
+        "Nhìn lại {time_period}, tôi nhận ra {retrospective_insight}, {hindsight} mang đến {lesson_learned}.",
+        "Ký ức về {past_event} ùa về, {memory_detail} khiến tôi {emotional_reaction}.",
+        "Nếu ngày đó tôi {alternative_action}, có lẽ {hypothetical_outcome} đã không xảy ra.",
+        "Suy ngẫm về {life_aspect}, tôi chợt hiểu {philosophical_understanding} về bản chất con người."
+    ],
+    descriptive: [
+        "Không gian xung quanh {environment_description}, {sensory_detail} tác động lên {emotional_response} của tôi.",
+        "Ánh mắt {eye_description} của {character} như {metaphorical_comparison}, khiến tôi {resulting_feeling}.",
+        "Cử chỉ {gesture_description} thoáng qua nhưng {significance} lại in sâu trong tâm trí tôi.",
+        "Bầu không khí {atmosphere_description} bao trùm, {environmental_factor} góp phần tạo nên {overall_mood}."
+    ],
+    // THÊM: Các đoạn văn 18+
+    adult: [
+        "Tôi không thể rời mắt khỏi {physical_description} của cô ấy, {adult_observation} khiến tôi {intense_emotion}.",
+        "Cảm giác {physical_sensation} lan tỏa khắp cơ thể tôi khi {intimate_situation}, {bodily_reaction} không thể kiểm soát.",
+        "Mỗi lần {intimate_action}, tôi lại {physical_response} và {emotional_response} một cách {intensity}.",
+        "Không gian giữa chúng tôi tràn ngập {atmosphere_description}, {sensory_detail} kích thích mọi giác quan.",
+        "Tôi cảm nhận được {physical_detail} của cô ấy qua {clothing_description}, {imagination_detail} khiến tôi {arousal_state}."
     ]
 };
 
-// Các yếu tố tình tiết chuyên biệt
+// CẢI TIẾN: Các yếu tố tình tiết phong phú hơn
 const plotElements = {
-    triggers: ['khi vợ tôi cúi xuống', 'lúc bố giúp con dâu', 'những cử chỉ thân mật', 'ánh mắt trao đổi', 'tiếng cười nhẹ', 'cách họ đứng gần nhau'],
-    timeFrames: ['những ngày', 'buổi tối', 'cuối tuần', 'khi tôi về nhà', 'lúc ăn cơm', 'những lúc yên tĩnh'],
-    locations: ['trong nhà bếp', 'ở phòng khách', 'ngoài sân', 'trên cầu thang', 'trong phòng tắm', 'ở ban công'],
-    discoveries: ['tôi phát hiện ra', 'tôi tình cờ thấy', 'tôi nghe được', 'tôi nhận ra', 'tôi không thể tin'],
-    consequences: ['tôi mất ngủ', 'tôi không thể tập trung', 'tôi bắt đầu tránh', 'tôi càng quan sát nhiều hơn', 'tôi cảm thấy bối rối']
+    triggers: ['khi vợ tôi cúi xuống', 'lúc bố giúp con dâu', 'những cử chỉ thân mật', 'ánh mắt trao đổi', 
+              'tiếng cười nhẹ', 'cách họ đứng gần nhau', 'khi vai chạm vai', 'lúc tay vô tình chạm nhau',
+              'khi chia sẻ chiếc khăn', 'lúc uống chung ly nước', 'khi điều chỉnh áo cho nhau'],
+    timeFrames: ['những ngày', 'buổi tối', 'cuối tuần', 'khi tôi về nhà', 'lúc ăn cơm', 'những lúc yên tĩnh',
+                'đêm khuya thanh vắng', 'sáng sớm tinh mơ', 'những chiều mưa', 'khi trời chập choạng tối'],
+    locations: ['trong nhà bếp', 'ở phòng khách', 'ngoài sân', 'trên cầu thang', 'trong phòng tắm', 'ở ban công',
+               'trong phòng ngủ', 'ngoài vườn sau', 'trên ghế sofa', 'quanh bàn ăn', 'dưới hiên nhà'],
+    discoveries: ['tôi phát hiện ra', 'tôi tình cờ thấy', 'tôi nghe được', 'tôi nhận ra', 'tôi không thể tin',
+                 'tôi vô tình chứng kiến', 'tôi bắt gặp', 'tôi khám phá ra', 'tôi vô tình nhìn thấy'],
+    consequences: ['tôi mất ngủ', 'tôi không thể tập trung', 'tôi bắt đầu tránh', 'tôi càng quan sát nhiều hơn',
+                  'tôi cảm thấy bối rối', 'tôi rơi vào hoang mang', 'tâm trí tôi rối bời', 'cảm xúc tôi giằng xé',
+                  'tôi tìm cách lảng tránh', 'tôi cố gắng phớt lờ', 'tôi không ngừng suy diễn']
 };
+
+// HÀM TÍNH ĐIỂM CHẤT LƯỢNG VĂN BẢN
+function calculateQualityMetrics(content) {
+    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const words = content.split(/\s+/).filter(w => w.length > 0);
+    
+    // Tính điểm phức tạp (dựa trên độ dài câu, từ vựng đa dạng)
+    const avgSentenceLength = words.length / sentences.length;
+    const uniqueWords = new Set(words.map(w => w.toLowerCase()));
+    const lexicalDiversity = uniqueWords.size / words.length;
+    const complexityScore = (avgSentenceLength / 20 * 0.4) + (lexicalDiversity * 0.6);
+    
+    // Tính điểm mạch lạc (dựa trên từ nối và liên kết)
+    const transitionWordsCount = words.filter(w => 
+        specializedVocabulary.transitionWords.includes(w.toLowerCase())).length;
+    const coherenceScore = Math.min(1, transitionWordsCount / (sentences.length * 0.5));
+    
+    // Tính điểm cảm xúc (dựa trên từ vựng cảm xúc)
+    const emotionWordsCount = words.filter(w => 
+        specializedVocabulary.emotions.includes(w.toLowerCase()) || 
+        specializedVocabulary.psychologicalTerms.includes(w.toLowerCase())).length;
+    const emotionScore = Math.min(1, emotionWordsCount / (words.length * 0.1));
+    
+    // Tính điểm độ dài
+    const lengthScore = Math.min(1, words.length / aiKnowledge.qualityMetrics.targetWordCount);
+    
+    return {
+        complexity: Math.round(complexityScore * 100) / 100,
+        coherence: Math.round(coherenceScore * 100) / 100,
+        emotion: Math.round(emotionScore * 100) / 100,
+        length: Math.round(lengthScore * 100) / 100,
+        wordCount: words.length,
+        sentenceCount: sentences.length
+    };
+}
+
+// HÀM ĐÁNH GIÁ VÀ CẢI THIỆN CHẤT LƯỢNG
+function evaluateAndImproveQuality(metrics, content) {
+    let improvedContent = content;
+    
+    // Nếu điểm phức tạp thấp, thêm câu phức tạp hơn
+    if (metrics.complexity < aiKnowledge.qualityMetrics.complexityThreshold) {
+        const complexSentences = Array.from(aiKnowledge.sentenceStructures)
+            .filter(s => s.split(' ').length > 15);
+        if (complexSentences.length > 0) {
+            const randomComplex = complexSentences[Math.floor(Math.random() * complexSentences.length)];
+            improvedContent += " " + adaptLearnedSentence(randomComplex);
+        }
+    }
+    
+    // Nếu điểm mạch lạc thấp, thêm từ chuyển tiếp
+    if (metrics.coherence < aiKnowledge.qualityMetrics.coherenceThreshold) {
+        const transitions = Array.from(specializedVocabulary.transitionWords);
+        const transition = transitions[Math.floor(Math.random() * transitions.length)];
+        improvedContent = improvedContent.replace(/\. ([A-Z])/g, `. ${transition}, $1`);
+    }
+    
+    // Nếu điểm cảm xúc thấp, thêm từ ngữ cảm xúc
+    if (metrics.emotion < aiKnowledge.qualityMetrics.emotionThreshold) {
+        const emotions = Array.from(specializedVocabulary.emotions);
+        const emotion = emotions[Math.floor(Math.random() * emotions.length)];
+        const emotionalPhrase = `Tôi cảm thấy ${emotion} một cách sâu sắc.`;
+        improvedContent += " " + emotionalPhrase;
+    }
+    
+    // Nếu độ dài chưa đạt, thêm nội dung mô tả
+    if (metrics.wordCount < aiKnowledge.qualityMetrics.targetWordCount * 0.9) {
+        const additionalContent = generateAdditionalContent();
+        improvedContent += " " + additionalContent;
+    }
+    
+    return improvedContent;
+}
+
+// HÀM TẠO NỘI DUNG BỔ SUNG
+function generateAdditionalContent() {
+    const contentTypes = ['observation', 'reflection', 'description', 'memory', 'adult'];
+    const selectedType = contentTypes[Math.floor(Math.random() * contentTypes.length)];
+    
+    switch(selectedType) {
+        case 'observation':
+            return generateDetailedObservation();
+        case 'reflection':
+            return generateInnerReflection();
+        case 'description':
+            return generateEnvironmentDescription();
+        case 'memory':
+            return generateMemoryRecall();
+        case 'adult':
+            return generateAdultContent();
+    }
+}
+
+// CÁC HÀM TẠO NỘI DUNG BỔ SUNG CHI TIẾT
+function generateDetailedObservation() {
+    const templates = [
+        "Tôi quan sát thấy {detailed_observation}, {specific_detail} khiến tôi {emotional_response}.",
+        "Không thể bỏ qua {visual_detail}, {movement_description} thu hút sự chú ý của tôi.",
+        "Ánh mắt {character} {eye_expression}, {gaze_interpretation} khiến tôi {resulting_feeling}."
+    ];
+    
+    let content = getRandomElement(templates);
+    content = replacePlaceholders(content);
+    return content;
+}
+
+function generateInnerReflection() {
+    const templates = [
+        "Suy nghĩ về {situation}, tôi nhận ra {personal_insight} về bản thân.",
+        "Tự vấn lương tâm, tôi thấy {self_realization} trong cách ứng xử của mình.",
+        "Trạng thái nội tâm hiện tại của tôi là {emotional_state}, {self_analysis} giúp tôi hiểu rõ hơn."
+    ];
+    
+    let content = getRandomElement(templates);
+    content = replacePlaceholders(content);
+    return content;
+}
+
+function generateEnvironmentDescription() {
+    const templates = [
+        "Không gian xung quanh {environment_description}, {sensory_detail} góp phần tạo nên {atmosphere}.",
+        "Bầu không khí trong phòng {room_atmosphere}, {environmental_factor} ảnh hưởng đến tâm trạng tôi.",
+        "Ánh sáng {light_description} chiếu qua {window_position}, tạo nên {light_effect} khiến cảnh vật trở nên {visual_impact}."
+    ];
+    
+    let content = getRandomElement(templates);
+    content = replacePlaceholders(content);
+    return content;
+}
+
+function generateMemoryRecall() {
+    const templates = [
+        "Ký ức về {past_event} ùa về, {memory_detail} khiến tôi {emotional_response}.",
+        "Nhớ lại {time_in_past}, tôi chợt nhận ra {retrospective_insight} về cuộc sống.",
+        "Hồi tưởng về {previous_occasion}, {comparison_to_present} làm tôi {resulting_feeling}."
+    ];
+    
+    let content = getRandomElement(templates);
+    content = replacePlaceholders(content);
+    return content;
+}
+
+function generateAdultContent() {
+    const templates = [
+        "Cảm giác {physical_sensation} lan tỏa khắp cơ thể khi {intimate_situation}, {bodily_reaction} không thể kiềm chế.",
+        "Tôi không thể rời mắt khỏi {physical_description} của cô ấy, {adult_observation} khiến tôi {intense_emotion}.",
+        "Mỗi lần {intimate_action}, tôi lại {physical_response} và {emotional_response} một cách {intensity}.",
+        "Không gian giữa chúng tôi tràn ngập {atmosphere_description}, {sensory_detail} kích thích mọi giác quan.",
+        "Tôi cảm nhận được {physical_detail} của cô ấy qua {clothing_description}, {imagination_detail} khiến tôi {arousal_state}."
+    ];
+    
+    let content = getRandomElement(templates);
+    content = replacePlaceholders(content);
+    return content;
+}
 
 // Initialize Google API
 async function initializeGapi() {
@@ -739,7 +962,6 @@ async function initializeApp() {
     await createMainFolder(); 
     await loadStoryHistory();
     await loadAiKnowledge();
-    await loadAiGeneratedStories();
     updateAiStats();
     document.getElementById('mainApp').style.display = 'block';
     showStatus('Khởi tạo ứng dụng thành công!', 'success');
@@ -761,56 +983,24 @@ async function createMainFolder() {
         });
         mainFolderId = folder.result.id;
     }
-    
-    // Create AI Stories folder if it doesn't exist
-    const aiFolderName = 'AI_Generated_Stories';
-    const aiResponse = await gapi.client.drive.files.list({
-        q: `name='${aiFolderName}' and mimeType='application/vnd.google-apps.folder' and '${mainFolderId}' in parents and trashed=false`,
-        fields: 'files(id, name)'
-    });
-    if (aiResponse.result.files.length === 0) {
-        const aiFolder = await gapi.client.drive.files.create({ 
-            resource: {
-                name: aiFolderName, 
-                mimeType: 'application/vnd.google-apps.folder', 
-                parents: [mainFolderId]
-            }, 
-            fields: 'id' 
-        });
-    }
 }
 
-async function createStoryFolder(storyTitle, isAiGenerated = false) {
-    let parentId = mainFolderId;
-    
-    if (isAiGenerated) {
-        // Find AI Stories folder
-        const aiFolderName = 'AI_Generated_Stories';
-        const response = await gapi.client.drive.files.list({
-            q: `name='${aiFolderName}' and mimeType='application/vnd.google-apps.folder' and '${mainFolderId}' in parents and trashed=false`,
-            fields: 'files(id, name)'
-        });
-        if (response.result.files.length > 0) {
-            parentId = response.result.files[0].id;
-        }
-    }
-    
+async function createStoryFolder(storyTitle) {
     const folder = await gapi.client.drive.files.create({
         resource: { 
             name: storyTitle, 
             mimeType: 'application/vnd.google-apps.folder', 
-            parents: [parentId] 
+            parents: [mainFolderId] 
         }, 
         fields: 'id'
     });
     return folder.result.id;
 }
 
-async function saveStoryContent(storyTitle, chapterTitle, content, storyFolderId, isAiGenerated = false) {
+async function saveStoryContent(storyTitle, chapterTitle, content, storyFolderId) {
     const fileMetadata = { 
         name: `${chapterTitle}.txt`, 
-        parents: [storyFolderId],
-        description: isAiGenerated ? "AI-Generated" : "User-Created"
+        parents: [storyFolderId]
     };
     
     await gapi.client.request({
@@ -834,62 +1024,22 @@ async function loadStoryHistory() {
     storyHistory = [];
     
     for (let folder of folders) {
-        if (folder.name === 'AI_Generated_Stories') continue;
-        
         const filesResponse = await gapi.client.drive.files.list({
             q: `'${folder.id}' in parents and trashed=false`,
-            fields: 'files(id, name, createdTime, description)'
+            fields: 'files(id, name, createdTime)'
         });
         storyHistory.push({ 
             storyTitle: folder.name, 
             folderId: folder.id, 
             createdTime: folder.createdTime, 
-            chapters: filesResponse.result.files,
-            isAiGenerated: false
+            chapters: filesResponse.result.files
         });
     }
     displayHistory(); 
     displayFolders();
 }
 
-async function loadAiGeneratedStories() {
-    const aiFolderName = 'AI_Generated_Stories';
-    const response = await gapi.client.drive.files.list({
-        q: `name='${aiFolderName}' and mimeType='application/vnd.google-apps.folder' and '${mainFolderId}' in parents and trashed=false`,
-        fields: 'files(id, name)'
-    });
-    
-    if (response.result.files.length === 0) {
-        aiGeneratedStories = [];
-        return;
-    }
-    
-    const aiFolderId = response.result.files[0].id;
-    const aiFoldersResponse = await gapi.client.drive.files.list({
-        q: `'${aiFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-        fields: 'files(id, name, createdTime)', 
-        orderBy: 'createdTime desc'
-    });
-    
-    const aiFolders = aiFoldersResponse.result.files;
-    aiGeneratedStories = [];
-    
-    for (let folder of aiFolders) {
-        const filesResponse = await gapi.client.drive.files.list({
-            q: `'${folder.id}' in parents and trashed=false`,
-            fields: 'files(id, name, createdTime, description)'
-        });
-        aiGeneratedStories.push({ 
-            storyTitle: folder.name, 
-            folderId: folder.id, 
-            createdTime: folder.createdTime, 
-            chapters: filesResponse.result.files,
-            isAiGenerated: true
-        });
-    }
-}
-
-// AI Training Functions - CẢI TIẾN CHO HỌC SÂUHƠN
+// HÀM HUẤN LUYỆN AI NÂNG CAO
 async function trainAI() {
     showLoading(true);
     showStatus('Đang bắt đầu huấn luyện AI chuyên sâu...', 'success');
@@ -914,7 +1064,7 @@ async function trainAI() {
             });
             
             const content = response.body;
-            await deepProcessContent(content, file.storyTitle, file.name);
+            await advancedContentProcessing(content, file.storyTitle, file.name);
             processedFiles++;
             
             // Update progress
@@ -935,8 +1085,8 @@ async function trainAI() {
     showStatus(`Huấn luyện hoàn thành! Đã xử lý ${processedFiles} file với học sâu.`, 'success');
 }
 
-// HÀM HỌC SÂU - PHÂN TÍCH CHUYÊN SÂU NỘI DUNG
-async function deepProcessContent(content, storyTitle, fileName) {
+// HÀM XỬ LÝ NỘI DUNG NÂNG CAO
+async function advancedContentProcessing(content, storyTitle, fileName) {
     const sentences = content.split(/[.!?]+/).filter(s => s.length > 5);
     const paragraphs = content.split(/\n\s*\n/).filter(p => p.length > 10);
     
@@ -949,12 +1099,37 @@ async function deepProcessContent(content, storyTitle, fileName) {
         words.forEach(word => {
             if (word.length > 2) {
                 aiKnowledge.vocabulary.add(word);
+                
+                // Học từ chuyển tiếp
+                if (specializedVocabulary.transitionWords.includes(word)) {
+                    aiKnowledge.transitionWords.add(word);
+                }
+                
+                // Học từ tâm lý
+                if (specializedVocabulary.psychologicalTerms.includes(word)) {
+                    aiKnowledge.psychologicalTerms.add(word);
+                }
+                
+                // Học từ ngữ 18+
+                if (specializedVocabulary.adultElements.includes(word)) {
+                    aiKnowledge.adultTerms.add(word);
+                }
             }
         });
         
-        // Học cấu trúc câu phức tạp
-        if (sentence.match(/tôi (cảm thấy|nghĩ|thấy|nhận ra|để ý)/i)) {
+        // Học cấu trúc câu phức tạp (câu dài, nhiều mệnh đề)
+        if (sentence.split(' ').length > 12) {
             aiKnowledge.sentenceStructures.add(sentence.trim());
+        }
+        
+        // Học pattern mô tả
+        if (sentence.match(/(màu|sắc|ánh|sáng|bóng|tối|âm thanh|tiếng|mùi|hương|vị|cảm giác)/i)) {
+            aiKnowledge.descriptivePatterns.add(sentence.trim());
+        }
+        
+        // Học ẩn dụ và so sánh
+        if (sentence.match(/(như|tựa|giống|như là|như thể|tựa như)/i)) {
+            aiKnowledge.metaphors.add(sentence.trim());
         }
         
         // Phát hiện diễn biến tình tiết
@@ -963,7 +1138,7 @@ async function deepProcessContent(content, storyTitle, fileName) {
         }
         
         // Học pattern cảm xúc và tâm lý
-        if (sentence.match(/(căng thẳng|lo lắng|bối rối|kích thích|khao khát|tội lỗi|không thể|phải chăng)/i)) {
+        if (sentence.match(/(căng thẳng|lo lắng|bối rối|kích thích|khao khát|tội lỗi|không thể|phải chăng|day dứt|dằn vặt)/i)) {
             aiKnowledge.emotionalPatterns.add(sentence.trim());
         }
         
@@ -995,29 +1170,26 @@ async function deepProcessContent(content, storyTitle, fileName) {
     
     // Phân tích paragraph để học cấu trúc dài hơn
     paragraphs.forEach(paragraph => {
-        if (paragraph.length > 100 && paragraph.length < 500) {
-            // Học cấu trúc đoạn văn
-            if (!aiKnowledge.paragraphStructures) aiKnowledge.paragraphStructures = [];
-            if (aiKnowledge.paragraphStructures.length < 500) {
-                aiKnowledge.paragraphStructures.push(paragraph.trim());
-            }
+        if (paragraph.length > 100) {
+            aiKnowledge.stories.push({
+                content: paragraph,
+                storyTitle: storyTitle,
+                fileName: fileName
+            });
         }
     });
     
-    // Lưu thông tin truyện
-    if (!aiKnowledge.stories.includes(storyTitle)) {
-        aiKnowledge.stories.push(storyTitle);
-    }
+    // Lưu lại để học hỏi
+    aiKnowledge.generationHistory.push({
+        storyTitle: storyTitle,
+        fileName: fileName,
+        content: content.substring(0, 500) + '...',
+        metrics: calculateQualityMetrics(content),
+        timestamp: new Date().toISOString()
+    });
 }
 
-function updateAiStats() {
-    document.getElementById('vocabularyCount').textContent = aiKnowledge.vocabulary.size;
-    document.getElementById('sentenceStructures').textContent = aiKnowledge.sentenceStructures.size;
-    document.getElementById('plotPoints').textContent = aiKnowledge.plotPoints.size;
-    document.getElementById('emotionalPatterns').textContent = aiKnowledge.emotionalPatterns.size;
-}
-
-// HÀM TẠO TRUYỆN CẢI TIẾN - LOGIC THÔNG MINH HỚN
+// HÀM TẠO TRUYỆN NÂNG CAO
 async function generateStory() {
     const chapterCount = parseInt(document.getElementById('chapterCount').value) || 100;
     if (chapterCount < 100 || chapterCount > 150) {
@@ -1038,7 +1210,7 @@ async function generateStory() {
     const title = generateIntelligentTitle();
     
     // Create folder for the new story
-    const storyFolderId = await createStoryFolder(title, true);
+    const storyFolderId = await createStoryFolder(title);
     
     // Generate chapters with progressive storyline
     let generatedChapters = 0;
@@ -1049,7 +1221,7 @@ async function generateStory() {
         const chapterContent = generateIntelligentChapterContent(i, totalChapters, overallPlot);
         
         // Save chapter to Google Drive
-        await saveStoryContent(title, chapterTitle, chapterContent, storyFolderId, true);
+        await saveStoryContent(title, chapterTitle, chapterContent, storyFolderId);
         
         generatedChapters++;
         
@@ -1063,7 +1235,6 @@ async function generateStory() {
     }
     
     // Reload stories
-    await loadAiGeneratedStories();
     await loadStoryHistory();
     showLoading(false);
     showStatus(`Đã tạo thành công truyện "${title}" với ${totalChapters} chương!`, 'success');
@@ -1149,6 +1320,18 @@ function generateIntelligentChapterContent(chapterNum, totalChapters, overallPlo
     // Thêm kết thúc chương
     content += generateChapterEnding(phase) + "\n";
     
+    // Đảm bảo đủ số từ (3000-4000)
+    while (content.split(/\s+/).length < 3000) {
+        const additionalContent = generateAdditionalContent();
+        content += additionalContent + "\n\n";
+    }
+    
+    // Giới hạn tối đa 4000 từ
+    const words = content.split(/\s+/);
+    if (words.length > 4000) {
+        content = words.slice(0, 4000).join(' ');
+    }
+    
     return content;
 }
 
@@ -1208,7 +1391,13 @@ function generateContextualSentence(phase, sentenceIndex, totalSentences) {
     }
     
     // Tạo câu mới dựa trên pattern
-    const patterns = narrativePatterns[phase === 'climax' ? 'conflict' : 'observation'] || narrativePatterns.innerMonologue;
+    let patterns = narrativePatterns[phase === 'climax' ? 'conflict' : 'observation'] || narrativePatterns.innerMonologue;
+    
+    // Thêm pattern 18+ nếu phù hợp
+    if (phase === 'climax' && Math.random() < 0.4) {
+        patterns = patterns.concat(narrativePatterns.adult || []);
+    }
+    
     let sentence = getRandomElement(patterns);
     
     // Thay thế placeholder
@@ -1228,7 +1417,7 @@ function adaptLearnedSentence(sentence) {
 }
 
 // HÀM THAY THẾ PLACEHOLDER
-function replacePlaceholders(sentence) {
+function replacePlaceholders(text) {
     const replacements = {
         '{situation}': getRandomElement(['bữa cơm tối', 'lúc xem TV', 'khi tôi về nhà', 'những buổi chiều', 'cuối tuần']),
         '{wife}': getRandomElement(['vợ tôi', 'con dâu', 'cô ấy', 'người phụ nữ trong nhà']),
@@ -1241,14 +1430,28 @@ function replacePlaceholders(sentence) {
         '{feeling}': getRandomElement(['căng thẳng', 'bất an', 'tò mò', 'khó hiểu', 'phức tạp']),
         '{intensity}': getRandomElement(['mạnh mẽ', 'sâu sắc', 'không thể phủ nhận', 'ngày càng rõ ràng']),
         '{physicalDescription}': getRandomElement(['ánh mắt', 'nụ cười', 'cách di chuyển', 'cử chỉ tay', 'biểu cảm']),
-        '{timeFrame}': getRandomElement(['những ngày gần đây', 'thời gian qua', 'tuần vừa rồi', 'gần đây'])
+        '{timeFrame}': getRandomElement(['những ngày gần đây', 'thời gian qua', 'tuần vừa rồi', 'gần đây']),
+        '{physical_sensation}': getRandomElement(['nóng bừng', 'rần rần', 'run rẩy', 'bủn rủn', 'ngứa ngáy']),
+        '{intimate_situation}': getRandomElement(['chạm vào nhau', 'ở gần nhau', 'trò chuyện thân mật', 'trong phòng kín']),
+        '{bodily_reaction}': getRandomElement(['tim đập nhanh', 'hơi thở gấp gáp', 'cơ thể căng cứng', 'mồ hôi vã ra']),
+        '{adult_observation}': getRandomElement(['đường cong quyến rũ', 'làn da mịn màng', 'ánh mắt đầy dục vọng', 'cử chỉ gợi tình']),
+        '{intense_emotion}': getRandomElement(['khao khát mãnh liệt', 'ham muốn không kiềm chế', 'say đắm', 'điên cuồng']),
+        '{intimate_action}': getRandomElement(['chạm nhẹ', 'ôm ấp', 'hôn', 'thì thầm']),
+        '{physical_response}': getRandomElement(['run lên', 'nóng ran', 'rung động', 'co thắt']),
+        '{emotional_response}': getRandomElement(['thăng hoa', 'sung sướng', 'đê mê', 'ngây ngất']),
+        '{atmosphere_description}': getRandomElement(['ngột ngạt dục vọng', 'căng thẳng tình dục', 'quyến rũ nguy hiểm', 'say đắm']),
+        '{sensory_detail}': getRandomElement(['hương thơm cơ thể', 'hơi ấm tỏa ra', 'tiếng thở dốc', 'ánh mắt thiêu đốt']),
+        '{physical_detail}': getRandomElement(['đường cong', 'làn da', 'hơi ấm', 'sự mềm mại']),
+        '{clothing_description}': getRandomElement(['chiếc váy mỏng', 'áo bó sát', 'trang phục gợi cảm', 'vải mỏng manh']),
+        '{imagination_detail}': getRandomElement(['tưởng tượng ra cơ thể', 'mơ về sự đụng chạm', 'khát khao được chạm', 'ham muốn được vuốt ve']),
+        '{arousal_state}': getRandomElement(['kích động', 'nứng tình', 'căng cứng', 'ướt át'])
     };
     
     Object.keys(replacements).forEach(placeholder => {
-        sentence = sentence.replace(new RegExp(placeholder, 'g'), replacements[placeholder]);
+        text = text.replace(new RegExp(placeholder, 'g'), replacements[placeholder]);
     });
     
-    return sentence;
+    return text;
 }
 
 // HÀM TẠO KẾT THÚC CHƯƠNG
@@ -1286,7 +1489,7 @@ function getRandomElement(array) {
     return array[Math.floor(Math.random() * array.length)];
 }
 
-// HÀM LỰU KIẾN THỨC AI
+// HÀM LƯU KIẾN THỨC AI
 async function saveAiKnowledge() {
     const knowledgeStr = JSON.stringify({
         vocabulary: Array.from(aiKnowledge.vocabulary),
@@ -1299,7 +1502,13 @@ async function saveAiKnowledge() {
         contexts: aiKnowledge.contexts || [],
         characterRelationships: Array.from(aiKnowledge.characterRelationships || new Set()),
         narrativeStyles: Array.from(aiKnowledge.narrativeStyles || new Set()),
-        paragraphStructures: aiKnowledge.paragraphStructures || []
+        transitionWords: Array.from(aiKnowledge.transitionWords || new Set()),
+        psychologicalTerms: Array.from(aiKnowledge.psychologicalTerms || new Set()),
+        descriptivePatterns: Array.from(aiKnowledge.descriptivePatterns || new Set()),
+        metaphors: Array.from(aiKnowledge.metaphors || new Set()),
+        adultTerms: Array.from(aiKnowledge.adultTerms || new Set()),
+        generationHistory: aiKnowledge.generationHistory || [],
+        qualityMetrics: aiKnowledge.qualityMetrics || {}
     });
     
     const fileName = 'ai_knowledge_advanced.json';
@@ -1361,7 +1570,18 @@ async function loadAiKnowledge() {
             aiKnowledge.contexts = knowledge.contexts || [];
             aiKnowledge.characterRelationships = new Set(knowledge.characterRelationships || []);
             aiKnowledge.narrativeStyles = new Set(knowledge.narrativeStyles || []);
-            aiKnowledge.paragraphStructures = knowledge.paragraphStructures || [];
+            aiKnowledge.transitionWords = new Set(knowledge.transitionWords || []);
+            aiKnowledge.psychologicalTerms = new Set(knowledge.psychologicalTerms || []);
+            aiKnowledge.descriptivePatterns = new Set(knowledge.descriptivePatterns || []);
+            aiKnowledge.metaphors = new Set(knowledge.metaphors || []);
+            aiKnowledge.adultTerms = new Set(knowledge.adultTerms || []);
+            aiKnowledge.generationHistory = knowledge.generationHistory || [];
+            aiKnowledge.qualityMetrics = knowledge.qualityMetrics || {
+                complexityThreshold: 0.6,
+                coherenceThreshold: 0.7,
+                emotionThreshold: 0.65,
+                targetWordCount: 3500
+            };
         }
     } catch (error) {
         console.error('Error loading AI knowledge:', error);
@@ -1380,7 +1600,19 @@ function resetAI() {
             dialogues: [],
             contexts: [],
             characterRelationships: new Set(),
-            narrativeStyles: new Set()
+            narrativeStyles: new Set(),
+            transitionWords: new Set(),
+            psychologicalTerms: new Set(),
+            descriptivePatterns: new Set(),
+            metaphors: new Set(),
+            adultTerms: new Set(),
+            generationHistory: [],
+            qualityMetrics: {
+                complexityThreshold: 0.6,
+                coherenceThreshold: 0.7,
+                emotionThreshold: 0.65,
+                targetWordCount: 3500
+            }
         };
         updateAiStats();
         saveAiKnowledge();
@@ -1393,7 +1625,8 @@ function isSensitiveContent(content) {
     const sensitiveKeywords = [
         'bố chồng', 'con dâu', 'khao khát', 'kích thích', 'dục vọng', 'bí mật', 
         'thầm kín', 'cấm kị', 'ranh giới', 'quan hệ đặc biệt', 'không thể cưỡng lại',
-        'ham muốn', 'thèm muốn', 'tội lỗi', 'xấu hổ', 'bối rối về tình dục'
+        'ham muốn', 'thèm muốn', 'tội lỗi', 'xấu hổ', 'bối rối về tình dục', 'dâm dục',
+        'quan hệ', 'ân ái', 'làm tình', 'yêu đương', 'gợi tình', 'quyến rũ', 'khoái cảm'
     ];
     
     return sensitiveKeywords.some(keyword => 
@@ -1444,22 +1677,18 @@ function displayHistory() {
     const historyList = document.getElementById('historyList');
     historyList.innerHTML = '';
     
-    const allStories = [...storyHistory, ...aiGeneratedStories];
-    
-    if (allStories.length === 0) {
+    if (storyHistory.length === 0) {
         historyList.innerHTML = '<div class="history-item">Chưa có truyện nào.</div>';
         return;
     }
     
-    allStories.forEach(story => {
+    storyHistory.forEach(story => {
         const item = document.createElement('div');
         item.className = 'history-item';
         item.onclick = () => viewStoryChapters(story);
         
-        let adultTag = story.isAiGenerated ? ' <span style="color:#ff9a3d">[AI-18+]</span>' : '';
-        
         item.innerHTML = `
-            <div class="story-title">${story.storyTitle}${adultTag}</div>
+            <div class="story-title">${story.storyTitle}</div>
             <div class="story-chapter">${story.chapters.length} chương</div>
             <div class="story-date">${new Date(story.createdTime).toLocaleDateString('vi-VN')}</div>
         `;
@@ -1661,7 +1890,7 @@ function viewAiStories() {
             };
             
             item.innerHTML = `
-                <div class="story-title">${story.storyTitle} <span style="color:#ff9a3d">[AI-18+]</span></div>
+                <div class="story-title">${story.storyTitle} <span style="color:#ff9a3d">[AI]</span></div>
                 <div class="story-chapter">${story.chapters.length} chương - ${new Date(story.createdTime).toLocaleDateString('vi-VN')}</div>
             `;
             aiStoryList.appendChild(item);
@@ -1669,6 +1898,13 @@ function viewAiStories() {
     }
     
     modal.style.display = 'block';
+}
+
+function updateAiStats() {
+    document.getElementById('vocabularyCount').textContent = aiKnowledge.vocabulary.size;
+    document.getElementById('sentenceStructures').textContent = aiKnowledge.sentenceStructures.size;
+    document.getElementById('plotPoints').textContent = aiKnowledge.plotPoints.size;
+    document.getElementById('emotionalPatterns').textContent = aiKnowledge.emotionalPatterns.size;
 }
 
 // Menu Navigation
