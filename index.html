@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Quản lý Truyện với Google Drive</title>
   <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     body { font-family: Arial; margin: 20px; }
     input, textarea, button { display: block; margin: 10px 0; width: 100%; }
@@ -22,22 +23,51 @@
 
   <script>
     const CLIENT_ID = "199144324956-rsc4tttep6uq67poepa2nclieqi82avj.apps.googleusercontent.com";
-    const API_KEY = "AIzaSyBGHB5FnrtMXliWtk3X6FZAl0CE2neNgZM";
     const SCOPES = "https://www.googleapis.com/auth/drive.file";
 
-    // 1. Load API
+    let tokenClient;
+    let gapiInited = false;
+    let gisInited = false;
+
     function gapiLoaded() {
-      gapi.load('client:auth2', initClient);
+      gapi.load('client', initializeGapiClient);
     }
 
-    async function initClient() {
+    async function initializeGapiClient() {
       await gapi.client.init({
-        apiKey: API_KEY,
-        clientId: CLIENT_ID,
-        scope: SCOPES,
         discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
       });
-      gapi.auth2.getAuthInstance().signIn().then(loadHistory);
+      gapiInited = true;
+      maybeEnableButtons();
+    }
+
+    function gisLoaded() {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: '', // sẽ set sau khi login
+      });
+      gisInited = true;
+      maybeEnableButtons();
+    }
+
+    function maybeEnableButtons() {
+      if (gapiInited && gisInited) {
+        handleAuthClick(); // auto login
+      }
+    }
+
+    function handleAuthClick() {
+      tokenClient.callback = async (resp) => {
+        if (resp.error !== undefined) throw(resp);
+        await loadHistory();
+      };
+
+      if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({prompt: 'consent'});
+      } else {
+        tokenClient.requestAccessToken({prompt: ''});
+      }
     }
 
     // 2. Tạo thư mục
@@ -69,12 +99,15 @@
       let folderId = await createFolderIfNotExist(storyName);
 
       const fileMetadata = { name: chapterName + ".txt", parents: [folderId] };
-      const media = { mimeType: 'text/plain', body: content };
+      const media = new Blob([content], { type: 'text/plain' });
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
+      form.append('file', media);
 
-      await gapi.client.drive.files.create({
-        resource: fileMetadata,
-        media: media,
-        fields: 'id'
+      await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+        method: "POST",
+        headers: new Headers({ "Authorization": "Bearer " + gapi.client.getToken().access_token }),
+        body: form
       });
 
       alert("Đã lưu chương!");
@@ -115,6 +148,16 @@
     }
 
     gapiLoaded();
+    window.gisLoaded = gisLoaded;
+  </script>
+
+  <!-- callback khi GIS load -->
+  <script>
+    window.onload = () => {
+      if (typeof google !== "undefined" && google.accounts) {
+        gisLoaded();
+      }
+    };
   </script>
 </body>
 </html>
