@@ -220,7 +220,7 @@
         }
         @keyframes spin { 
             0% { transform: rotate(0deg); } 
-            100% { transform: rotate(360deg); } 
+           100% { transform: rotate(360deg); } 
         }
         .grid { 
             display: flex;
@@ -585,6 +585,10 @@
                                 <span>Từ vựng học được:</span>
                                 <span id="vocabularyCount">0</span>
                             </div>
+                            <div class="stat-item">
+                                <span>Nội dung 18+:</span>
+                                <span id="adultContentCount">0</span>
+                            </div>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill" id="progressFill"></div>
@@ -605,6 +609,7 @@
                                 <button class="theme-btn active" data-theme="sad">😔 Buồn, Bi thảm</button>
                                 <button class="theme-btn" data-theme="romance">💖 Tình yêu lãng mạn</button>
                                 <button class="theme-btn" data-theme="adult">🔞 Người lớn (18+)</button>
+                                <button class="theme-btn" data-theme="explicit">🔥 Nội dung Explicit</button>
                                 <button class="theme-btn" data-theme="mixed">🔀 Pha trộn ngẫu nhiên</button>
                             </div>
                         </div>
@@ -723,7 +728,7 @@ const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/res
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 let tokenClient, gapi_inited = false, gis_inited = false, mainFolderId = null, storyHistory = [];
-let aiKnowledge = { vocabulary: new Set(), stories: [], trainedFiles: 0 };
+let aiKnowledge = { vocabulary: new Set(), stories: [], trainedFiles: 0, adultContent: 0 };
 let aiGeneratedStories = [];
 let currentEditingChapter = null;
 let currentTheme = 'sad';
@@ -752,18 +757,43 @@ const romanceVocabulary = {
            'đợi', 'trao', 'nhận', 'chia sẻ']
 };
 
-// TỪ VỰNG VÀ CẤU TRÚC CHO NỘI DUNG 18+ - THÊM MỚI
+// TỪ VỰNG VÀ CẤU TRÚC CHO NỘI DUNG 18+ - MỞ RỘNG
 const adultVocabulary = {
     emotions: ['dục vọng', 'khao khát', 'say đắm', 'nóng bỏng', 'cuồng nhiệt', 'thèm muốn', 
-               'phấn khích', 'kích động', 'mãn nguyện', 'thỏa mãn', 'sung sướng', 'đê mê'],
+               'phấn khích', 'kích động', 'mãn nguyện', 'thỏa mãn', 'sung sướng', 'đê mê',
+               'bức bối', 'thôi thúc', 'ham muốn', 'nồng nhiệt', 'cuồng dâm', 'khoái lạc'],
     introspective: ['cơ thể tôi', 'cảm giác', 'ham muốn', 'kích thích', 'dâng trào', 'cơn sóng',
-                   'đỉnh điểm', 'khoái cảm', 'xúc giác', 'cảm nhận'],
+                   'đỉnh điểm', 'khoái cảm', 'xúc giác', 'cảm nhận', 'bản năng', 'dục tính',
+                   'khoái cảm', 'cực khoái', 'sung sướng', 'kích dục'],
     metaphors: ['ngọn lửa', 'cơn bão', 'biển cả', 'vực sâu', 'ánh chớp', 'cơn lốc',
-               'dòng thác', 'nguồn năng lượng', 'ánh sáng', 'bóng tối'],
+               'dòng thác', 'nguồn năng lượng', 'ánh sáng', 'bóng tối', 'vụ nổ', 'bão tố',
+               'cơn địa chấn', 'ngọn núi lửa', 'dòng dung nham'],
     verbs: ['chạm', 'vuốt ve', 'hôn', 'cắn', 'ôm', 'siết chặt', 'ăn', 'uống', 'khám phá',
-           'thử nghiệm', 'trải nghiệm', 'thưởng thức', 'đam mê', 'choáng ngợp'],
-    bodyParts: ['môi', 'cổ', 'vai', 'ngực', 'bụng', 'đùi', 'hông', 'lưng', 'tay', 'chân'],
-    sensations: ['ấm áp', 'nóng bỏng', 'lạnh giá', 'mềm mại', 'mịn màng', 'thô ráp', 'ẩm ướt', 'khô ráo']
+           'thử nghiệm', 'trải nghiệm', 'thưởng thức', 'đam mê', 'choáng ngợp', 'xâm chiếm',
+           'thâm nhập', 'cọ xát', 'mân mê', 'liếm', 'hút', 'nuốt', 'cưỡng đoạt', 'khiêu khích'],
+    bodyParts: ['môi', 'cổ', 'vai', 'ngực', 'bụng', 'đùi', 'hông', 'lưng', 'tay', 'chân',
+               'vú', 'nhũ hoa', 'eo', 'mông', 'vùng kín', 'cậu nhỏ', 'cửa mình', 'lồn', 'cặc',
+               'dương vật', 'âm đạo', 'âm hộ', 'đầu vú', 'hậu môn', 'bướm'],
+    sensations: ['ấm áp', 'nóng bỏng', 'lạnh giá', 'mềm mại', 'mịn màng', 'thô ráp', 'ẩm ướt', 'khô ráo',
+                'co thắt', 'rùng mình', 'run rẩy', 'rạo rực', 'ngứa ngáy', 'nóng ran', 'lâng lâng',
+                'tê dại', 'đê mê', 'say đắm', 'cuồng loạn']
+};
+
+// TỪ VỰNG CHO NỘI DUNG EXPLICIT - THÊM MỚI
+const explicitVocabulary = {
+    emotions: ['dâm đãng', 'thô tục', 'tục tĩu', 'dục tính', 'kích dục', 'khoái lạc',
+               'thỏa mãn', 'sung sướng', 'đê mê', 'cuồng dâm', 'dâm dục', 'lăng loàn'],
+    introspective: ['cơn thèm khát', 'ham muốn thể xác', 'kích thích tình dục', 'khoái cảm nhục dục',
+                   'bản năng tình dục', 'cảm giác dâm đãng', 'khao khát xác thịt'],
+    metaphors: ['cơn lốc dục vọng', 'biển lửa ham muốn', 'vực sâu khoái lạc', 'bão tố tình dục',
+               'dòng sông nhục dục', 'ngọn núi dục vọng', 'cơn địa chấn khoái cảm'],
+    verbs: ['địt', 'lồn', 'cặc', 'húp', 'liếm', 'bú', 'hôn', 'xâm chiếm', 'thâm nhập', 'cưỡng bức',
+           'cọ xát', 'ma sát', 'xuất tinh', 'lên đỉnh', 'thẩm du', 'tự sướng', 'khẩu giao', 'giao hợp',
+           'làm tình', 'ân ái', 'đụ', 'chịch', 'phang', 'đóng đinh'],
+    bodyParts: ['lồn', 'cặc', 'dương vật', 'âm đạo', 'âm hộ', 'hậu môn', 'vú', 'đầu vú', 'mông', 'háng',
+               'bướm', 'cậu nhỏ', 'cửa mình', 'bìu', 'dương vật', 'âm vật', 'gò mu', 'lông mu'],
+    sensations: ['ướt át', 'co thắt', 'rùng mình', 'rạo rực', 'nóng ran', 'tê tê', 'sung mãn',
+                'căng cứng', 'ứ đầy', 'trào ra', 'tuôn trào', 'phun trào', 'thổn thức']
 };
 
 // Cấu trúc câu cho độc thoại nội tâm
@@ -803,20 +833,37 @@ const sentencePatterns = {
         "Cơ thể tôi như {metaphor} {emotion}.",
         "Tôi muốn {desire} cùng người ấy mãi mãi.",
         "Mỗi {time} trôi qua, {introspective} lại thêm {emotion}."
+    ],
+    explicit: [
+        "Tôi {verb} {bodyPart} của người ấy một cách {emotion}.",
+        "{BodyPart} của người ấy {verb} khiến tôi {sensation}.",
+        "Chúng tôi {verb} trong {moment} với {emotion}.",
+        "Tôi {verb} và {verb} {bodyPart} của người ấy.",
+        "Cảm giác {sensation} khi {verb} {bodyPart} thật {emotion}.",
+        "Tôi {verb} không ngừng trên {bodyPart} của người ấy.",
+        "{BodyPart} của tôi {verb} với {sensation} cảm giác.",
+        "Chúng tôi {verb} cho đến khi {event}.",
+        "Tôi {verb} {bodyPart} của người ấy cho đến khi {sensation}.",
+        "{Emotion} {metaphor} tràn ngập căn phòng khi chúng tôi {verb}."
     ]
 };
 
 // Sự kiện và ký ức cho cốt truyện
 const storyElements = {
     events: ["ngày đó", "lời nói dối", "sự ra đi", "lời hứa", "ánh mắt", "nụ cười", 
-            "cuộc gặp gỡ", "biến cố", "quyết định", "lời từ chối"],
+            "cuộc gặp gỡ", "biến cố", "quyết định", "lời từ chối", "đêm tân hôn", "lần đầu tiên",
+            "buổi tối định mệnh", "khúc quanh", "bước ngoặt", "sự cố", "tai nạn", "sự kiện"],
     memories: ["người ấy", "quá khứ", "tuổi thơ", "gia đình", "tình yêu", "ước mơ",
-              "ngôi nhà cũ", "con đường", "khu vườn", "bài hát"],
-    thoughts: ["cuộc đời", "tương lai", 'ý nghĩa', "sự tồn tại", "số phận", "hạnh phúc",
-              "nỗi đau", "sự thật", "lựa chọn", "con người thật"],
+              "ngôi nhà cũ", "con đường", "khu vườn", "bài hát", "kỷ niệm", "khoảnh khắc",
+              "mối tình đầu", "mối quan hệ", "cuộc gặp gỡ", "lần đầu"],
+    thoughts: ["cuộc đời", "tương lai", "ý nghĩa", "sự tồn tại", "số phận", "hạnh phúc",
+              "nỗi đau", "sự thật", "lựa chọn", "con người thật", "bản năng", "dục vọng",
+              "ham muốn", "khao khát", "đam mê"],
     desires: ["quay lại", "thay đổi", "quên đi", "yêu thương", "tha thứ", "tìm thấy",
-             "giải thoát", "bình yên", "hiểu được", "chấp nhận"],
-    times: ["giây phút", "phút giây", "khoảnh khắc", "ngày", "đêm", "tháng năm", "mùa"]
+             "giải thoát", "bình yên", "hiểu được", "chấp nhận", "sở hữu", "chiếm đoạt",
+             "thỏa mãn", "chinh phục", "khám phá"],
+    times: ["giây phút", "phút giây", "khoảnh khắc", "ngày", "đêm", "tháng năm", "mùa",
+           "buổi sáng", "buổi chiều", "buổi tối", "đêm khuya", "rạng sáng"]
 };
 
 // Initialize Google API
@@ -1073,7 +1120,7 @@ async function trainAI() {
     showStatus(`Huấn luyện hoàn thành! Đã xử lý ${processedFiles} file.`, 'success');
 }
 
-// Hàm huấn luyện AI - CẢI TIẾN ĐỂ HỌC NỘI DUNG 18+
+// Hàm huấn luyện AI - CẢI TIẾN ĐỂ HỌC NỘI DUNG 18+ VÀ EXPLICIT
 function processContent(content, storyTitle, fileName) {
     // Phân tích nội dung để học cấu trúc câu và từ vựng
     const sentences = content.split(/[.!?]+/).filter(s => s.length > 5);
@@ -1117,10 +1164,36 @@ function processContent(content, storyTitle, fileName) {
             aiKnowledge.romanceSentences.push(sentence);
         }
         
-        // PHÁT HIỆN NỘI DUNG 18+ - THÊM MỚI
-        if (sentence.match(/dục|khao khát|ham muốn|thân mật|gối chăn|ân ái|kích dục|khoái cảm/i)) {
+        // PHÁT HIỆN NỘI DUNG 18+ - MỞ RỘNG
+        const adultKeywords = [
+            'dục', 'khao khát', 'ham muốn', 'thân mật', 'gối chăn', 'ân ái', 'kích dục', 
+            'khoái cảm', 'dâm', 'loạn', 'luyến', 'ấu dâm', 'cơ thể', 'chạm', 'vuốt ve', 
+            'hôn', 'cắn', 'ôm', 'siết chặt', 'lồn', 'cặc', 'địt', 'chịch', 'phang', 'đụ',
+            'dương vật', 'âm đạo', 'âm hộ', 'hậu môn', 'vú', 'đầu vú', 'mông', 'háng'
+        ];
+        
+        const explicitKeywords = [
+            'địt', 'lồn', 'cặc', 'húp', 'liếm', 'bú', 'cưỡng bức', 'xuất tinh', 'lên đỉnh',
+            'thẩm du', 'tự sướng', 'khẩu giao', 'giao hợp', 'làm tình', 'ân ái', 'đóng đinh',
+            'dương vật', 'âm đạo', 'âm hộ', 'hậu môn', 'bướm', 'cậu nhỏ', 'cửa mình', 'bìu',
+            'âm vật', 'gò mu', 'lông mu'
+        ];
+        
+        // Kiểm tra nội dung explicit
+        if (explicitKeywords.some(keyword => sentence.toLowerCase().includes(keyword))) {
+            if (!aiKnowledge.explicitSentences) aiKnowledge.explicitSentences = [];
+            aiKnowledge.explicitSentences.push(sentence);
+            aiKnowledge.adultContent++;
+            
+            // Đánh dấu truyện có nội dung explicit
+            if (!aiKnowledge.explicitStories) aiKnowledge.explicitStories = new Set();
+            aiKnowledge.explicitStories.add(storyTitle);
+        }
+        // Kiểm tra nội dung 18+
+        else if (adultKeywords.some(keyword => sentence.toLowerCase().includes(keyword))) {
             if (!aiKnowledge.adultSentences) aiKnowledge.adultSentences = [];
             aiKnowledge.adultSentences.push(sentence);
+            aiKnowledge.adultContent++;
             
             // Đánh dấu truyện có nội dung nhạy cảm
             if (!aiKnowledge.adultStories) aiKnowledge.adultStories = new Set();
@@ -1146,6 +1219,7 @@ function processContent(content, storyTitle, fileName) {
 
 function updateAiStats() {
     document.getElementById('vocabularyCount').textContent = aiKnowledge.vocabulary.size;
+    document.getElementById('adultContentCount').textContent = aiKnowledge.adultContent || 0;
 }
 
 async function saveAiKnowledge() {
@@ -1153,12 +1227,15 @@ async function saveAiKnowledge() {
         vocabulary: Array.from(aiKnowledge.vocabulary),
         stories: aiKnowledge.stories,
         trainedFiles: aiKnowledge.trainedFiles,
+        adultContent: aiKnowledge.adultContent || 0,
         dialogues: aiKnowledge.dialogues || [],
         contexts: aiKnowledge.contexts || [],
         sadSentences: aiKnowledge.sadSentences || [],
         romanceSentences: aiKnowledge.romanceSentences || [],
         adultSentences: aiKnowledge.adultSentences || [],
-        adultStories: aiKnowledge.adultStories ? Array.from(aiKnowledge.adultStories) : []
+        explicitSentences: aiKnowledge.explicitSentences || [],
+        adultStories: aiKnowledge.adultStories ? Array.from(aiKnowledge.adultStories) : [],
+        explicitStories: aiKnowledge.explicitStories ? Array.from(aiKnowledge.explicitStories) : []
     });
     
     // Save to a file in the main folder
@@ -1215,12 +1292,15 @@ async function loadAiKnowledge() {
             aiKnowledge.vocabulary = new Set(knowledge.vocabulary);
             aiKnowledge.stories = knowledge.stories;
             aiKnowledge.trainedFiles = knowledge.trainedFiles;
+            aiKnowledge.adultContent = knowledge.adultContent || 0;
             aiKnowledge.dialogues = knowledge.dialogues || [];
             aiKnowledge.contexts = knowledge.contexts || [];
             aiKnowledge.sadSentences = knowledge.sadSentences || [];
             aiKnowledge.romanceSentences = knowledge.romanceSentences || [];
             aiKnowledge.adultSentences = knowledge.adultSentences || [];
+            aiKnowledge.explicitSentences = knowledge.explicitSentences || [];
             aiKnowledge.adultStories = new Set(knowledge.adultStories || []);
+            aiKnowledge.explicitStories = new Set(knowledge.explicitStories || []);
         }
     } catch (error) {
         console.error('Error loading AI knowledge:', error);
@@ -1229,7 +1309,7 @@ async function loadAiKnowledge() {
 
 function resetAI() {
     if (confirm('Bạn có chắc chắn muốn reset toàn bộ kiến thức của AI?')) {
-        aiKnowledge = { vocabulary: new Set(), stories: [], trainedFiles: 0 };
+        aiKnowledge = { vocabulary: new Set(), stories: [], trainedFiles: 0, adultContent: 0 };
         updateAiStats();
         saveAiKnowledge();
         showStatus('Đã reset kiến thức của AI!', 'success');
@@ -1278,7 +1358,7 @@ function generateParagraph(theme) {
     return sentences.join(" ");
 }
 
-// Tạo câu có ý nghĩa - CẢI TIẾN CHO NỘI DUNG 18+
+// Tạo câu có ý nghĩa - CẢI TIẾN CHO NỘI DUNG 18+ VÀ EXPLICIT
 function generateSentence(theme) {
     let pattern, sentence;
     let vocabulary = sadVocabulary;
@@ -1290,14 +1370,19 @@ function generateSentence(theme) {
     } else if (theme === 'adult') {
         vocabulary = adultVocabulary;
         patterns = sentencePatterns.adult;
+    } else if (theme === 'explicit') {
+        vocabulary = explicitVocabulary;
+        patterns = sentencePatterns.explicit;
     } else if (theme === 'mixed') {
         // Randomly choose between themes for mixed theme
-        const randomThemes = ['sad', 'romance', 'adult'];
+        const randomThemes = ['sad', 'romance', 'adult', 'explicit'];
         const randomTheme = randomThemes[Math.floor(Math.random() * randomThemes.length)];
         vocabulary = randomTheme === 'sad' ? sadVocabulary : 
-                    randomTheme === 'romance' ? romanceVocabulary : adultVocabulary;
+                    randomTheme === 'romance' ? romanceVocabulary : 
+                    randomTheme === 'adult' ? adultVocabulary : explicitVocabulary;
         patterns = randomTheme === 'sad' ? sentencePatterns.sad : 
-                  randomTheme === 'romance' ? sentencePatterns.romance : sentencePatterns.adult;
+                  randomTheme === 'romance' ? sentencePatterns.romance : 
+                  randomTheme === 'adult' ? sentencePatterns.adult : sentencePatterns.explicit;
     }
     
     pattern = getRandomElement(patterns);
@@ -1316,14 +1401,16 @@ function generateSentence(theme) {
     sentence = sentence.replace(/{moment}/gi, getRandomElement(storyElements.times));
     sentence = sentence.replace(/{time}/gi, getRandomElement(storyElements.times));
     sentence = sentence.replace(/{state}/gi, getRandomElement(vocabulary.metaphors));
-    sentence = sentence.replace(/{bodyPart}/gi, getRandomElement(adultVocabulary.bodyParts));
-    sentence = sentence.replace(/{sensation}/gi, getRandomElement(adultVocabulary.sensations));
+    sentence = sentence.replace(/{bodyPart}/gi, getRandomElement(vocabulary.bodyParts));
+    sentence = sentence.replace(/{sensation}/gi, getRandomElement(vocabulary.sensations));
     sentence = sentence.replace(/{question}/gi, getRandomElement([
         "tôi lại khao khát điều này",
         "mọi thứ lại cuốn tôi vào",
         "tôi không thể cưỡng lại được",
         "người ấy lại khiến tôi say đắm",
-        "ham muốn không bao giờ ngừng lại"
+        "ham muốn không bao giờ ngừng lại",
+        "tôi lại thèm muốn thể xác người ấy",
+        "cơ thể tôi lại rạo rực"
     ]));
     
     // Đảm bảo câu bắt đầu bằng chữ hoa và kết thúc bằng dấu câu
@@ -1334,7 +1421,7 @@ function generateSentence(theme) {
     return sentence.charAt(0).toUpperCase() + sentence.slice(1);
 }
 
-// Tạo phần mở đầu chương - CẢI TIẾN CHO NỘI DUNG 18+
+// Tạo phần mở đầu chương - CẢI TIẾN CHO NỘI DUNG 18+ VÀ EXPLICIT
 function generateChapterIntro(theme) {
     let intro;
     
@@ -1360,6 +1447,17 @@ function generateChapterIntro(theme) {
             `Khoảnh khắc ấy in sâu trong tâm trí tôi không thể phai mờ.`
         ];
         intro = getRandomElement(adultIntros);
+    } else if (theme === 'explicit') {
+        const explicitIntros = [
+            `Đêm ấy, chúng tôi không thể kìm nén được dục vọng.`,
+            `Cơ thể tôi run lên vì khao khát được chạm vào người ấy.`,
+            `Tôi muốn chiếm đoạt người ấy ngay lập tức.`,
+            `Không gian ngập tràn hơi thở nồng nàn của dục vọng.`,
+            `Ánh mắt người ấy khiến tôi không thể kiềm chế.`,
+            `Mọi ranh giới đều bị xóa nhòa bởi ham muốn.`,
+            `Chúng tôi lao vào nhau như những con thú đói khát.`
+        ];
+        intro = getRandomElement(explicitIntros);
     } else {
         const sadIntros = [
             `Tôi ngồi đây, một mình với những suy nghĩ về ${getRandomElement(storyElements.memories)}.`,
@@ -1367,7 +1465,7 @@ function generateChapterIntro(theme) {
             `Có những điều tôi chưa từng kể với ai về ${getRandomElement(storyElements.memories)}.`,
             `Đã bao lâu rồi kể từ ngày ${getRandomElement(storyElements.memories)} trở thành nỗi ám ảnh của tôi?`,
             `Tôi nhớ lại ${getRandomElement(storyElements.memories)} như thể nó vừa mới xảy ra ngày hôm qua.`,
-            `Trong im lặng của đêm khuya, tôi nghị về ${getRandomElement(storyElements.memories)}.`,
+            `Trong im lặng của đêm khuya, tôi nghĩ về ${getRandomElement(storyElements.memories)}.`,
             `Đôi khi tôi tự hỏi, liệu ${getRandomElement(storyElements.memories)} có đáng để tôi đau khổ?`
         ];
         intro = getRandomElement(sadIntros);
@@ -1528,7 +1626,7 @@ async function generateStory() {
     document.getElementById('generationStatus').innerHTML = '';
 }
 
-// Hàm tạo tiêu đề dựa trên chủ đề - CẢI TIẾN CHO NỘI DUNG 18+
+// Hàm tạo tiêu đề dựa trên chủ đề - CẢI TIẾN CHO NỘI DUNG 18+ VÀ EXPLICIT
 function generateTitle(words, theme) {
     if (theme === 'romance') {
         const romanceTitles = [
@@ -1552,6 +1650,17 @@ function generateTitle(words, theme) {
             "Đam Mê Bí Ẩn"
         ];
         return getRandomElement(adultTitles);
+    } else if (theme === 'explicit') {
+        const explicitTitles = [
+            "Đêm Cuồng Dâm",
+            "Nhục Dục Vô Biên",
+            "Cuồng Nộ Thể Xác",
+            "Dâm Dục Đêm Khuya",
+            "Lửa Dục Thiêu Đốt",
+            "Đam Mê Tội Lỗi",
+            "Thác Loạn Tình Dục"
+        ];
+        return getRandomElement(explicitTitles);
     }
     
     // Simple title generation based on learned vocabulary for other themes
@@ -1567,7 +1676,7 @@ function generateTitle(words, theme) {
     return title.trim();
 }
 
-// Hàm tạo tiêu đề chương dựa trên chủ đề - CẢI TIẾN CHO NỘI DUNG 18+
+// Hàm tạo tiêu đề chương dựa trên chủ đề - CẢI TIẾN CHO NỘI DUNG 18+ VÀ EXPLICIT
 function generateChapterTitle(words, theme) {
     if (theme === 'romance') {
         const romanceTitles = [
@@ -1597,6 +1706,20 @@ function generateChapterTitle(words, theme) {
             "Đỉnh Cao Khoái Cảm"
         ];
         return getRandomElement(adultTitles);
+    } else if (theme === 'explicit') {
+        const explicitTitles = [
+            "Cuồng Dâm Bất Tận",
+            "Địt Nhau Thâu Đêm",
+            "Dâm Đãng Tột Cùng",
+            "Xuất Tinh Không Kiểm Soát",
+            "Ân Ái Điên Cuồng",
+            "Lên Đỉnh Liên Tục",
+            "Thác Loạn Thể Xác",
+            "Dục Vọng Tràn Trề",
+            "Giao Hợp Mãnh Liệt",
+            "Khoái Lạc Tột Đỉnh"
+        ];
+        return getRandomElement(explicitTitles);
     }
     
     // Generate a chapter title for other themes
@@ -1612,12 +1735,12 @@ function generateChapterTitle(words, theme) {
     return title.trim();
 }
 
-// Hàm xử lý khi chọn chủ đề - THÊM KIỂM SOÁT NỘI DUNG 18+
+// Hàm xử lý khi chọn chủ đề - THÊM KIỂM SOÁT NỘI DUNG 18+ VÀ EXPLICIT
 function handleThemeSelection(theme) {
     currentTheme = theme;
     
     // Hiển thị cảnh báo nếu chọn chủ đề người lớn
-    if (theme === 'adult') {
+    if (theme === 'adult' || theme === 'explicit') {
         document.getElementById('adultWarning').style.display = 'block';
         document.getElementById('adultToggle').style.display = 'flex';
         document.getElementById('generateStoryButton').disabled = true;
@@ -1628,12 +1751,17 @@ function handleThemeSelection(theme) {
     }
 }
 
-// Hàm kiểm tra xem nội dung có nhạy cảm không - MỚI
+// Hàm kiểm tra xem nội dung có nhạy cảm không - MỞ RỘNG
 function isSensitiveContent(content) {
     const sensitiveKeywords = [
         'dục', 'khao khát', 'ham muốn', 'thân mật', 'gối chăn', 'ân ái', 
         'kích dục', 'khoái cảm', 'dâm', 'loạn', 'luyến', 'ấu dâm', 
-        'cơ thể', 'chạm', 'vuốt ve', 'hôn', 'cắn', 'ôm', 'siết chặt'
+        'cơ thể', 'chạm', 'vuốt ve', 'hôn', 'cắn', 'ôm', 'siết chặt',
+        'lồn', 'cặc', 'địt', 'chịch', 'phang', 'đụ', 'dương vật', 'âm đạo',
+        'âm hộ', 'hậu môn', 'vú', 'đầu vú', 'mông', 'háng', 'bướm', 'cậu nhỏ',
+        'cửa mình', 'bìu', 'dương vật', 'âm vật', 'gò mu', 'lông mu', 'húp',
+        'liếm', 'bú', 'cưỡng bức', 'xuất tinh', 'lên đỉnh', 'thẩm du', 'tự sướng',
+        'khẩu giao', 'giao hợp', 'làm tình', 'đóng đinh'
     ];
     
     return sensitiveKeywords.some(keyword => 
@@ -1641,7 +1769,7 @@ function isSensitiveContent(content) {
     );
 }
 
-// Hàm hiển thị nội dung chương với kiểm soát nội dung nhạy cảm - MỚI
+// Hàm hiển thị nội dung chương với kiểm soát nội dung nhạy cảm - MỞ RỘNG
 async function viewChapterContent(chapter, folderId) {
     const chapterContent = document.getElementById('chapterContent');
     const chapterActions = document.getElementById('chapterActions');
@@ -1704,8 +1832,17 @@ function displayHistory() {
         const item = document.createElement('div');
         item.className = 'history-item';
         item.onclick = () => viewStoryChapters(story);
+        
+        // Kiểm tra xem truyện có nội dung nhạy cảm không
+        let adultTag = '';
+        if (aiKnowledge.explicitStories && aiKnowledge.explicitStories.has(story.storyTitle)) {
+            adultTag = ' <span style="color:#ff6b6b">[EXPLICIT]</span>';
+        } else if (aiKnowledge.adultStories && aiKnowledge.adultStories.has(story.storyTitle)) {
+            adultTag = ' <span style="color:#ff9a3d">[18+]</span>';
+        }
+        
         item.innerHTML = `
-            <div class="story-title">${story.storyTitle} ${story.isAiGenerated ? '(AI Tạo)' : ''}</div>
+            <div class="story-title">${story.storyTitle} ${story.isAiGenerated ? '(AI Tạo)' : ''}${adultTag}</div>
             <div class="story-chapter">${story.chapters.length} chương</div>
             <div class="story-date">${new Date(story.createdTime).toLocaleDateString('vi-VN')}</div>
         `;
@@ -1728,8 +1865,17 @@ function displayFolders() {
         // Add to folder list
         const item = document.createElement('div');
         item.className = 'history-item';
+        
+        // Kiểm tra xem truyện có nội dung nhạy cảm không
+        let adultTag = '';
+        if (aiKnowledge.explicitStories && aiKnowledge.explicitStories.has(story.storyTitle)) {
+            adultTag = ' <span style="color:#ff6b6b">[EXPLICIT]</span>';
+        } else if (aiKnowledge.adultStories && aiKnowledge.adultStories.has(story.storyTitle)) {
+            adultTag = ' <span style="color:#ff9a3d">[18+]</span>';
+        }
+        
         item.innerHTML = `
-            <div class="story-title">${story.storyTitle}</div>
+            <div class="story-title">${story.storyTitle}${adultTag}</div>
             <div class="story-chapter">${story.chapters.length} chương</div>
         `;
         folderList.appendChild(item);
@@ -1902,8 +2048,17 @@ function viewAiStories() {
                 closeModal('aiStoriesModal');
                 viewStoryChapters(story);
             };
+            
+            // Kiểm tra xem truyện có nội dung nhạy cảm không
+            let adultTag = '';
+            if (aiKnowledge.explicitStories && aiKnowledge.explicitStories.has(story.storyTitle)) {
+                adultTag = ' <span style="color:#ff6b6b">[EXPLICIT]</span>';
+            } else if (aiKnowledge.adultStories && aiKnowledge.adultStories.has(story.storyTitle)) {
+                adultTag = ' <span style="color:#ff9a3d">[18+]</span>';
+            }
+            
             item.innerHTML = `
-                <div class="ai-story-title">${story.storyTitle}</div>
+                <div class="ai-story-title">${story.storyTitle}${adultTag}</div>
                 <div class="ai-story-info">${story.chapters.length} chương - ${new Date(story.createdTime).toLocaleDateString('vi-VN')}</div>
             `;
             aiStoryList.appendChild(item);
