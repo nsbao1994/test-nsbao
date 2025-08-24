@@ -1,278 +1,205 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Truyện</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .header h1 {
-            color: white;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .setup-section {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
-        }
-
-        .step {
-            background: #f8f9fa;
-            padding: 20px;
-            margin: 15px 0;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-        }
-
-        .step h3 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .step ol {
-            margin-left: 20px;
-            line-height: 1.6;
-        }
-
-        .step li {
-            margin: 5px 0;
-        }
-
-        .code-block {
-            background: #2d3748;
-            color: #e2e8f0;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            margin: 10px 0;
-            overflow-x: auto;
-        }
-
-        .highlight {
-            background: #ffeaa7;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        .warning {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-        }
-
-        .info {
-            background: #e3f2fd;
-            border: 1px solid #bbdefb;
-            color: #1565c0;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-        }
-
-        .btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            margin: 10px;
-            display: inline-block;
-            text-decoration: none;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .setup-section {
-                padding: 20px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Quản lý Truyện với Google Drive</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+    #history div { margin: 10px 0; padding: 10px; background: #fff; border-radius: 6px; cursor: pointer; }
+    .chapters { margin-left: 20px; display: none; }
+    .story-head { display: flex; justify-content: space-between; align-items: center; }
+    .story-name { font-weight: bold; }
+    .muted { font-size: 12px; color: #666; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📚 Hướng dẫn Sửa lỗi Google Drive</h1>
-            <p style="color: rgba(255,255,255,0.8); font-size: 1.1em;">Khắc phục lỗi không thể kết nối với Google Drive API</p>
-        </div>
+  <h2>📚 Trình quản lý truyện</h2>
 
-        <div class="setup-section">
-            <div class="warning">
-                <h3>⚠️ Vấn đề hiện tại</h3>
-                <p>Ứng dụng không thể kết nối với Google Drive vì thiếu cấu hình API Keys và Google Cloud Console chưa được thiết lập đúng cách.</p>
-            </div>
+  <button onclick="handleAuthClick()">🔑 Đăng nhập Google</button>
+  <button onclick="handleSignoutClick()">🚪 Đăng xuất</button>
 
-            <div class="step">
-                <h3>🔧 Bước 1: Tạo Google Cloud Project</h3>
-                <ol>
-                    <li>Truy cập <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a></li>
-                    <li>Tạo project mới hoặc chọn project có sẵn</li>
-                    <li>Ghi nhớ tên project để sử dụng sau</li>
-                </ol>
-            </div>
+  <h3>Nhập truyện mới</h3>
+  <input id="storyName" placeholder="Tên truyện"><br><br>
+  <textarea id="chapterContent" placeholder="Nội dung chương" rows="6" cols="50"></textarea><br>
+  <button onclick="saveStory()">💾 Lưu truyện</button>
 
-            <div class="step">
-                <h3>🚀 Bước 2: Bật Google Drive API</h3>
-                <ol>
-                    <li>Trong Google Cloud Console, vào <strong>APIs & Services > Library</strong></li>
-                    <li>Tìm kiếm "Google Drive API"</li>
-                    <li>Click vào Google Drive API và nhấn <strong>Enable</strong></li>
-                    <li>Đợi vài giây để API được kích hoạt</li>
-                </ol>
-            </div>
+  <h3>Lịch sử truyện</h3>
+  <div id="history"></div>
 
-            <div class="step">
-                <h3>🔑 Bước 3: Tạo API Key</h3>
-                <ol>
-                    <li>Vào <strong>APIs & Services > Credentials</strong></li>
-                    <li>Click <strong>+ Create Credentials > API Key</strong></li>
-                    <li>Copy API Key được tạo</li>
-                    <li><span class="highlight">Quan trọng:</span> Click vào API Key vừa tạo để hạn chế sử dụng</li>
-                    <li>Trong <strong>API restrictions</strong>, chọn <strong>Restrict key</strong> và chỉ chọn <strong>Google Drive API</strong></li>
-                    <li>Save lại</li>
-                </ol>
-            </div>
+  <script>
+    const CLIENT_ID = "199144324956-rsc4tttep6uq67poepa2nclieqi82avj.apps.googleusercontent.com";
+    const API_KEY = "AIzaSyBGHB5FnrtMXliWtk3X6FZAl0CE2neNgZM";
 
-            <div class="step">
-                <h3>👤 Bước 4: Tạo OAuth 2.0 Client ID</h3>
-                <ol>
-                    <li>Vẫn ở trang Credentials, click <strong>+ Create Credentials > OAuth client ID</strong></li>
-                    <li>Nếu chưa có OAuth consent screen, sẽ được yêu cầu tạo:
-                        <ul>
-                            <li>Chọn <strong>External</strong> user type</li>
-                            <li>Điền thông tin cơ bản (App name, User support email, Developer contact email)</li>
-                            <li>Trong <strong>Scopes</strong>, thêm scope: <code>https://www.googleapis.com/auth/drive.file</code></li>
-                            <li>Thêm email test user nếu app chưa publish</li>
-                        </ul>
-                    </li>
-                    <li>Sau khi tạo consent screen, quay lại tạo OAuth client ID</li>
-                    <li>Chọn application type: <strong>Web application</strong></li>
-                    <li>Thêm Authorized JavaScript origins (domain của website của bạn)</li>
-                    <li>Copy <strong>Client ID</strong> được tạo</li>
-                </ol>
-            </div>
+    const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
+    const SCOPES = "https://www.googleapis.com/auth/drive.file";
 
-            <div class="step">
-                <h3>⚙️ Bước 5: Cập nhật Code</h3>
-                <p>Thay thế trong file HTML của bạn:</p>
-                <div class="code-block">
-const API_KEY = 'AIzaSyBGHB5FnrtMXliWtk3X6FZAl0CE2neNgZM';
-const CLIENT_ID = '199144324956-rsc4tttep6uq67poepa2nclieqi82avj.apps.googleusercontent.com';
-                </div>
-                <p>Với các giá trị thực từ Google Cloud Console</p>
-            </div>
+    let gapiInited = false;
+    let gisInited = false;
+    let tokenClient;
+    let parentFolderId = null;
 
-            <div class="info">
-                <h3>🔍 Kiểm tra thêm</h3>
-                <ul>
-                    <li><strong>Domain/Origin:</strong> Đảm bảo domain hiện tại được thêm vào Authorized JavaScript origins</li>
-                    <li><strong>HTTPS:</strong> Một số trình duyệt yêu cầu HTTPS cho Google APIs</li>
-                    <li><strong>AdBlock:</strong> Tắt các extension chặn quảng cáo có thể chặn Google APIs</li>
-                    <li><strong>Console Errors:</strong> Mở Developer Tools (F12) để xem lỗi chi tiết</li>
-                </ul>
-            </div>
-
-            <div class="step">
-                <h3>🚨 Xử lý lỗi thường gặp</h3>
-                <ul>
-                    <li><strong>"API key not valid":</strong> Kiểm tra API key và API restrictions</li>
-                    <li><strong>"Origin mismatch":</strong> Thêm domain vào Authorized origins</li>
-                    <li><strong>"Access blocked":</strong> Kiểm tra OAuth consent screen và test users</li>
-                    <li><strong>"This app isn't verified":</strong> Thêm email test user hoặc submit để verify app</li>
-                </ul>
-            </div>
-
-            <div class="step">
-                <h3>🔧 Code cải tiến (Optional)</h3>
-                <p>Để debug dễ hơn, thêm error handling chi tiết:</p>
-                <div class="code-block">
-// Thêm vào phần init
-async function initializeGapi() {
-    try {
-        console.log('API Key:', API_KEY ? 'Đã có' : 'THIẾU');
-        console.log('Client ID:', CLIENT_ID ? 'Đã có' : 'THIẾU');
-        
-        if (!API_KEY || !CLIENT_ID) {
-            throw new Error('Thiếu API Key hoặc Client ID');
-        }
-        
-        // ... phần code còn lại
-    } catch (error) {
-        console.error('Lỗi chi tiết:', error);
-        showMessage('Lỗi cấu hình: ' + error.message, 'error');
+    // Google API script loaded
+    function gapiLoaded() {
+      gapi.load("client:auth2", initClient);
     }
-}
-                </div>
-            </div>
 
-            <div class="warning">
-                <h3>⚠️ Lưu ý bảo mật</h3>
-                <ul>
-                    <li>API Key có thể hiển thị công khai (đã được hạn chế scope)</li>
-                    <li>Không bao giờ chia sẻ Client Secret (nếu có)</li>
-                    <li>Định kỳ rotate API keys</li>
-                    <li>Chỉ cấp quyền tối thiểu cần thiết (drive.file scope)</li>
-                </ul>
-            </div>
+    async function initClient() {
+      await gapi.client.init({
+        apiKey: API_KEY,
+        clientId: CLIENT_ID,
+        discoveryDocs: DISCOVERY_DOCS,
+        scope: SCOPES,
+      });
 
-            <div style="text-align: center; margin-top: 30px;">
-                <p style="color: #666; font-size: 14px;">
-                    Sau khi hoàn thành các bước trên, ứng dụng sẽ có thể kết nối với Google Drive thành công.
-                </p>
-            </div>
-        </div>
-    </div>
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: "", // Sẽ set sau
+      });
+
+      gapiInited = true;
+      console.log("✅ GAPI đã khởi tạo");
+      checkMainFolder();
+    }
+
+    function handleAuthClick() {
+      tokenClient.callback = async (resp) => {
+        if (resp.error !== undefined) {
+          throw (resp);
+        }
+        console.log("Đăng nhập thành công");
+        checkMainFolder();
+      };
+      if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({ prompt: "consent" });
+      } else {
+        tokenClient.requestAccessToken({ prompt: "" });
+      }
+    }
+
+    function handleSignoutClick() {
+      const token = gapi.client.getToken();
+      if (token !== null) {
+        google.accounts.oauth2.revoke(token.access_token);
+        gapi.client.setToken("");
+        console.log("🚪 Đã đăng xuất");
+      }
+    }
+
+    async function checkMainFolder() {
+      const res = await gapi.client.drive.files.list({
+        q: "name='TruyenApp' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+        fields: "files(id, name)",
+      });
+      if (res.result.files.length > 0) {
+        parentFolderId = res.result.files[0].id;
+      } else {
+        const folder = await gapi.client.drive.files.create({
+          resource: {
+            name: "TruyenApp",
+            mimeType: "application/vnd.google-apps.folder",
+          },
+          fields: "id",
+        });
+        parentFolderId = folder.result.id;
+      }
+      listStories();
+    }
+
+    async function saveStory() {
+      const storyName = document.getElementById("storyName").value.trim();
+      const chapterContent = document.getElementById("chapterContent").value.trim();
+      if (!storyName || !chapterContent) {
+        alert("Nhập tên truyện và nội dung chương!");
+        return;
+      }
+
+      // Tìm hoặc tạo folder truyện
+      const res = await gapi.client.drive.files.list({
+        q: "name='" + storyName + "' and mimeType='application/vnd.google-apps.folder' and '" + parentFolderId + "' in parents and trashed=false",
+        fields: "files(id, name)",
+      });
+      let storyFolderId;
+      if (res.result.files.length > 0) {
+        storyFolderId = res.result.files[0].id;
+      } else {
+        const folder = await gapi.client.drive.files.create({
+          resource: {
+            name: storyName,
+            mimeType: "application/vnd.google-apps.folder",
+            parents: [parentFolderId],
+          },
+          fields: "id",
+        });
+        storyFolderId = folder.result.id;
+      }
+
+      // Tạo file chương
+      const fileMetadata = {
+        name: "chuong-" + Date.now() + ".txt",
+        parents: [storyFolderId],
+      };
+      const media = {
+        mimeType: "text/plain",
+        body: chapterContent,
+      };
+      await gapi.client.drive.files.create({
+        resource: fileMetadata,
+        media: media,
+        fields: "id",
+      });
+      alert("✅ Đã lưu chương!");
+      listStories();
+    }
+
+    async function listStories() {
+      if (!parentFolderId) return;
+      const res = await gapi.client.drive.files.list({
+        q: "'" + parentFolderId + "' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false",
+        fields: "files(id, name)",
+      });
+      const history = document.getElementById("history");
+      history.innerHTML = "";
+
+      res.result.files.forEach(f => {
+        const item = document.createElement("div");
+        item.innerHTML =
+          '<div class="story-head" onclick="toggleChapters(this)">' +
+            '<div>' +
+              '<div class="story-name">' + f.name + '</div>' +
+              '<div class="muted" data-folder-id="' + f.id + '">Đang tải chương...</div>' +
+            '</div>' +
+            '<div>▼</div>' +
+          '</div>' +
+          '<div class="chapters"></div>';
+        history.appendChild(item);
+      });
+    }
+
+    async function toggleChapters(el) {
+      const muted = el.querySelector(".muted");
+      const chaptersDiv = el.parentElement.querySelector(".chapters");
+      if (chaptersDiv.style.display === "block") {
+        chaptersDiv.style.display = "none";
+        return;
+      }
+      chaptersDiv.style.display = "block";
+      const folderId = muted.getAttribute("data-folder-id");
+      const res = await gapi.client.drive.files.list({
+        q: "'" + folderId + "' in parents and trashed=false",
+        fields: "files(id, name)",
+      });
+      chaptersDiv.innerHTML = "";
+      res.result.files.forEach(file => {
+        const ch = document.createElement("div");
+        ch.textContent = "📖 " + file.name;
+        chaptersDiv.appendChild(ch);
+      });
+    }
+  </script>
+
+  <!-- Google API -->
+  <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>
