@@ -396,10 +396,6 @@
         </div>
     </div>
 
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://apis.google.com/js/api.js" async defer></script>
-
     <script>
         // Cấu hình Google API
         const API_KEY = 'AIzaSyBGHB5FnrtMXliWtk3X6FZAl0CE2neNgZM';
@@ -408,28 +404,69 @@
         const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
         // Biến toàn cục
-        let gapi, tokenClient;
+        let gapi, google, tokenClient;
         let isSignedIn = false;
         let storyData = [];
         let aiModel = null;
         let currentUser = null;
+        let isApiLoaded = false;
+
+        // Load Google APIs
+        function loadGoogleAPIs() {
+            return new Promise((resolve, reject) => {
+                // Load gapi first
+                const gapiScript = document.createElement('script');
+                gapiScript.src = 'https://apis.google.com/js/api.js';
+                gapiScript.onload = () => {
+                    // Load Google Identity Services
+                    const gisScript = document.createElement('script');
+                    gisScript.src = 'https://accounts.google.com/gsi/client';
+                    gisScript.onload = () => {
+                        resolve();
+                    };
+                    gisScript.onerror = reject;
+                    document.head.appendChild(gisScript);
+                };
+                gapiScript.onerror = reject;
+                document.head.appendChild(gapiScript);
+            });
+        }
 
         // Khởi tạo Google API
         async function initializeGapi() {
-            await new Promise((resolve) => {
-                gapi.load('auth2:client', resolve);
-            });
-            
-            await gapi.client.init({
-                apiKey: API_KEY,
-                discoveryDocs: [DISCOVERY_DOC],
-            });
+            try {
+                if (!window.gapi) {
+                    throw new Error('Google API chưa được load');
+                }
 
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: handleAuthResponse,
-            });
+                // Wait for gapi to be ready
+                await new Promise((resolve) => {
+                    window.gapi.load('client:auth2', resolve);
+                });
+                
+                await window.gapi.client.init({
+                    apiKey: API_KEY,
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+
+                if (!window.google) {
+                    throw new Error('Google Identity Services chưa được load');
+                }
+
+                tokenClient = window.google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: handleAuthResponse,
+                });
+
+                isApiLoaded = true;
+                console.log('Google API initialized successfully');
+                
+            } catch (error) {
+                console.error('Error initializing Google API:', error);
+                showStatus('loginStatus', 'error', 'Lỗi khởi tạo Google API: ' + error.message);
+                throw error;
+            }
         }
 
         // Xử lý phản hồi xác thực
@@ -489,12 +526,18 @@
         function showMainContent() {
             document.getElementById('loginPanel').classList.add('hidden');
             document.getElementById('mainContent').classList.remove('hidden');
+            showStatus('loginStatus', 'success', 'Đăng nhập thành công!');
         }
 
         // Tải và phân tích dữ liệu
         async function loadAndAnalyzeData() {
             if (!isSignedIn) {
                 showStatus('connectionStatus', 'error', 'Vui lòng đăng nhập trước');
+                return;
+            }
+
+            if (!window.gapi || !window.gapi.client) {
+                showStatus('connectionStatus', 'error', 'Google API chưa sẵn sàng');
                 return;
             }
 
@@ -508,8 +551,9 @@
                     // Tự động tìm folder "QuanLyTruyen"
                     folderId = await findFolderByName('QuanLyTruyen');
                     if (!folderId) {
-                        throw new Error('Không tìm thấy folder "QuanLyTruyen"');
+                        throw new Error('Không tìm thấy folder "QuanLyTruyen" trong Google Drive của bạn. Vui lòng tạo folder hoặc nhập ID thủ công.');
                     }
+                    document.getElementById('folderId').value = folderId;
                 }
 
                 updateProgress(30);
@@ -520,7 +564,7 @@
                 updateProgress(50);
 
                 if (files.length === 0) {
-                    throw new Error('Không có file .txt nào trong folder');
+                    throw new Error('Không có file .txt nào trong folder "QuanLyTruyen". Vui lòng thêm file truyện (.txt) vào folder.');
                 }
 
                 showStatus('connectionStatus', 'info', `Đang phân tích ${files.length} files...`);
@@ -528,13 +572,23 @@
                 // Tải và phân tích nội dung
                 storyData = [];
                 for (let i = 0; i < files.length; i++) {
-                    const content = await getFileContent(files[i].id);
-                    storyData.push({
-                        name: files[i].name,
-                        content: content,
-                        size: formatFileSize(files[i].size || 0)
-                    });
+                    try {
+                        const content = await getFileContent(files[i].id);
+                        if (content && content.trim().length > 0) {
+                            storyData.push({
+                                name: files[i].name,
+                                content: content,
+                                size: formatFileSize(files[i].size || content.length)
+                            });
+                        }
+                    } catch (error) {
+                        console.warn(`Không thể đọc file ${files[i].name}:`, error);
+                    }
                     updateProgress(50 + (i + 1) * 30 / files.length);
+                }
+
+                if (storyData.length === 0) {
+                    throw new Error('Không thể đọc được nội dung từ các file trong folder.');
                 }
 
                 // Khởi tạo và huấn luyện AI
@@ -547,6 +601,7 @@
                 document.getElementById('generateBtn').disabled = false;
 
             } catch (error) {
+                console.error('Error in loadAndAnalyzeData:', error);
                 showStatus('connectionStatus', 'error', 'Lỗi: ' + error.message);
                 updateProgress(0);
             }
@@ -555,8 +610,8 @@
         // Tìm folder theo tên
         async function findFolderByName(folderName) {
             try {
-                const response = await gapi.client.drive.files.list({
-                    q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder'`,
+                const response = await window.gapi.client.drive.files.list({
+                    q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
                     fields: 'files(id, name)'
                 });
 
@@ -564,37 +619,44 @@
                 return folders.length > 0 ? folders[0].id : null;
             } catch (error) {
                 console.error('Lỗi tìm folder:', error);
-                return null;
+                throw new Error('Lỗi khi tìm kiếm folder: ' + error.message);
             }
         }
 
         // Lấy files từ folder
         async function getFilesFromFolder(folderId) {
             try {
-                const response = await gapi.client.drive.files.list({
-                    q: `parents in '${folderId}' and name contains '.txt'`,
-                    fields: 'files(id, name, size)'
+                const response = await window.gapi.client.drive.files.list({
+                    q: `'${folderId}' in parents and (name contains '.txt' or mimeType='text/plain') and trashed=false`,
+                    fields: 'files(id, name, size, mimeType)',
+                    pageSize: 100
                 });
 
                 return response.result.files || [];
             } catch (error) {
                 console.error('Lỗi lấy files:', error);
-                return [];
+                throw new Error('Lỗi khi lấy danh sách file: ' + error.message);
             }
         }
 
         // Lấy nội dung file
         async function getFileContent(fileId) {
             try {
-                const response = await gapi.client.drive.files.get({
+                const response = await window.gapi.client.drive.files.get({
                     fileId: fileId,
                     alt: 'media'
                 });
 
-                return response.body;
+                // Đảm bảo encoding UTF-8
+                let content = response.body;
+                if (typeof content !== 'string') {
+                    content = new TextDecoder('utf-8').decode(content);
+                }
+                
+                return content;
             } catch (error) {
                 console.error('Lỗi lấy nội dung file:', error);
-                return '';
+                throw new Error('Không thể đọc nội dung file: ' + error.message);
             }
         }
 
@@ -1116,15 +1178,26 @@
 
         // Khởi tạo ứng dụng khi trang được load
         window.onload = function() {
-            initializeGapi().then(() => {
-                console.log('Google API initialized');
-            }).catch(error => {
-                console.error('Error initializing Google API:', error);
-                showStatus('loginStatus', 'error', 'Lỗi khởi tạo Google API');
-            });
-
-            // Setup star rating
-            setupStarRating();
+            console.log('Starting application initialization...');
+            
+            // Hiển thị trạng thái loading
+            showStatus('loginStatus', 'info', 'Đang khởi tạo Google API...');
+            
+            loadGoogleAPIs()
+                .then(() => {
+                    console.log('Google APIs loaded, initializing...');
+                    return initializeGapi();
+                })
+                .then(() => {
+                    console.log('Google API initialized successfully');
+                    showStatus('loginStatus', 'success', 'Google API đã sẵn sàng! Vui lòng đăng nhập để tiếp tục.');
+                    // Setup star rating
+                    setupStarRating();
+                })
+                .catch(error => {
+                    console.error('Error during initialization:', error);
+                    showStatus('loginStatus', 'error', 'Lỗi khởi tạo: ' + error.message + '. Vui lòng tải lại trang.');
+                });
         };
     </script>
 </body>
