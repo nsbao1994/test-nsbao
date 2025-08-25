@@ -3,12 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Quản Lý Truyện — Drive + ml5 + 50 chương (GIS)</title>
+  <title>Quản Lý Truyện — Drive + TensorFlow.js + ml5 (50 chương)</title>
 
-  <!-- Google Identity Services (mới) + Google API Client -->
+  <!-- Google Identity Services + Google API Client -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script async defer src="https://apis.google.com/js/api.js"></script>
-  <!-- ml5.js sentiment -->
+
+  <!-- TensorFlow.js + Universal Sentence Encoder (TFJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script>
+
+  <!-- ml5.js (sentiment) -->
   <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
 
   <style>
@@ -43,7 +48,7 @@
 </head>
 <body>
 <header>
-  <h1>📚 Quản Lý Truyện — Google Drive + ml5 (GIS)</h1>
+  <h1>📚 Quản Lý Truyện — Google Drive + TensorFlow.js + ml5</h1>
   <div style="display:flex; gap:8px; align-items:center">
     <button id="signin" class="btn">Đăng nhập Google</button>
     <button id="signout" class="btn" style="display:none">Đăng xuất</button>
@@ -92,7 +97,7 @@
       </div>
 
       <div class="card">
-        <h3 style="margin:0 0 8px">2) Phân tích nâng cao (tiếng Việt + sentiment)</h3>
+        <h3 style="margin:0 0 8px">2) Phân tích nâng cao (TF.js + ml5 sentiment)</h3>
         <div style="display:flex; gap:10px; flex-wrap:wrap">
           <button id="analyze" class="btn">Phân tích</button>
           <button id="exportStats" class="btn">Xuất JSON thống kê</button>
@@ -215,7 +220,8 @@ let accessToken = null; // GIS token
 let tokenClient = null; // GIS token client
 let corpusTexts = []; // mảng chuỗi txt
 let totalBytes = 0;
-let sentiment;
+let sentiment;        // ml5 sentiment
+let useModel;         // TF.js Universal Sentence Encoder
 let qltFolderId = null; // id thư mục QuanLyTruyen
 let cancelFlag = false;
 let activeStoryFolderId = null; // nơi upload chương
@@ -246,7 +252,11 @@ function initGIS(){
 
 window.addEventListener('load', async () => {
   await initGapi();
-  const waitGIS = () => new Promise(r=>{ const iv=setInterval(()=>{ if (window.google && google.accounts && google.accounts.oauth2){ clearInterval(iv); r(); } }, 50); });
+  const waitGIS = () => new Promise(r=>{
+    const iv=setInterval(()=>{
+      if (window.google && google.accounts && google.accounts.oauth2){ clearInterval(iv); r(); }
+    }, 50);
+  });
   await waitGIS();
   initGIS();
 });
@@ -304,8 +314,16 @@ async function listAllTxtRecursive(folderId, maxFiles = 200, collected = [], pag
   return collected.slice(0, maxFiles);
 }
 
+async function listSubfolders(parentId){
+  const res = await gapi.client.drive.files.list({
+    q: `'${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: 'files(id,name)',
+    orderBy: 'name'
+  });
+  return res.result.files || [];
+}
+
 function getAccessToken(){
-  // ưu tiên token GIS đã nhận
   if (accessToken) return accessToken;
   const tokenObj = gapi.client.getToken();
   return tokenObj && (tokenObj.access_token || tokenObj.accessToken);
@@ -317,7 +335,7 @@ async function uploadMultipart({name, mimeType, content, parents, fileId=null}){
   const closeDelim = "\r\n--" + boundary + "--";
   const metadata = { name, mimeType, parents };
   const base64Data = btoa(unescape(encodeURIComponent(content)));
-  const body = 
+  const body =
     delimiter + 'Content-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata) +
     delimiter + 'Content-Type: ' + mimeType + '\r\n' + 'Content-Transfer-Encoding: base64\r\n\r\n' + base64Data + closeDelim;
 
@@ -401,11 +419,13 @@ const VI_STOPWORDS = new Set(['và','là','của','những','các','một','như
 function tokenizeVI(text){ const tokens = (text||'').toLowerCase().match(/[\p{L}\p{M}\d']+/gu) || []; return tokens.filter(w=>w && !VI_STOPWORDS.has(w)); }
 function splitSentencesVI(text){ return (text||'').split(/(?<=[\.!?…])\s+/).filter(s=>s.trim().length>0); }
 
-/** ================== PHÂN TÍCH (NÂNG CẤP) ================== */
+/** ================== PHÂN TÍCH (TF.js + ml5) ================== */
 $("analyze").onclick = analyzeCorpus;
 $("exportStats").onclick = ()=>{ if (!window._lastStats){ setStatus('Chưa có thống kê.'); return; } const data = window._lastStats; const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='stats.json'; a.click(); URL.revokeObjectURL(url); };
 
 async function ensureSentiment(){ if (!sentiment){ sentiment = ml5.sentiment('movieReviews'); } }
+async function ensureUSE(){ if (!useModel){ useModel = await use.load(); } }
+
 function topWords(tokens, n=40){ const f=new Map(); for(const w of tokens) f.set(w,(f.get(w)||0)+1); return [...f.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n); }
 function ngrams(tokens, n){ const m=new Map(); for(let i=0;i<=tokens.length-n;i++){ const key=tokens.slice(i,i+n).join(' '); const next=tokens[i+n]; if (!next) continue; if(!m.has(key)) m.set(key,[]); m.get(key).push(next);} return m; }
 
@@ -436,8 +456,34 @@ Top 40 từ phổ biến:\n${tops}`;
 }
 
 /** ================== CACHE PHÂN TÍCH (Drive) ================== */
-async function saveCacheToDrive(){ if (!qltFolderId){ await ensureQLT(); } if (!window._lastTokens || !window._lastStats){ setStatus('Chưa phân tích để lưu.'); return; } const cache = { when: new Date().toISOString(), stats: window._lastStats }; const vocab = { tokens: window._lastTokens.slice(0, 500000) }; await upsertJsonFile(qltFolderId, 'QLT_analysis.json', cache); await upsertJsonFile(qltFolderId, 'QLT_vocab.json', vocab); setStatus('Đã lưu cache phân tích lên Drive.'); log('Lưu cache thành công.'); }
-async function loadCacheFromDrive(){ if (!qltFolderId){ await ensureQLT(); } async function downloadJsonIfExists(name){ const f = await findChildByName(qltFolderId, name); if (!f){ return null; } const token = getAccessToken(); const res = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`, { headers:{ Authorization:'Bearer '+token } }); if (!res.ok) return null; return await res.json(); } const cache = await downloadJsonIfExists('QLT_analysis.json'); const vocab = await downloadJsonIfExists('QLT_vocab.json'); if (cache && vocab){ window._lastStats = cache.stats; window._lastTokens = vocab.tokens; $("analysis").textContent = JSON.stringify(cache, null, 2); window._lastModel = ngrams(window._lastTokens, cache.stats.order || 3); setStatus('Đã tải cache phân tích.'); log('Tải cache thành công.'); } else { setStatus('Không tìm thấy cache.'); } }
+async function saveCacheToDrive(){
+  if (!qltFolderId){ await ensureQLT(); }
+  if (!window._lastTokens || !window._lastStats){ setStatus('Chưa phân tích để lưu.'); return; }
+  const cache = { when: new Date().toISOString(), stats: window._lastStats };
+  const vocab = { tokens: window._lastTokens.slice(0, 500000) };
+  await upsertJsonFile(qltFolderId, 'QLT_analysis.json', cache);
+  await upsertJsonFile(qltFolderId, 'QLT_vocab.json', vocab);
+  setStatus('Đã lưu cache phân tích lên Drive.'); log('Lưu cache thành công.');
+}
+async function loadCacheFromDrive(){
+  if (!qltFolderId){ await ensureQLT(); }
+  async function downloadJsonIfExists(name){
+    const f = await findChildByName(qltFolderId, name);
+    if (!f){ return null; }
+    const token = getAccessToken();
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`, { headers:{ Authorization:'Bearer '+token } });
+    if (!res.ok) return null; return await res.json();
+  }
+  const cache = await downloadJsonIfExists('QLT_analysis.json');
+  const vocab = await downloadJsonIfExists('QLT_vocab.json');
+  if (cache && vocab){
+    window._lastStats = cache.stats;
+    window._lastTokens = vocab.tokens;
+    $("analysis").textContent = JSON.stringify(cache, null, 2);
+    window._lastModel = ngrams(window._lastTokens, cache.stats.order || 3);
+    setStatus('Đã tải cache phân tích.'); log('Tải cache thành công.');
+  } else { setStatus('Không tìm thấy cache.'); }
+}
 
 /** ================== VIẾT TRUYỆN 50 CHƯƠNG ================== */
 $("generateOutline").onclick = suggestOutline;
@@ -445,22 +491,276 @@ $("startBook").onclick = startGeneratingBook;
 $("cancelGen").onclick = ()=>{ cancelFlag = true; setStatus('Đã gửi yêu cầu huỷ.'); };
 
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-function buildWordModel(tokens, order){ const m = new Map(); for(let i=0;i<=tokens.length - order; i++){ const key = tokens.slice(i,i+order).join(' '); const next = tokens[i+order]; if (!next) continue; if (!m.has(key)) m.set(key, []); m.get(key).push(next);} return m; }
-async function ensureModel(){ if (!window._lastTokens){ if (!corpusTexts.length){ setStatus('Chưa có dữ liệu để học.'); throw new Error('no data'); } const tokens = tokenizeVI(corpusTexts.join('\n')); window._lastTokens = tokens; } if (!window._lastModel){ const order = parseInt($("order").value || '3', 10); window._lastModel = buildWordModel(window._lastTokens, order); } await ensureSentiment(); }
+function buildWordModel(tokens, order){
+  const m = new Map();
+  for(let i=0;i<=tokens.length - order; i++){
+    const key = tokens.slice(i,i+order).join(' ');
+    const next = tokens[i+order];
+    if (!next) continue;
+    if (!m.has(key)) m.set(key, []);
+    m.get(key).push(next);
+  }
+  return m;
+}
+async function ensureModel(){
+  if (!window._lastTokens){
+    if (!corpusTexts.length){ setStatus('Chưa có dữ liệu để học.'); throw new Error('no data'); }
+    const tokens = tokenizeVI(corpusTexts.join('\n'));
+    window._lastTokens = tokens;
+  }
+  if (!window._lastModel){
+    const order = parseInt($("order").value || '3', 10);
+    window._lastModel = buildWordModel(window._lastTokens, order);
+  }
+  await ensureSentiment();
+  await ensureUSE();
+}
 
-function proposeTitleFromTokens(tokens){ const freq = new Map(); for(const w of tokens) freq.set(w,(freq.get(w)||0)+1); const weighted = [...freq.entries()].filter(([w])=>w.length>2 && !VI_STOPWORDS.has(w)); weighted.sort((a,b)=>b[1]-a[1]); const pool = weighted.slice(0,120).map(([w,c])=>({w,score:c})); const pickN = (n)=>{ const arr=[]; for(let i=0;i<n;i++){ const r = pool[Math.floor(Math.random()*pool.length)]; if(!r) break; arr.push(r.w); } return arr; }; const form1 = ["hành trình", "bí ẩn", "ký ức", "bóng đêm", "mùa gió", "dấu chân", "lằn ranh", "mặt trời", "đám mây", "cơn mưa"]; let cand = pick(form1) + ' ' + pickN(2).join(' '); cand = cand.replace(/\b\w/g, m=>m.toUpperCase()); return cand; }
+function proposeTitleFromTokens(tokens){
+  const freq = new Map();
+  for(const w of tokens) freq.set(w,(freq.get(w)||0)+1);
+  const weighted = [...freq.entries()].filter(([w])=>w.length>2 && !VI_STOPWORDS.has(w));
+  weighted.sort((a,b)=>b[1]-a[1]);
+  const pool = weighted.slice(0,120).map(([w,c])=>({w,score:c}));
+  const pickN = (n)=>{ const arr=[]; for(let i=0;i<n;i++){ const r = pool[Math.floor(Math.random()*pool.length)]; if(!r) break; arr.push(r.w); } return arr; };
+  const form1 = ["hành trình", "bí ẩn", "ký ức", "bóng đêm", "mùa gió", "dấu chân", "lằn ranh", "mặt trời", "đám mây", "cơn mưa"];
+  let cand = pick(form1) + ' ' + pickN(2).join(' ');
+  cand = cand.replace(/\b\w/g, m=>m.toUpperCase());
+  return cand;
+}
 
-async function suggestOutline(){ await ensureModel(); const title = ($("titleInput").value.trim() || proposeTitleFromTokens(window._lastTokens)).replace(/\s+/g,' ').trim(); const chapters = []; const arcs = ['Khởi đầu & gọi mời cuộc phiêu lưu','Bước chân đầu tiên & mâu thuẫn nhen nhóm','Lời hứa và bí mật','Gặp gỡ đồng minh','Thử thách nhỏ, hậu quả lớn','Dấu vết quá khứ','Đối đầu lần đầu','Vùng tối của tôi','Lựa chọn khó khăn','Mất mát thứ nhất','Manh mối lộ diện','Nâng tầm xung đột','Cánh cửa khép hờ','Bước ngoặt','Lời nói dối','Chạy trốn','Tái ngộ','Học cách tin','Đổi vai','Bước vào tâm bão','Đêm trước bão','Sự thật thứ nhất','Vỡ vụn','Nhặt từng mảnh','Thắp lửa','Âm mưu lộ mặt','Cái bẫy','Hi sinh','Sụp đổ','Vực dậy','Đối mặt cuối','Cái giá phải trả','Mở khoá bí ẩn','Ánh sáng rạng đông','Vết sẹo còn lại','Tha thứ','Trở về','Cánh cửa mới','Chọn con đường','Lời hứa giữ lấy','Viết tiếp','Mùa mưa nữa','Bình yên mong manh','Dấu chấm hết','Ngoại truyện 1','Ngoại truyện 2','Ngoại truyện 3','Ngoại truyện 4','Ngoại truyện 5','Khép lại & mở ra']; for(let i=1;i<=50;i++){ const arc = arcs[i-1] || `Chương ${i}`; chapters.push({ index:i, name: arc }); } const outline = { title, chapters }; $("outlineBox").value = JSON.stringify(outline, null, 2); setStatus('Đã tạo dàn ý 50 chương.'); }
+async function suggestOutline(){
+  await ensureModel();
+  const title = ($("titleInput").value.trim() || proposeTitleFromTokens(window._lastTokens)).replace(/\s+/g,' ').trim();
+  const chapters = [];
+  const arcs = ['Khởi đầu & gọi mời cuộc phiêu lưu','Bước chân đầu tiên & mâu thuẫn nhen nhóm','Lời hứa và bí mật','Gặp gỡ đồng minh','Thử thách nhỏ, hậu quả lớn','Dấu vết quá khứ','Đối đầu lần đầu','Vùng tối của tôi','Lựa chọn khó khăn','Mất mát thứ nhất','Manh mối lộ diện','Nâng tầm xung đột','Cánh cửa khép hờ','Bước ngoặt','Lời nói dối','Chạy trốn','Tái ngộ','Học cách tin','Đổi vai','Bước vào tâm bão','Đêm trước bão','Sự thật thứ nhất','Vỡ vụn','Nhặt từng mảnh','Thắp lửa','Âm mưu lộ mặt','Cái bẫy','Hi sinh','Sụp đổ','Vực dậy','Đối mặt cuối','Cái giá phải trả','Mở khoá bí ẩn','Ánh sáng rạng đông','Vết sẹo còn lại','Tha thứ','Trở về','Cánh cửa mới','Chọn con đường','Lời hứa giữ lấy','Viết tiếp','Mùa mưa nữa','Bình yên mong manh','Dấu chấm hết','Ngoại truyện 1','Ngoại truyện 2','Ngoại truyện 3','Ngoại truyện 4','Ngoại truyện 5','Khép lại & mở ra'];
+  for(let i=1;i<=50;i++){ const arc = arcs[i-1] || `Chương ${i}`; chapters.push({ index:i, name: arc }); }
+  const outline = { title, chapters };
+  $("outlineBox").value = JSON.stringify(outline, null, 2);
+  setStatus('Đã tạo dàn ý 50 chương.');
+}
 
-function sampleWords(model, order, targetWords, seedWords){ const ENDERS=['.','!','?','…']; const ensureFirstPerson=(s)=>{ if (!/\btôi\b/i.test(s)) return 'Tôi ' + s.charAt(0).toLowerCase()+s.slice(1); return s; }; let keyTokens; if (seedWords && seedWords.length >= order) keyTokens = seedWords.slice(0, order); else { const keys = [...model.keys()]; keyTokens = keys[Math.floor(Math.random()*keys.length)].split(' '); } let out = keyTokens.slice(); while (out.length < targetWords){ const key = out.slice(out.length - order, out.length).join(' '); const choices = model.get(key) || []; if (!choices.length){ const keys = [...model.keys()]; const pickKey = keys[Math.floor(Math.random()*keys.length)]; const parts = pickKey.split(' '); out.push(...parts); continue; } let cand = choices[Math.floor(Math.random()*choices.length)]; out.push(cand); if (Math.random() < 0.08) out.push(pick([',', ',', ',', '.', '.'])); } let text = out.join(' ').replace(/\s+([,\.\!\?…])/g,'$1').replace(/\n\s+/g,'\n'); const sents = splitSentencesVI(text).map(s=>s.trim()).filter(Boolean); const paras=[]; let cur=[]; let count=0; for (const s of sents){ cur.push(s); count++; if (count>=5+Math.floor(Math.random()*4)){ paras.push(ensureFirstPerson(cur.join(' '))); cur=[]; count=0; } } if (cur.length) paras.push(ensureFirstPerson(cur.join(' '))); return paras.join('\n\n'); }
+/** ====== Sinh văn bản Markov + điều hướng TF.js (USE) + ml5 sentiment ====== */
+function sampleWords(model, order, targetWords, seedWords){
+  const ENDERS=['.','!','?','…'];
+  const ensureFirstPerson=(s)=>{ if (!/\btôi\b/i.test(s)) return 'Tôi ' + s.charAt(0).toLowerCase()+s.slice(1); return s; };
 
-async function generateChapter({model, order, wordsTarget, seed, targetSent=0.1}){ await ensureSentiment(); const seedWords = seed ? tokenizeVI(seed) : null; const candidates = []; for (let i=0;i<3;i++){ const text = sampleWords(model, order, wordsTarget, seedWords); const sents = splitSentencesVI(text); let sum=0, n=0; for (const s of sents.slice(0,50)){ try{ sum += sentiment.predict(s).score||0; n++; }catch{} } const score = n? sum/n : 0; candidates.push({text, dist: Math.abs(score - targetSent)}); } candidates.sort((a,b)=>a.dist-b.dist); return candidates[0].text; }
+  let keyTokens;
+  if (seedWords && seedWords.length >= order) keyTokens = seedWords.slice(0, order);
+  else {
+    const keys = [...model.keys()];
+    keyTokens = keys[Math.floor(Math.random()*keys.length)].split(' ');
+  }
 
-async function startGeneratingBook(){ cancelFlag = false; try{ await ensureModel(); await ensureQLT(); let outline; try{ outline = JSON.parse($("outlineBox").value || '{}'); }catch{ outline=null; } if (!outline || !outline.title){ await suggestOutline(); outline = JSON.parse($("outlineBox").value); } const title = outline.title; const storyFolderId = await findFolderIdByName(title, qltFolderId) || await createFolder(title, qltFolderId); activeStoryFolderId = storyFolderId; const meta = { title, chapters: outline.chapters, createdAt: new Date().toISOString(), generator:'Markov-W3 + ml5 sentiment', wordsPerChapter:+$("wordsPerChapter").value }; await upsertJsonFile(storyFolderId, 'metadata.json', meta); const order = parseInt($("order").value || '3', 10); const wordsTarget = parseInt($("wordsPerChapter").value || '2300', 10); const targetSent = parseFloat($("targetSentiment").value || '0.1'); const chapters = outline.chapters || Array.from({length:50}, (_,i)=>({index:i+1, name:`Chương ${i+1}`})); for (let i=0; i<chapters.length; i++){ if (cancelFlag){ setStatus('Đã huỷ.'); break; } const ch = chapters[i]; $("bookStatus").textContent = `Đang sinh: Chương ${ch.index} – ${ch.name}`; log(`Sinh chương ${ch.index}`); const seed = (i===0? ($("seed").value.trim()||'Tôi') : `Tôi ${ch.name.toLowerCase()}`); const text = await generateChapter({ model: window._lastModel, order, wordsTarget, seed, targetSent }); const titleName = ch.name || `Chương ${i+1}`; const fileName = `${String(ch.index).padStart(2,'0')} - ${titleName}.txt`; await upsertTextFile(storyFolderId, fileName, titleName.toUpperCase()+"\n\n"+ text + "\n"); const p = Math.round(((i+1)/chapters.length)*100); setBar(p,'bookBar'); $("bookStatus").textContent = `Đã upload: ${fileName}`; await new Promise(r=>setTimeout(r, 350)); } await upsertJsonFile(storyFolderId, 'generation_summary.json', { finishedAt: new Date().toISOString(), wordsPerChapter: wordsTarget, order, targetSent }); setStatus('Hoàn tất sinh & upload.'); log('Hoàn tất toàn bộ.'); }catch(e){ console.error(e); setStatus('Lỗi: '+e.message); log('Lỗi: '+e.message); }}
+  let out = keyTokens.slice();
+  const maxLen = Math.max(targetWords*2.2, targetWords+500);
+
+  while (out.length < maxLen){
+    const key = out.slice(out.length - order, out.length).join(' ');
+    const choices = model.get(key) || [];
+    if (!choices.length){
+      const keys = [...model.keys()];
+      const pickKey = keys[Math.floor(Math.random()*keys.length)];
+      const parts = pickKey.split(' ');
+      out.push(...parts);
+      continue;
+    }
+    // temperature-ish sampling: prefer frequent but add noise
+    const cand = choices[Math.floor(Math.random()*choices.length)];
+    out.push(cand);
+
+    // chấm câu ngẫu nhiên nhẹ
+    if (Math.random() < 0.08) out.push(pick([',', ',', ',', '.', '.']));
+    if (out.length > targetWords && Math.random() < 0.02) break;
+  }
+
+  let text = out.join(' ').replace(/\s+([,\.\!\?…])/g,'$1').replace(/\n\s+/g,'\n');
+
+  // Ráp câu thành đoạn 5–8 câu/đoạn
+  const sents = splitSentencesVI(text).map(s=>s.trim()).filter(Boolean);
+  const paras=[]; let cur=[]; let count=0;
+  for (const s of sents){
+    cur.push(s); count++;
+    if (count>=5+Math.floor(Math.random()*4)){
+      paras.push(ensureFirstPerson(cur.join(' ')));
+      cur=[]; count=0;
+    }
+  }
+  if (cur.length) paras.push(ensureFirstPerson(cur.join(' ')));
+  return paras.join('\n\n');
+}
+
+async function scoreBySentiment(text, targetSent){
+  const sents = splitSentencesVI(text);
+  let sum=0, n=0;
+  for (const s of sents.slice(0,80)){ // lấy tối đa 80 câu để nhanh
+    try{ sum += sentiment.predict(s).score||0; n++; }catch{}
+  }
+  const avg = n? sum/n : 0;
+  return {avg, dist: Math.abs(avg - targetSent)};
+}
+
+async function scoreByUSE(text, themeEmbedding){
+  // Dùng sentence embeddings để tính gần gũi chủ đề
+  const paras = text.split(/\n{2,}/).slice(0, 8).map(s=>s.trim()).filter(Boolean);
+  if (!paras.length) return {sim:0};
+  const emb = await useModel.embed(paras);
+  const mean = tf.tidy(()=> emb.mean(0));
+  const sim = tf.tidy(()=> {
+    const a = mean;
+    const b = themeEmbedding;
+    const na = tf.norm(a);
+    const nb = tf.norm(b);
+    return tf.div(tf.sum(tf.mul(a,b)), tf.mul(na, nb));
+  });
+  const val = (await sim.data())[0];
+  tf.dispose([emb, mean, sim]);
+  return {sim: val};
+}
+
+function truncateToWords(text, targetWords){
+  const tokens = text.split(/\s+/);
+  if (tokens.length <= targetWords) return text;
+  // cắt đến dấu câu gần nhất sau target
+  let idx = targetWords;
+  for (let i=targetWords; i<Math.min(tokens.length, targetWords+200); i++){
+    if (/[.!?…]$/.test(tokens[i])){ idx = i+1; break; }
+  }
+  return tokens.slice(0, idx).join(' ');
+}
+
+async function generateChapter({model, order, wordsTarget, seed, targetSent=0.1}){
+  await ensureSentiment();
+  await ensureUSE();
+
+  const seedWords = seed ? tokenizeVI(seed) : null;
+  const themeText = seed || "Tôi kể chuyện đời mình với những ngã rẽ gia đình, mâu thuẫn, và lựa chọn.";
+  const themeEmb = await useModel.embed([themeText]);   // 1 x 512
+  const themeVec = themeEmb; // giữ tensor để dùng nhiều lần
+
+  const candidates = [];
+  const K = 4; // số ứng viên sinh
+  for (let i=0;i<K;i++){
+    const raw = sampleWords(model, order, Math.round(wordsTarget*1.15), seedWords);
+    const chopped = truncateToWords(raw, Math.round(wordsTarget*1.05));
+    const sentScore = await scoreBySentiment(chopped, targetSent);
+    const useScore = await scoreByUSE(chopped, themeVec);
+    const len = chopped.split(/\s+/).length;
+    const lenPenalty = Math.abs(len - wordsTarget) / wordsTarget; // càng nhỏ càng tốt
+    // tổng điểm: càng lớn càng tốt -> chuyển các metric về 0..1
+    const sentimentFitness = 1 - Math.min(1, sentScore.dist);     // gần targetSent -> ~1
+    const useFitness = Math.max(0, Math.min(1, (useScore.sim + 1)/2)); // cosine [-1,1] -> [0,1]
+    const lengthFitness = 1 - Math.min(1, lenPenalty);
+
+    // trọng số: ưu tiên chủ đề & cảm xúc, sau đó độ dài
+    const score = 0.45*useFitness + 0.45*sentimentFitness + 0.10*lengthFitness;
+
+    candidates.push({text: chopped, score, use:useScore.sim, sent:sentScore.avg, len});
+  }
+
+  // chọn tốt nhất
+  candidates.sort((a,b)=>b.score-a.score);
+  const best = candidates[0];
+  tf.dispose(themeVec);
+  return best.text;
+}
+
+async function startGeneratingBook(){
+  cancelFlag = false;
+  try{
+    await ensureModel();
+    await ensureQLT();
+
+    let outline;
+    try{ outline = JSON.parse($("outlineBox").value || '{}'); }catch{ outline=null; }
+    if (!outline || !outline.title){ await suggestOutline(); outline = JSON.parse($("outlineBox").value); }
+
+    const title = outline.title;
+    const storyFolderId = await findFolderIdByName(title, qltFolderId) || await createFolder(title, qltFolderId);
+    activeStoryFolderId = storyFolderId;
+
+    const meta = {
+      title,
+      chapters: outline.chapters,
+      createdAt: new Date().toISOString(),
+      generator: 'Markov-W (TF.js+ml5 sentiment + USE steering)',
+      wordsPerChapter:+$("wordsPerChapter").value
+    };
+    await upsertJsonFile(storyFolderId, 'metadata.json', meta);
+
+    const order = parseInt($("order").value || '3', 10);
+    const wordsTarget = parseInt($("wordsPerChapter").value || '2300', 10);
+    const targetSent = parseFloat($("targetSentiment").value || '0.1');
+
+    const chapters = outline.chapters || Array.from({length:50}, (_,i)=>({index:i+1, name:`Chương ${i+1}`}));
+
+    for (let i=0; i<chapters.length; i++){
+      if (cancelFlag){ setStatus('Đã huỷ.'); break; }
+      const ch = chapters[i];
+      $("bookStatus").textContent = `Đang sinh: Chương ${ch.index} – ${ch.name}`;
+      log(`Sinh chương ${ch.index}`);
+
+      const seed = (i===0? ($("seed").value.trim()||'Tôi') : `Tôi ${ch.name.toLowerCase()}`);
+
+      const text = await generateChapter({
+        model: window._lastModel,
+        order,
+        wordsTarget,
+        seed,
+        targetSent
+      });
+
+      const titleName = ch.name || `Chương ${i+1}`;
+      const fileName = `${String(ch.index).padStart(2,'0')} - ${titleName}.txt`;
+      const header = `${titleName.toUpperCase()}\n\n`;
+      await upsertTextFile(storyFolderId, fileName, header + text + "\n");
+
+      const p = Math.round(((i+1)/chapters.length)*100);
+      setBar(p,'bookBar');
+      $("bookStatus").textContent = `Đã upload: ${fileName}`;
+      await new Promise(r=>setTimeout(r, 250));
+    }
+
+    await upsertJsonFile(storyFolderId, 'generation_summary.json', {
+      finishedAt: new Date().toISOString(),
+      wordsPerChapter: wordsTarget,
+      order,
+      targetSent
+    });
+    setStatus('Hoàn tất sinh & upload.'); log('Hoàn tất toàn bộ.');
+  }catch(e){
+    console.error(e);
+    setStatus('Lỗi: '+e.message);
+    log('Lỗi: '+e.message);
+  }
+}
 
 /** ============ THÊM TRUYỆN (UI) ============ */
-$("createStoryFolder").onclick = async ()=>{ try{ await ensureQLT(); const name = $("newStoryTitle").value.trim(); if (!name){ setStatus('Nhập tên truyện.'); return; } const id = await findFolderIdByName(name, qltFolderId) || await createFolder(name, qltFolderId); $("createStoryResult").textContent = `Đã sẵn sàng thư mục: ${name} (ID: ${id})`; activeStoryFolderId = id; }catch(e){ setStatus('Lỗi tạo thư mục: '+e.message); } };
-$("listSubfolders").onclick = async ()=>{ await ensureQLT(); const subs = await listSubfolders(qltFolderId); const sel = $("subfolders"); sel.innerHTML=''; for (const f of subs){ const opt = document.createElement('option'); opt.value=f.id; opt.textContent=f.name; sel.appendChild(opt); } sel.onchange = ()=>{ activeStoryFolderId = sel.value; setStatus('Chọn thư mục: '+ sel.options[sel.selectedIndex].text); }; };
+$("createStoryFolder").onclick = async ()=>{
+  try{
+    await ensureQLT();
+    const name = $("newStoryTitle").value.trim();
+    if (!name){ setStatus('Nhập tên truyện.'); return; }
+    const id = await findFolderIdByName(name, qltFolderId) || await createFolder(name, qltFolderId);
+    $("createStoryResult").textContent = `Đã sẵn sàng thư mục: ${name} (ID: ${id})`;
+    activeStoryFolderId = id;
+  }catch(e){ setStatus('Lỗi tạo thư mục: '+e.message); }
+};
+$("listSubfolders").onclick = async ()=>{
+  await ensureQLT();
+  const subs = await listSubfolders(qltFolderId);
+  const sel = $("subfolders");
+  sel.innerHTML='';
+  for (const f of subs){
+    const opt = document.createElement('option');
+    opt.value=f.id; opt.textContent=f.name;
+    sel.appendChild(opt);
+  }
+  sel.onchange = ()=>{
+    activeStoryFolderId = sel.value;
+    setStatus('Chọn thư mục: '+ sel.options[sel.selectedIndex].text);
+  };
+};
 </script>
 </body>
 </html>
