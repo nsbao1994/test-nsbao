@@ -196,15 +196,7 @@
             margin: 15px 0;
         }
 
-        .debug-info {
-            background: #e9ecef;
-            border: 1px solid #ced4da;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-family: monospace;
-            font-size: 12px;
-        }
+
     </style>
 </head>
 <body>
@@ -232,7 +224,6 @@
             <button id="signoutBtn" class="button hidden">🚪 Đăng xuất</button>
             
             <div id="status" class="status hidden"></div>
-            <div id="debugInfo" class="debug-info hidden"></div>
             
             <div id="fileSection" class="hidden">
                 <h3>📁 Files trong thư mục QuanLyTruyen</h3>
@@ -305,15 +296,9 @@
         let vocabulary = {};
         let sequences = [];
 
-        // Debug function
+        // Debug function (simplified for production)
         function debugLog(message, data = null) {
-            console.log(message, data);
-            const debugInfo = document.getElementById('debugInfo');
-            debugInfo.classList.remove('hidden');
-            debugInfo.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${message}</div>`;
-            if (data) {
-                debugInfo.innerHTML += `<div style="margin-left: 20px;">${JSON.stringify(data, null, 2)}</div>`;
-            }
+            console.log(`[AI Story Analyzer] ${message}`, data || '');
         }
 
         // Initialize Google APIs with better error handling
