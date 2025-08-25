@@ -563,7 +563,7 @@
                                 <label for="chapterTitle">Tên Chương:</label>
                                 <input type="text" id="chapterTitle" required placeholder="Nhập tên chương...">
                             </div>
-                            <div class="form-group">
+                           <div class="form-group">
                                 <label for="storyContent">Nội dung:</label>
                                 <textarea id="storyContent" required placeholder="Nhập nội dung truyện..."></textarea>
                             </div>
@@ -629,68 +629,33 @@ const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 let tokenClient, gapi_inited = false, gis_inited = false, mainFolderId = null, storyHistory = [];
 let aiKnowledge = { 
     vocabulary: new Set(), 
-    stories: [], 
     trainedFiles: 0,
     sentenceStructures: new Set(),
-    plotPoints: new Set(),
     emotionalPatterns: new Set(),
     dialogues: [],
     contexts: [],
-    characterRelationships: new Set(),
-    narrativeStyles: new Set(),
-    transitionWords: new Set(),
-    psychologicalTerms: new Set(),
-    descriptivePatterns: new Set(),
-    metaphors: new Set(),
-    adultTerms: new Set(),
     characterNames: new Set(),
-    locations: new Set(),
-    timeFrames: new Set(),
-    situations: new Set(),
-    generationHistory: [],
-    processedFiles: new Set(), // Lưu trữ ID các file đã xử lý
-    qualityMetrics: {
-        complexityThreshold: 0.6,
-        coherenceThreshold: 0.7,
-        emotionThreshold: 0.65,
-        targetWordCount: 3500
-    }
+    adultTerms: new Set(),
+    processedFiles: new Set()
 };
 let aiGeneratedStories = [];
 let currentEditingChapter = null;
 
 // Từ vựng và cấu trúc chuyên biệt
 const specializedVocabulary = {
-    familyRelations: ['bố chồng', 'con dâu', 'chồng', 'vợ', 'gia đình', 'họ hàng', 'mối quan hệ', 'phép tắc', 'ranh giới', 
-                     'quyền lực gia trưởng', 'vai vế', 'tôn ti trật tự', 'nề nếp gia đình', 'quan hệ huyết thống'],
-    emotions: ['căng thẳng', 'bối rối', 'ghen tị', 'tò mò', 'lo lắng', 'thèm muốn', 'khao khát', 'tội lỗi', 'xấu hổ', 
-              'kích thích', 'dục vọng', 'bất an', 'day dứt', 'dằn vặt', 'giằng xé', 'ngờ vực', 'ám ảnh', 'khắc khoải',
-              'xót xa', 'đau đớn', 'tê tái', 'ngột ngạt', 'bức bối', 'rối bời', 'hoang mang'],
-    observations: ['quan sát', 'nhìn trộm', 'theo dõi', 'chú ý', 'phát hiện', 'để ý', 'nhận ra', 'thấy được', 'cảm nhận', 
-                  'nghe được', 'khám phá', 'vô tình chứng kiến', 'bắt gặp', 'nhận thấy', 'thấu hiểu', 'thấu cảm'],
-    innerThoughts: ['tôi nghĩ', 'trong tâm trí tôi', 'tôi tự hỏi', 'có lẽ', 'liệu rằng', 'tôi không thể tin được', 
-                   'tôi cảm thấy', 'điều này khiến tôi', 'tôi nhận ra', 'tôi chợt hiểu', 'tôi ngỡ ngàng', 
-                   'tôi giật mình nhận thấy', 'tôi bàng hoàng', 'tôi sửng sốt'],
-    secretive: ['bí mật', 'giấu kín', 'che giấu', 'lén lút', 'thầm kín', 'kín đáo', 'âm thầm', 'không ai biết', 
-               'chỉ mình tôi', 'im lặng', 'nén chặt', 'giữ kín trong lòng', 'không dám thổ lộ'],
-    physicalDescriptions: ['đôi mắt', 'nụ cười', 'cử chỉ', 'ánh mắt', 'cách di chuyển', 'giọng nói', 'cách cười', 
-                          'biểu cảm', 'dáng vẻ', 'bờ môi', 'mái tóc', 'bàn tay', 'vòng eo', 'cử động', 'hơi thở',
-                          'nhịp tim', 'làn da', 'nét mặt', 'cơ thể', 'vòng một', 'vòng ba', 'vóc dáng', 'đường cong'],
-    situations: ['bữa cơm gia đình', 'khi vợ đi vắng', 'cuối tuần', 'những buổi tối', 'lúc một mình', 'khi không ai chú ý',
-                'đêm khuya', 'sáng sớm', 'khi tắm rửa', 'lúc thay đồ', 'khi uống rượu', 'trong phòng ngủ', 
-                'ngoài vườn', 'trong bếp', 'trên ghế sofa', 'trong phòng tắm', 'khi say rượu'],
-    adultElements: ['ham muốn', 'dục vọng', 'khát khao', 'bí mật cấm kị', 'ranh giới mờ nhạt', 'cám dỗ', 'sự quyến rũ', 
-                   'không thể cưỡng lại', 'khoái cảm', 'say đắm', 'mê hoặc', 'thân thể', 'gợi cảm', 'quyến rũ',
-                   'dục tính', 'kích động', 'mơn trớn', 'vuốt ve', 'thân mật', 'gần gũi', 'sờ soạng', 'ôm ấp',
-                   'hôn', 'hôn nồng cháy', 'ân ái', 'làm tình', 'quan hệ', 'yêu đương'],
-    psychologicalTerms: ['vô thức', 'tiềm thức', 'bản năng', 'ức chế', 'dồn nén', 'phòng thủ', 'phủ nhận', 'chiếu diễn',
-                        'đồng nhất hóa', 'mặc cảm', 'mâu thuẫn nội tâm', 'xung đột tâm lý', 'ámm ảnh', 'dằn vặt'],
-    transitionWords: ['tuy nhiên', 'bên cạnh đó', 'ngoài ra', 'hơn nữa', 'đặc biệt là', 'thêm vào đó', 'mặt khác',
-                     'ngược lại', 'thực tế thì', 'quả thật', 'chắc chắn', 'có lẽ', 'dường như', 'rõ ràng là',
-                     'cuối cùng thì', 'kết quả là', 'vì vậy', 'do đó', 'cho nên', 'đồng thời'],
-    characterNames: ['Minh', 'Hương', 'Lan', 'Hạnh', 'An', 'Bình', 'Dũng', 'Hải', 'Phương', 'Thảo', 'Ngọc', 'Trang'],
-    locations: ['phòng khách', 'nhà bếp', 'phòng ngủ', 'phòng tắm', 'ban công', 'sân vườn', 'cầu thang', 'nhà kho', 'garage'],
-    timeFrames: ['sáng sớm', 'buổi trưa', 'chiều tà', 'đêm khuya', 'nửa đêm', 'rạng sáng', 'hoàng hôn', 'bình minh']
+    familyRelations: ['bố chồng', 'con dâu', 'chồng', 'vợ', 'gia đình', 'họ hàng', 'mối quan hệ', 'phép tắc', 'ranh giới'],
+    emotions: ['căng thẳng', 'bối rối', 'ghen tị', 'tò mò', 'lo lắng', 'thèm muốn', 'khao khát', 'tội lỗi', 'xấu hổ'],
+    observations: ['quan sát', 'nhìn trộm', 'theo dõi', 'chú ý', 'phát hiện', 'để ý', 'nhận ra', 'thấy được', 'cảm nhận'],
+    innerThoughts: ['tôi nghĩ', 'trong tâm trí tôi', 'tôi tự hỏi', 'có lẽ', 'liệu rằng', 'tôi không thể tin được'],
+    secretive: ['bí mật', 'giấu kín', 'che giấu', 'lén lút', 'thầm kín', 'kín đáo', 'âm thầm', 'không ai biết'],
+    physicalDescriptions: ['đôi mắt', 'nụ cười', 'cử chỉ', 'ánh mắt', 'cách di chuyển', 'giọng nói', 'cách cười'],
+    situations: ['bữa cơm gia đình', 'khi vợ đi vắng', 'cuối tuần', 'những buổi tối', 'lúc một mình', 'khi không ai chú ý'],
+    adultElements: ['ham muốn', 'dục vọng', 'khát khao', 'bí mật cấm kị', 'ranh giới mờ nhạt', 'cám dỗ', 'sự quyến rũ'],
+    psychologicalTerms: ['vô thức', 'tiềm thức', 'bản năng', 'ức chế', 'dồn nén', 'phòng thủ', 'phủ nhận'],
+    transitionWords: ['tuy nhiên', 'bên cạnh đó', 'ngoài ra', 'hơn nữa', 'đặc biệt là', 'thêm vào đó', 'mặt khác'],
+    characterNames: ['Minh', 'Hương', 'Lan', 'Hạnh', 'An', 'Bình', 'Dũng', 'Hải', 'Phương', 'Thảo'],
+    locations: ['phòng khách', 'nhà bếp', 'phòng ngủ', 'phòng tắm', 'ban công', 'sân vườn', 'cầu thang'],
+    timeFrames: ['sáng sớm', 'buổi trưa', 'chiều tà', 'đêm khuya', 'nửa đêm', 'rạng sáng', 'hoàng hôn']
 };
 
 // Hàm khởi tạo
@@ -916,18 +881,32 @@ async function saveStory(e) {
         }
         
         // Cập nhật lịch sử
-        storyHistory.unshift({
-            title: storyTitle,
-            chapter: chapterTitle,
-            date: new Date().toISOString(),
-            fileId: result.id
-        });
+        const existingStoryIndex = storyHistory.findIndex(item => item.title === storyTitle);
+        
+        if (existingStoryIndex !== -1) {
+            // Cập nhật số chương nếu truyện đã tồn tại
+            storyHistory[existingStoryIndex].chapters++;
+            storyHistory[existingStoryIndex].date = new Date().toISOString();
+            storyHistory[existingStoryIndex].lastChapter = chapterTitle;
+        } else {
+            // Thêm mới vào lịch sử
+            storyHistory.unshift({
+                title: storyTitle,
+                chapters: 1,
+                lastChapter: chapterTitle,
+                date: new Date().toISOString(),
+                folderId: storyFolderId
+            });
+        }
         
         saveStoryHistory();
         updateAIKnowledge(content, result.id);
         
         showStatus(`Đã lưu chương "${chapterTitle}" vào truyện "${storyTitle}"`, 'success');
         document.getElementById('storyForm').reset();
+        
+        // Cập nhật lại danh sách thư mục
+        loadFolderContents();
         
     } catch (error) {
         showStatus('Lỗi khi lưu truyện: ' + error.message, 'error');
@@ -965,8 +944,8 @@ function displayStoryHistory() {
         
         historyItem.innerHTML = `
             <div class="story-title">${item.title}</div>
-            <div class="story-chapter">Chương: ${item.chapter}</div>
-            <div class="story-date">${new Date(item.date).toLocaleDateString('vi-VN')}</div>
+            <div class="story-chapter">${item.chapters} chương - Mới nhất: ${item.lastChapter}</div>
+            <div class="story-date">Cập nhật: ${new Date(item.date).toLocaleDateString('vi-VN')}</div>
         `;
         
         historyList.appendChild(historyItem);
@@ -992,18 +971,31 @@ async function loadFolderContents() {
             return;
         }
         
-        folders.forEach(folder => {
-            const folderItem = document.createElement('div');
-            folderItem.className = 'history-item';
-            folderItem.onclick = () => viewStory(folder.name);
-            
-            folderItem.innerHTML = `
-                <div class="story-title">${folder.name}</div>
-                <div class="story-date">Tạo ngày: ${new Date(folder.createdTime).toLocaleDateString('vi-VN')}</div>
-            `;
-            
-            folderList.appendChild(folderItem);
-        });
+        // Lấy thông tin số chương cho mỗi thư mục
+        for (const folder of folders) {
+            try {
+                const chaptersResponse = await gapi.client.drive.files.list({
+                    q: `'${folder.id}' in parents and mimeType='text/plain' and trashed=false`,
+                    fields: 'files(id)'
+                });
+                
+                const chapterCount = chaptersResponse.result.files.length;
+                
+                const folderItem = document.createElement('div');
+                folderItem.className = 'history-item';
+                folderItem.onclick = () => viewStory(folder.name);
+                
+                folderItem.innerHTML = `
+                    <div class="story-title">${folder.name}</div>
+                    <div class="story-chapter">${chapterCount} chương</div>
+                    <div class="story-date">Tạo ngày: ${new Date(folder.createdTime).toLocaleDateString('vi-VN')}</div>
+                `;
+                
+                folderList.appendChild(folderItem);
+            } catch (error) {
+                console.error('Lỗi khi tải thông tin thư mục:', folder.name, error);
+            }
+        }
         
     } catch (error) {
         console.error('Lỗi khi tải danh sách thư mục:', error);
@@ -1157,6 +1149,9 @@ async function deleteChapter() {
         showStatus('Đã xóa chương', 'success');
         closeModal('chaptersModal');
         
+        // Cập nhật lại danh sách thư mục
+        loadFolderContents();
+        
     } catch (error) {
         showStatus('Lỗi khi xóa chương: ' + error.message, 'error');
     }
@@ -1303,7 +1298,6 @@ function saveAIKnowledge() {
         contexts: aiKnowledge.contexts,
         characterNames: Array.from(aiKnowledge.characterNames),
         adultTerms: Array.from(aiKnowledge.adultTerms),
-        generationHistory: aiKnowledge.generationHistory,
         processedFiles: Array.from(aiKnowledge.processedFiles)
     };
     
@@ -1324,7 +1318,6 @@ function loadAIKnowledge() {
         aiKnowledge.contexts = parsedKnowledge.contexts || [];
         aiKnowledge.characterNames = new Set(parsedKnowledge.characterNames || []);
         aiKnowledge.adultTerms = new Set(parsedKnowledge.adultTerms || []);
-        aiKnowledge.generationHistory = parsedKnowledge.generationHistory || [];
         aiKnowledge.processedFiles = new Set(parsedKnowledge.processedFiles || []);
     }
     updateAIStats();
@@ -1414,32 +1407,14 @@ function resetAI() {
     if (confirm('Bạn có chắc chắn muốn reset toàn bộ kiến thức của AI? Hành động này không thể hoàn tác.')) {
         aiKnowledge = {
             vocabulary: new Set(),
-            stories: [],
             trainedFiles: 0,
             sentenceStructures: new Set(),
-            plotPoints: new Set(),
             emotionalPatterns: new Set(),
             dialogues: [],
             contexts: [],
-            characterRelationships: new Set(),
-            narrativeStyles: new Set(),
-            transitionWords: new Set(),
-            psychologicalTerms: new Set(),
-            descriptivePatterns: new Set(),
-            metaphors: new Set(),
-            adultTerms: new Set(),
             characterNames: new Set(),
-            locations: new Set(),
-            timeFrames: new Set(),
-            situations: new Set(),
-            generationHistory: [],
-            processedFiles: new Set(),
-            qualityMetrics: {
-                complexityThreshold: 0.6,
-                coherenceThreshold: 0.7,
-                emotionThreshold: 0.65,
-                targetWordCount: 3500
-            }
+            adultTerms: new Set(),
+            processedFiles: new Set()
         };
         
         localStorage.removeItem('aiKnowledge');
@@ -1534,8 +1509,22 @@ async function generateAIStory() {
         
         saveAIGeneratedStories();
         
+        // Cập nhật lịch sử
+        storyHistory.unshift({
+            title: storyTitle,
+            chapters: chapterCount,
+            lastChapter: `Chương ${chapterCount}`,
+            date: new Date().toISOString(),
+            folderId: storyFolderId
+        });
+        
+        saveStoryHistory();
+        
         showStatus(`Đã tạo thành công truyện "${storyTitle}" với ${chapterCount} chương`, 'success');
         document.getElementById('generationStatus').innerHTML = '';
+        
+        // Cập nhật lại danh sách thư mục
+        loadFolderContents();
         
     } catch (error) {
         showStatus('Lỗi khi tạo truyện AI: ' + error.message, 'error');
@@ -1638,4 +1627,4 @@ function showStatus(message, type) {
 window.onload = init;
 </script>
 </body>
-</html>
+</html> 
