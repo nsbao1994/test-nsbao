@@ -44,6 +44,48 @@
     .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas; background:#0d1520; border:1px solid #21324a; padding:3px 6px; border-radius:6px}
     .bottom-nav{position:fixed; bottom:0; left:0; right:0; z-index:60; background:rgba(9,14,20,.8); backdrop-filter:saturate(1.2) blur(8px); border-top:1px solid var(--line); display:flex; height:64px; padding-bottom:env(safe-area-inset-bottom);} .tab{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--muted); font-size:11px; cursor:pointer; user-select:none} .tab.active{color:#d6e7ff}
     .page{display:none} .page.active{display:block}
+
+    /* Tối ưu cho iPhone X */
+    @media only screen and (max-width: 375px) and (max-height: 812px) and (-webkit-device-pixel-ratio: 3) {
+      :root {
+        --safe-area-inset-top: env(safe-area-inset-top);
+        --safe-area-inset-bottom: env(safe-area-inset-bottom);
+        --safe-area-inset-left: env(safe-area-inset-left);
+        --safe-area-inset-right: env(safe-area-inset-right);
+      }
+      
+      body {
+        padding-top: var(--safe-area-inset-top);
+        padding-bottom: calc(76px + var(--safe-area-inset-bottom));
+      }
+      
+      header {
+        padding-top: calc(16px + var(--safe-area-inset-top));
+        padding-left: calc(16px + var(--safe-area-inset-left));
+        padding-right: calc(16px + var(--safe-area-inset-right));
+      }
+      
+      .wrap {
+        padding-left: calc(14px + var(--safe-area-inset-left));
+        padding-right: calc(14px + var(--safe-area-inset-right));
+      }
+      
+      .bottom-nav {
+        padding-left: var(--safe-area-inset-left);
+        padding-right: var(--safe-area-inset-right);
+        padding-bottom: var(--safe-area-inset-bottom);
+        height: calc(64px + var(--safe-area-inset-bottom));
+      }
+      
+      .grid3, .grid2 {
+        grid-template-columns: 1fr;
+      }
+      
+      .btn {
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -86,7 +128,7 @@
           </div>
         </div>
         <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap">
-          <button id="loadTexts" class="btn primary">Tải .txt trong “QuanLyTruyen”</button>
+          <button id="loadTexts" class="btn primary">Tải .txt trong "QuanLyTruyen"</button>
           <button id="clearAll" class="btn">Xoá dữ liệu trong RAM</button>
           <button id="saveCache" class="btn">Lưu cache phân tích lên Drive</button>
           <button id="loadCache" class="btn">Tải cache phân tích</button>
@@ -143,6 +185,25 @@
       <div class="progress" style="margin-top:10px"><div class="bar" id="bookBar"></div></div>
       <div id="bookStatus" class="list" style="margin-top:10px"></div>
       <textarea id="outlineBox" placeholder="Dàn ý 50 chương sẽ hiển thị tại đây..."></textarea>
+    </div>
+
+    <!-- Thêm card chi tiết sinh truyện -->
+    <div class="card" id="generation-details" style="display: none; margin-top: 16px;">
+      <h3 style="margin:0 0 8px">Chi tiết sinh truyện</h3>
+      <div class="grid2">
+        <div>
+          <label>Cảm xúc chính</label>
+          <div id="current-emotion" class="pill">Chưa xác định</div>
+        </div>
+        <div>
+          <label>Thành phần nội dung</label>
+          <div id="content-components" class="pill">Đang tính toán...</div>
+        </div>
+      </div>
+      <div class="progress" style="margin-top:10px">
+        <div class="bar" id="detail-bar"></div>
+      </div>
+      <div id="generation-stats" class="status"></div>
     </div>
   </section>
 
@@ -485,6 +546,148 @@ async function loadCacheFromDrive(){
   } else { setStatus('Không tìm thấy cache.'); }
 }
 
+/** ================== LỚP SINH TRUYỆN NÂNG CAO ================== */
+class StoryGenerator {
+  constructor(model, order) {
+    this.model = model;
+    this.order = order;
+    this.dialoguePatterns = [
+      "{char} nói: \"{dialogue}\"",
+      "\"{dialogue}\", {char} nói",
+      "{char} nhìn tôi chằm chằm: \"{dialogue}\"",
+      "\"{dialogue}\", {char} thở dài",
+      "Tôi nghe thấy {char} nói: \"{dialogue}\"",
+      "{char} cười nhẹ: \"{dialogue}\"",
+      "Ánh mắt {char} lấp lánh: \"{dialogue}\"",
+      "Giọng {char} run run: \"{dialogue}\""
+    ];
+    this.characters = ["Lan", "Hùng", "Minh", "An", "Bác sĩ", "Giáo sư", "Bạn tôi", "Người lạ", "Mẹ", "Bố", "Chị gái", "Em trai"];
+    this.emotions = ["vui", "buồn", "tức giận", "sợ hãi", "ngạc nhiên", "bình tĩnh", "xúc động", "phấn khích", "thất vọng", "hy vọng"];
+    this.locations = ["trong công viên", "tại quán cà phê", "trong phòng làm việc", "trên đường phố", "ở bệnh viện", "tại nhà tôi", "trong thư viện", "trên xe buýt", "ở sân bay", "trong rừng", "bên bờ sông", "trên núi"];
+    this.sceneElements = {
+      "weather": ["trời nắng đẹp", "mưa rơi lất phất", "gió thổi nhẹ", "trời âm u", "nắng gắt", "mưa như trút nước", "sương mù dày đặc", "trời se lạnh"],
+      "time": ["sáng sớm", "buổi trưa", "chiều tà", "đêm khuya", "rạng sáng", "hoàng hôn", "giữa trưa", "nửa đêm"],
+      "sounds": ["tiếng chim hót", "tiếng còi xe", "tiếng mưa rơi", "tiếng gió rít", "tiếng nói chuyện xa xa", "tiếng nhạc du dương", "tiếng bước chân", "tiếng lá xào xạc"]
+    };
+  }
+
+  // Tạo đoạn hội thoại
+  generateDialogue() {
+    const pattern = this.dialoguePatterns[Math.floor(Math.random() * this.dialoguePatterns.length)];
+    const char = this.characters[Math.floor(Math.random() * this.characters.length)];
+    const dialogue = this.generateSentence(5 + Math.floor(Math.random() * 10));
+    
+    return pattern
+      .replace("{char}", char)
+      .replace("{dialogue}", dialogue);
+  }
+
+  // Tạo câu với cảm xúc
+  generateEmotionalSentence(emotion) {
+    const emotionalPhrases = {
+      "vui": ["vui mừng khôn xiết", "cười rạng rỡ", "tràn đầy hạnh phúc", "lòng phơi phới", "mặt rạng rỡ niềm vui"],
+      "buồn": ["buồn bã vô cùng", "lòng trĩu nặng", "nước mắt lưng tròng", "tâm trạng u ám", "trái tim tan nát"],
+      "tức giận": ["tức giận vô cùng", "mặt đỏ bừng", "nắm chặt tay", "máu sôi lên", "giận dữ đến run người"],
+      "sợ hãi": ["run sợ", "tim đập loạn nhịp", "toát mồ hôi lạnh", "sợ hãi tột độ", "chân tay bủn rủn"],
+      "ngạc nhiên": ["kinh ngạc", "mắt mở to", "không tin vào mắt mình", "sửng sốt", "há hốc mồm"],
+      "bình tĩnh": ["bình tĩnh lại", "thở sâu", "lấy lại tự chủ", "tĩnh tâm", "giữ vững tinh thần"],
+      "xúc động": ["xúc động mạnh", "nghẹn ngào", "lòng xao xuyến", "rơi nước mắt", "cảm động sâu sắc"],
+      "phấn khích": ["phấn khích tột độ", "hào hứng vô cùng", "reo lên vì vui sướng", "nhảy cẫng lên", "tràn đầy năng lượng"],
+      "thất vọng": ["thất vọng tràn trề", "nuối tiếc khôn nguôi", "chán nản", "tuyệt vọng", "mặt ủ rũ"],
+      "hy vọng": ["tràn đầy hy vọng", "lạc quan", "tin vào tương lai", "ấp ủ ước mơ", "vững niềm tin"]
+    };
+    
+    const phrase = emotionalPhrases[emotion] 
+      ? emotionalPhrases[emotion][Math.floor(Math.random() * emotionalPhrases[emotion].length)]
+      : emotionalPhrases["bình tĩnh"][0];
+    
+    return `Tôi ${phrase}, ${this.generateSentence(5 + Math.floor(Math.random() * 8))}`;
+  }
+
+  // Tạo mô tả bối cảnh
+  generateSceneDescription() {
+    const location = this.locations[Math.floor(Math.random() * this.locations.length)];
+    const time = this.sceneElements.time[Math.floor(Math.random() * this.sceneElements.time.length)];
+    const weather = this.sceneElements.weather[Math.floor(Math.random() * this.sceneElements.weather.length)];
+    const sound = this.sceneElements.sounds[Math.floor(Math.random() * this.sceneElements.sounds.length)];
+    
+    return `Vào một buổi ${time} ${location}, ${weather}. ${sound}. ${this.generateSentence(8 + Math.floor(Math.random() * 6))}`;
+  }
+
+  // Tạo câu từ model
+  generateSentence(length) {
+    const keys = [...this.model.keys()];
+    if (keys.length === 0) return "Tôi không biết phải nói gì.";
+    
+    let key = keys[Math.floor(Math.random() * keys.length)];
+    let output = key.split(' ');
+    
+    for (let i = 0; i < length; i++) {
+      const nextWords = this.model.get(key);
+      if (!nextWords || nextWords.length === 0) {
+        // Nếu không tìm thấy từ tiếp theo, chọn key ngẫu nhiên khác
+        key = keys[Math.floor(Math.random() * keys.length)];
+        output = output.concat(key.split(' '));
+        continue;
+      }
+      
+      const nextWord = nextWords[Math.floor(Math.random() * nextWords.length)];
+      output.push(nextWord);
+      
+      // Cập nhật key
+      const keyParts = key.split(' ');
+      keyParts.shift();
+      keyParts.push(nextWord);
+      key = keyParts.join(' ');
+    }
+    
+    // Viết hoa chữ cái đầu và thêm dấu chấm
+    let sentence = output.join(' ');
+    sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
+    
+    if (!/[.!?]$/.test(sentence)) {
+      sentence += '.';
+    }
+    
+    return sentence;
+  }
+
+  // Tạo đoạn văn phong phú
+  generateRichParagraph(targetWords, emotion) {
+    const components = [];
+    const targetLength = targetWords;
+    let currentLength = 0;
+    
+    // Thêm mô tả bối cảnh (20%)
+    if (Math.random() < 0.8) {
+      const scene = this.generateSceneDescription();
+      components.push(scene);
+      currentLength += scene.split(/\s+/).length;
+    }
+    
+    // Thêm câu cảm xúc (30%)
+    const emotionalSentence = this.generateEmotionalSentence(emotion);
+    components.push(emotionalSentence);
+    currentLength += emotionalSentence.split(/\s+/).length;
+    
+    // Thêm đoạn hội thoại (30%)
+    if (Math.random() < 0.7 && currentLength < targetLength * 0.7) {
+      const dialogue = this.generateDialogue();
+      components.push(dialogue);
+      currentLength += dialogue.split(/\s+/).length;
+    }
+    
+    // Thêm nội dung từ Markov để đạt độ dài yêu cầu
+    const remainingWords = targetWords - currentLength;
+    if (remainingWords > 3) {
+      const markovContent = this.generateSentence(remainingWords);
+      components.push(markovContent);
+    }
+    
+    return components.join(" ");
+  }
+}
+
 /** ================== VIẾT TRUYỆN 50 CHƯƠNG ================== */
 $("generateOutline").onclick = suggestOutline;
 $("startBook").onclick = startGeneratingBook;
@@ -540,54 +743,137 @@ async function suggestOutline(){
   setStatus('Đã tạo dàn ý 50 chương.');
 }
 
-/** ====== Sinh văn bản Markov + điều hướng TF.js (USE) + ml5 sentiment ====== */
-function sampleWords(model, order, targetWords, seedWords){
-  const ENDERS=['.','!','?','…'];
-  const ensureFirstPerson=(s)=>{ if (!/\btôi\b/i.test(s)) return 'Tôi ' + s.charAt(0).toLowerCase()+s.slice(1); return s; };
+// Hàm tính toán cung cảm xúc theo vị trí chương
+function calculateEmotionalArc(chapterIndex, totalChapters, baseSentiment) {
+  const progression = chapterIndex / totalChapters;
+  let primaryEmotion, target;
+  
+  if (progression < 0.25) {
+    // Khởi đầu: cảm xúc trung lập hoặc tích cực nhẹ
+    primaryEmotion = "bình tĩnh";
+    target = baseSentiment + (Math.random() * 0.2 - 0.1);
+  } else if (progression < 0.5) {
+    // Xung đột tăng: cảm xúc tiêu cực
+    primaryEmotion = ["tức giận", "sợ hãi", "buồn"][Math.floor(Math.random() * 3)];
+    target = baseSentiment - 0.3 - (Math.random() * 0.2);
+  } else if (progression < 0.75) {
+    // Cao trào: cảm xúc mạnh
+    primaryEmotion = ["tức giận", "sợ hãi", "ngạc nhiên"][Math.floor(Math.random() * 3)];
+    target = baseSentiment - 0.4 - (Math.random() * 0.2);
+  } else {
+    // Giải quyết: cảm xúc tích cực dần
+    primaryEmotion = ["vui", "xúc động", "bình tĩnh"][Math.floor(Math.random() * 3)];
+    target = baseSentiment + 0.2 + (Math.random() * 0.2);
+  }
+  
+  return { primaryEmotion, target: Math.max(-1, Math.min(1, target)) };
+}
 
-  let keyTokens;
-  if (seedWords && seedWords.length >= order) keyTokens = seedWords.slice(0, order);
-  else {
-    const keys = [...model.keys()];
-    keyTokens = keys[Math.floor(Math.random()*keys.length)].split(' ');
+// Hàm tính điểm đa dạng cho nội dung
+function calculateDiversityBonus(text) {
+  let bonus = 0;
+  
+  // Kiểm tra có hội thoại không (dấu ngoặc kép)
+  if (text.includes('"')) bonus += 0.3;
+  
+  // Kiểm tra có dấu cảm xúc không
+  if (text.includes('!') || text.includes('?')) bonus += 0.2;
+  
+  // Kiểm tra có từ chỉ cảm xúc
+  const emotionWords = ["vui", "buồn", "tức", "giận", "sợ", "ngạc nhiên", "xúc động", "cười", "khóc"];
+  if (emotionWords.some(word => text.includes(word))) bonus += 0.2;
+  
+  // Kiểm tra có từ chỉ địa điểm
+  const locationWords = ["tại", "trong", "trên", "ở", "công viên", "quán", "phòng", "nhà", "đường"];
+  if (locationWords.some(word => text.includes(word))) bonus += 0.2;
+  
+  // Kiểm tra có từ chỉ thời gian
+  const timeWords = ["sáng", "trưa", "chiều", "tối", "đêm", "ngày", "giờ", "phút"];
+  if (timeWords.some(word => text.includes(word))) bonus += 0.1;
+  
+  return Math.min(1, bonus);
+}
+
+function truncateToWords(text, targetWords){
+  const tokens = text.split(/\s+/);
+  if (tokens.length <= targetWords) return text;
+  // cắt đến dấu câu gần nhất sau target
+  let idx = targetWords;
+  for (let i=targetWords; i<Math.min(tokens.length, targetWords+200); i++){
+    if (/[.!?…]$/.test(tokens[i])){ idx = i+1; break; }
+  }
+  return tokens.slice(0, idx).join(' ');
+}
+
+async function generateChapter({model, order, wordsTarget, seed, targetSent=0.1, chapterIndex, totalChapters}){
+  await ensureSentiment();
+  await ensureUSE();
+
+  const storyGenerator = new StoryGenerator(model, order);
+  const seedWords = seed ? tokenizeVI(seed) : null;
+  
+  // Xác định cảm xúc chính dựa trên vị trí chương trong cốt truyện
+  const emotionalArc = calculateEmotionalArc(chapterIndex, totalChapters, targetSent);
+  
+  // Hiển thị thông tin chi tiết
+  $("generation-details").style.display = "block";
+  $("#current-emotion").textContent = emotionalArc.primaryEmotion;
+  $("#content-components").textContent = "Đang sinh...";
+  setBar(10, "detail-bar");
+  
+  const themeText = seed || "Tôi kể chuyện đời mình với những ngã rẽ gia đình, mâu thuẫn, và lựa chọn.";
+  const themeEmb = await useModel.embed([themeText]);
+  const themeVec = themeEmb;
+
+  const candidates = [];
+  const K = 5; // Tăng số ứng viên để lựa chọn tốt hơn
+  
+  for (let i = 0; i < K; i++) {
+    // Cập nhật tiến trình
+    setBar(10 + (i/K)*40, "detail-bar");
+    $("#generation-stats").textContent = `Đang tạo ứng viên ${i+1}/${K}...`;
+    
+    // Tạo nội dung phong phú với các thành phần mới
+    const richContent = storyGenerator.generateRichParagraph(
+      Math.round(wordsTarget * 1.15), 
+      emotionalArc.primaryEmotion
+    );
+    
+    const chopped = truncateToWords(richContent, Math.round(wordsTarget * 1.05));
+    const sentScore = await scoreBySentiment(chopped, emotionalArc.target);
+    const useScore = await scoreByUSE(chopped, themeVec);
+    const len = chopped.split(/\s+/).length;
+    const lenPenalty = Math.abs(len - wordsTarget) / wordsTarget;
+    
+    const sentimentFitness = 1 - Math.min(1, sentScore.dist);
+    const useFitness = Math.max(0, Math.min(1, (useScore.sim + 1) / 2));
+    const lengthFitness = 1 - Math.min(1, lenPenalty);
+    
+    // Thêm điểm cho độ đa dạng (có hội thoại, cảm xúc, bối cảnh)
+    const diversityBonus = calculateDiversityBonus(chopped);
+    
+    const score = 0.35 * useFitness + 0.35 * sentimentFitness + 0.10 * lengthFitness + 0.20 * diversityBonus;
+    
+    candidates.push({text: chopped, score, use: useScore.sim, sent: sentScore.avg, len});
   }
 
-  let out = keyTokens.slice();
-  const maxLen = Math.max(targetWords*2.2, targetWords+500);
-
-  while (out.length < maxLen){
-    const key = out.slice(out.length - order, out.length).join(' ');
-    const choices = model.get(key) || [];
-    if (!choices.length){
-      const keys = [...model.keys()];
-      const pickKey = keys[Math.floor(Math.random()*keys.length)];
-      const parts = pickKey.split(' ');
-      out.push(...parts);
-      continue;
-    }
-    // temperature-ish sampling: prefer frequent but add noise
-    const cand = choices[Math.floor(Math.random()*choices.length)];
-    out.push(cand);
-
-    // chấm câu ngẫu nhiên nhẹ
-    if (Math.random() < 0.08) out.push(pick([',', ',', ',', '.', '.']));
-    if (out.length > targetWords && Math.random() < 0.02) break;
-  }
-
-  let text = out.join(' ').replace(/\s+([,\.\!\?…])/g,'$1').replace(/\n\s+/g,'\n');
-
-  // Ráp câu thành đoạn 5–8 câu/đoạn
-  const sents = splitSentencesVI(text).map(s=>s.trim()).filter(Boolean);
-  const paras=[]; let cur=[]; let count=0;
-  for (const s of sents){
-    cur.push(s); count++;
-    if (count>=5+Math.floor(Math.random()*4)){
-      paras.push(ensureFirstPerson(cur.join(' ')));
-      cur=[]; count=0;
-    }
-  }
-  if (cur.length) paras.push(ensureFirstPerson(cur.join(' ')));
-  return paras.join('\n\n');
+  // Chọn tốt nhất
+  candidates.sort((a, b) => b.score - a.score);
+  const best = candidates[0];
+  
+  // Hiển thị thống kê
+  const components = [];
+  if (best.text.includes('"')) components.push("Hội thoại");
+  if (best.text.includes('!') || best.text.includes('?')) components.push("Cảm xúc");
+  if (best.text.includes("tại") || best.text.includes("trong") || best.text.includes("trên")) components.push("Bối cảnh");
+  
+  $("#content-components").textContent = components.join(", ") || "Mô tả thuần";
+  $("#generation-stats").textContent = `Điểm: ${best.score.toFixed(2)} | Cảm xúc: ${best.sent.toFixed(2)} | Từ: ${best.len}`;
+  setBar(100, "detail-bar");
+  
+  tf.dispose(themeVec);
+  
+  return best.text;
 }
 
 async function scoreBySentiment(text, targetSent){
@@ -616,53 +902,6 @@ async function scoreByUSE(text, themeEmbedding){
   const val = (await sim.data())[0];
   tf.dispose([emb, mean, sim]);
   return {sim: val};
-}
-
-function truncateToWords(text, targetWords){
-  const tokens = text.split(/\s+/);
-  if (tokens.length <= targetWords) return text;
-  // cắt đến dấu câu gần nhất sau target
-  let idx = targetWords;
-  for (let i=targetWords; i<Math.min(tokens.length, targetWords+200); i++){
-    if (/[.!?…]$/.test(tokens[i])){ idx = i+1; break; }
-  }
-  return tokens.slice(0, idx).join(' ');
-}
-
-async function generateChapter({model, order, wordsTarget, seed, targetSent=0.1}){
-  await ensureSentiment();
-  await ensureUSE();
-
-  const seedWords = seed ? tokenizeVI(seed) : null;
-  const themeText = seed || "Tôi kể chuyện đời mình với những ngã rẽ gia đình, mâu thuẫn, và lựa chọn.";
-  const themeEmb = await useModel.embed([themeText]);   // 1 x 512
-  const themeVec = themeEmb; // giữ tensor để dùng nhiều lần
-
-  const candidates = [];
-  const K = 4; // số ứng viên sinh
-  for (let i=0;i<K;i++){
-    const raw = sampleWords(model, order, Math.round(wordsTarget*1.15), seedWords);
-    const chopped = truncateToWords(raw, Math.round(wordsTarget*1.05));
-    const sentScore = await scoreBySentiment(chopped, targetSent);
-    const useScore = await scoreByUSE(chopped, themeVec);
-    const len = chopped.split(/\s+/).length;
-    const lenPenalty = Math.abs(len - wordsTarget) / wordsTarget; // càng nhỏ càng tốt
-    // tổng điểm: càng lớn càng tốt -> chuyển các metric về 0..1
-    const sentimentFitness = 1 - Math.min(1, sentScore.dist);     // gần targetSent -> ~1
-    const useFitness = Math.max(0, Math.min(1, (useScore.sim + 1)/2)); // cosine [-1,1] -> [0,1]
-    const lengthFitness = 1 - Math.min(1, lenPenalty);
-
-    // trọng số: ưu tiên chủ đề & cảm xúc, sau đó độ dài
-    const score = 0.45*useFitness + 0.45*sentimentFitness + 0.10*lengthFitness;
-
-    candidates.push({text: chopped, score, use:useScore.sim, sent:sentScore.avg, len});
-  }
-
-  // chọn tốt nhất
-  candidates.sort((a,b)=>b.score-a.score);
-  const best = candidates[0];
-  tf.dispose(themeVec);
-  return best.text;
 }
 
 async function startGeneratingBook(){
@@ -707,7 +946,9 @@ async function startGeneratingBook(){
         order,
         wordsTarget,
         seed,
-        targetSent
+        targetSent,
+        chapterIndex: i,
+        totalChapters: chapters.length
       });
 
       const titleName = ch.name || `Chương ${i+1}`;
