@@ -415,10 +415,60 @@
             }
         }
 
-        // File operations with improved error handling
+        // Recursive function to find all subfolders
+        async function getAllSubfolders(parentFolderId, allFolders = []) {
+            try {
+                const response = await gapi.client.drive.files.list({
+                    q: `'${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                    fields: 'files(id, name)',
+                    pageSize: 1000
+                });
+
+                const folders = response.result.files;
+                debugLog(`Found ${folders.length} subfolders in ${parentFolderId}`);
+                
+                // Add current folders to the list
+                allFolders.push(...folders.map(folder => ({
+                    id: folder.id,
+                    name: folder.name,
+                    parentId: parentFolderId
+                })));
+
+                // Recursively get subfolders of each folder
+                for (const folder of folders) {
+                    await getAllSubfolders(folder.id, allFolders);
+                }
+
+                return allFolders;
+            } catch (error) {
+                debugLog(`Error getting subfolders for ${parentFolderId}:`, error);
+                return allFolders;
+            }
+        }
+
+        // Get all .txt files from a specific folder
+        async function getFilesFromFolder(folderId, folderPath = '') {
+            try {
+                const response = await gapi.client.drive.files.list({
+                    q: `'${folderId}' in parents and name contains '.txt' and trashed=false`,
+                    fields: 'files(id, name, size, modifiedTime)',
+                    pageSize: 1000
+                });
+
+                return response.result.files.map(file => ({
+                    ...file,
+                    folderPath: folderPath
+                }));
+            } catch (error) {
+                debugLog(`Error getting files from folder ${folderId}:`, error);
+                return [];
+            }
+        }
+
+        // File operations with recursive subfolder support
         async function listFiles() {
             try {
-                debugLog('Starting file listing...');
+                debugLog('Starting recursive file listing...');
                 showStatus('Đang tìm thư mục QuanLyTruyen...', 'info');
                 
                 // Check if we have valid token
@@ -427,7 +477,7 @@
                     throw new Error('Không có token xác thực');
                 }
                 
-                debugLog('Token available, searching for folder...');
+                debugLog('Token available, searching for main folder...');
                 
                 // Find QuanLyTruyen folder
                 const folderResponse = await gapi.client.drive.files.list({
@@ -435,7 +485,7 @@
                     fields: 'files(id, name)',
                 });
 
-                debugLog('Folder search response:', folderResponse);
+                debugLog('Main folder search response:', folderResponse);
                 
                 const folders = folderResponse.result.files;
                 if (folders.length === 0) {
@@ -443,27 +493,59 @@
                     return;
                 }
 
-                const folderId = folders[0].id;
-                debugLog(`Found folder: ${folders[0].name} (ID: ${folderId})`);
-                showStatus('Đang tải danh sách file .txt...', 'info');
+                const mainFolderId = folders[0].id;
+                const mainFolderName = folders[0].name;
+                debugLog(`Found main folder: ${mainFolderName} (ID: ${mainFolderId})`);
+                
+                showStatus('Đang tìm tất cả thư mục con...', 'info');
 
-                // Get all .txt files in the folder
-                const filesResponse = await gapi.client.drive.files.list({
-                    q: `'${folderId}' in parents and name contains '.txt' and trashed=false`,
-                    fields: 'files(id, name, size, modifiedTime)',
-                    pageSize: 100
+                // Get all subfolders recursively
+                const allSubfolders = await getAllSubfolders(mainFolderId);
+                debugLog(`Found ${allSubfolders.length} total subfolders`);
+
+                // Create folder hierarchy map for better display
+                const folderMap = new Map();
+                folderMap.set(mainFolderId, { name: mainFolderName, path: mainFolderName });
+                
+                allSubfolders.forEach(folder => {
+                    const parentPath = folderMap.get(folder.parentId)?.path || mainFolderName;
+                    const currentPath = `${parentPath}/${folder.name}`;
+                    folderMap.set(folder.id, { name: folder.name, path: currentPath });
                 });
 
-                debugLog('Files search response:', filesResponse);
+                showStatus('Đang tải tất cả file .txt từ mọi thư mục...', 'info');
 
-                const files = filesResponse.result.files;
-                if (files.length === 0) {
-                    showStatus('Không tìm thấy file .txt nào trong thư mục QuanLyTruyen', 'warning');
+                // Get files from main folder
+                let allFiles = await getFilesFromFolder(mainFolderId, mainFolderName);
+                
+                // Get files from all subfolders
+                for (const subfolder of allSubfolders) {
+                    const folderPath = folderMap.get(subfolder.id)?.path || subfolder.name;
+                    const files = await getFilesFromFolder(subfolder.id, folderPath);
+                    allFiles.push(...files);
+                    
+                    // Update progress
+                    showStatus(`Đang quét: ${folderPath}...`, 'info');
+                    await new Promise(resolve => setTimeout(resolve, 50)); // Small delay to show progress
+                }
+
+                debugLog(`Total files found: ${allFiles.length}`);
+
+                if (allFiles.length === 0) {
+                    showStatus('Không tìm thấy file .txt nào trong thư mục QuanLyTruyen và các thư mục con', 'warning');
                     return;
                 }
 
-                displayFiles(files);
-                showStatus(`Tìm thấy ${files.length} file .txt`, 'success');
+                // Sort files by folder path and then by name
+                allFiles.sort((a, b) => {
+                    if (a.folderPath !== b.folderPath) {
+                        return a.folderPath.localeCompare(b.folderPath);
+                    }
+                    return a.name.localeCompare(b.name);
+                });
+
+                displayFiles(allFiles);
+                showStatus(`Tìm thấy ${allFiles.length} file .txt từ ${allSubfolders.length + 1} thư mục`, 'success');
                 document.getElementById('fileSection').classList.remove('hidden');
 
             } catch (error) {
@@ -482,22 +564,46 @@
 
         function displayFiles(files) {
             const fileList = document.getElementById('fileList');
-            fileList.innerHTML = files.map(file => `
-                <div class="file-item">
-                    <span>📄 ${file.name}</span>
-                    <small>${formatFileSize(file.size)} - ${formatDate(file.modifiedTime)}</small>
-                </div>
-            `).join('');
+            
+            // Group files by folder for better organization
+            const filesByFolder = {};
+            files.forEach(file => {
+                const folder = file.folderPath || 'QuanLyTruyen';
+                if (!filesByFolder[folder]) {
+                    filesByFolder[folder] = [];
+                }
+                filesByFolder[folder].push(file);
+            });
+
+            let html = '';
+            Object.keys(filesByFolder).sort().forEach(folderPath => {
+                const folderFiles = filesByFolder[folderPath];
+                html += `
+                    <div style="margin-bottom: 15px;">
+                        <div style="background: #e9ecef; padding: 8px 12px; border-radius: 4px; font-weight: bold; margin-bottom: 8px;">
+                            📁 ${folderPath} (${folderFiles.length} files)
+                        </div>
+                        ${folderFiles.map(file => `
+                            <div class="file-item" style="margin-left: 20px;">
+                                <span>📄 ${file.name}</span>
+                                <small>${formatFileSize(file.size)} - ${formatDate(file.modifiedTime)}</small>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            });
+            
+            fileList.innerHTML = html;
             
             // Store files for later use
             window.storyFiles = files;
-            debugLog(`Displayed ${files.length} files`);
+            debugLog(`Displayed ${files.length} files from ${Object.keys(filesByFolder).length} folders`);
         }
 
-        // Enhanced file download with better error handling
-        async function downloadFile(fileId, fileName) {
+        // Enhanced file download with folder path info
+        async function downloadFile(fileId, fileName, folderPath = '') {
             try {
-                debugLog(`Downloading file: ${fileName} (ID: ${fileId})`);
+                debugLog(`Downloading file: ${fileName} from ${folderPath} (ID: ${fileId})`);
                 const response = await gapi.client.drive.files.get({
                     fileId: fileId,
                     alt: 'media'
@@ -511,14 +617,14 @@
             }
         }
 
-        // Rest of the AI analysis functions remain the same...
+        // Rest of the AI analysis functions with folder support...
         async function analyzeStories() {
             if (!window.storyFiles || window.storyFiles.length === 0) {
                 showStatus('Không có file nào để phân tích', 'error');
                 return;
             }
 
-            debugLog(`Starting analysis of ${window.storyFiles.length} files`);
+            debugLog(`Starting analysis of ${window.storyFiles.length} files from multiple folders`);
             showProgress(true);
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
@@ -527,13 +633,16 @@
             try {
                 for (let i = 0; i < window.storyFiles.length; i++) {
                     const file = window.storyFiles[i];
-                    progressText.textContent = `Đang đọc file: ${file.name}`;
+                    const displayPath = file.folderPath ? `${file.folderPath}/${file.name}` : file.name;
+                    progressText.textContent = `Đang đọc file: ${displayPath}`;
                     progressFill.style.width = `${(i / window.storyFiles.length) * 80}%`;
 
-                    const content = await downloadFile(file.id, file.name);
+                    const content = await downloadFile(file.id, file.name, file.folderPath);
                     if (content) {
                         storyData.push({
                             name: file.name,
+                            folderPath: file.folderPath || 'QuanLyTruyen',
+                            fullPath: displayPath,
                             content: content,
                             analysis: analyzeText(content)
                         });
@@ -555,8 +664,19 @@
                 progressText.textContent = 'Hoàn thành!';
                 
                 showResults();
-                showStatus(`Đã phân tích thành công ${storyData.length} file truyện`, 'success');
-                debugLog(`Analysis completed for ${storyData.length} stories`);
+                
+                // Group by folder for summary
+                const folderCounts = {};
+                storyData.forEach(story => {
+                    folderCounts[story.folderPath] = (folderCounts[story.folderPath] || 0) + 1;
+                });
+                
+                const folderSummary = Object.entries(folderCounts)
+                    .map(([folder, count]) => `${folder} (${count})`)
+                    .join(', ');
+                
+                showStatus(`Đã phân tích thành công ${storyData.length} file truyện từ: ${folderSummary}`, 'success');
+                debugLog(`Analysis completed for ${storyData.length} stories from ${Object.keys(folderCounts).length} folders`);
                 
                 document.getElementById('trainBtn').disabled = false;
                 document.getElementById('generateBtn').disabled = false;
@@ -791,11 +911,31 @@
             const totalSentences = storyData.reduce((sum, story) => sum + story.analysis.sentenceCount, 0);
             const avgLexicalDiversity = storyData.reduce((sum, story) => sum + story.analysis.lexicalDiversity, 0) / storyData.length;
 
+            // Folder statistics
+            const folderStats = {};
+            storyData.forEach(story => {
+                const folder = story.folderPath;
+                if (!folderStats[folder]) {
+                    folderStats[folder] = { count: 0, words: 0 };
+                }
+                folderStats[folder].count++;
+                folderStats[folder].words += story.analysis.wordCount;
+            });
+
+            const folderStatsHtml = Object.entries(folderStats)
+                .map(([folder, stats]) => `<li>${folder}: ${stats.count} file (${stats.words.toLocaleString()} từ)</li>`)
+                .join('');
+
             document.getElementById('contentStats').innerHTML = `
                 <p><strong>Tổng số từ:</strong> ${totalWords.toLocaleString()}</p>
                 <p><strong>Tổng số câu:</strong> ${totalSentences.toLocaleString()}</p>
                 <p><strong>Số truyện:</strong> ${storyData.length}</p>
+                <p><strong>Số thư mục:</strong> ${Object.keys(folderStats).length}</p>
                 <p><strong>Độ đa dạng từ vựng:</strong> ${(avgLexicalDiversity * 100).toFixed(1)}%</p>
+                <details style="margin-top: 10px;">
+                    <summary style="cursor: pointer; font-weight: bold;">📊 Thống kê theo thư mục</summary>
+                    <ul style="margin-top: 5px; padding-left: 20px;">${folderStatsHtml}</ul>
+                </details>
             `;
 
             // Character analysis (keywords related to characters)
@@ -835,15 +975,17 @@
 
             const topThemes = Object.entries(allWords)
                 .sort(([,a], [,b]) => b - a)
-                .slice(0, 5)
+                .slice(0, 8)
                 .map(([word, freq]) => `${word} (${freq})`);
 
             document.getElementById('themes').innerHTML = `
                 <p><strong>Từ khóa phổ biến:</strong></p>
-                <ul>${topThemes.map(theme => `<li>${theme}</li>`).join('')}</ul>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                    ${topThemes.map(theme => `<div style="background: #f8f9fa; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">${theme}</div>`).join('')}
+                </div>
             `;
             
-            debugLog('Results displayed successfully');
+            debugLog('Results displayed successfully with folder breakdown');
         }
 
         // Helper functions
