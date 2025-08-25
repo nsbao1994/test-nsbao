@@ -1,162 +1,457 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản Lý Truyện AI</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Quản Lý Truyện — Drive + ml5 + 50 chương (GIS)</title>
 
-  <!-- Google Identity Services -->
+  <!-- Google Identity Services (mới) + Google API Client -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://apis.google.com/js/api.js"></script>
-
-  <!-- ml5.js -->
-  <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+  <script async defer src="https://apis.google.com/js/api.js"></script>
+  <!-- ml5.js sentiment -->
+  <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
 
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    header { padding: 1rem; text-align: center; background: #6200ea; color: #fff; }
-    .content { padding: 1rem; margin-bottom: 60px; }
-    .menu { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: #eee; border-top: 1px solid #ccc; }
-    .menu button { flex: 1; padding: 10px; border: none; background: #eee; font-size: 14px; }
-    .menu button.active { background: #6200ea; color: #fff; }
-    .hidden { display: none; }
+    :root{ --bg:#0a0f14; --card:#0f1620; --text:#e6eef7; --muted:#9ab0c8; --accent:#4ea1ff; --line:#203047; --good:#25c059; --warn:#f0b429; --bad:#ff6b6b; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:linear-gradient(180deg,#0a0f14,#101827); color:var(--text); padding-bottom:76px; }
+    header{position:sticky;top:0;z-index:50; backdrop-filter:saturate(1.2) blur(6px); background:rgba(10,15,20,.7); border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 16px 12px;}
+    h1{margin:0; font-size:16px; font-weight:600}
+    .btn{border:1px solid var(--line); background:#0d1420; color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer; transition:.15s ease; font-weight:600}
+    .btn:hover{border-color:var(--accent); transform:translateY(-1px)}
+    .btn.primary{background:linear-gradient(180deg,#16263b,#0f1a2a); border-color:#2f4d78}
+    .wrap{max-width:980px; margin:0 auto; padding:14px 14px 24px}
+    .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-top:14px}
+    .row{display:grid; grid-template-columns:1fr; gap:14px}
+    @media(min-width:960px){ .row{grid-template-columns:1.1fr .9fr} }
+    label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+    input[type="number"], input[type="text"], textarea, select{ width:100%; padding:12px 12px; border-radius:12px; border:1px solid #1b283c; background:#0c1420; color:var(--text); -webkit-appearance:none; appearance:none; }
+    textarea{min-height:160px; resize:vertical; line-height:1.55}
+    .muted{color:var(--muted)}
+    .pill{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#0e2034; border:1px solid #183654; color:#b9d7ff; font-size:12px; margin:2px 6px 2px 0}
+    .progress{height:10px; background:#0b1420; border-radius:8px; overflow:hidden; border:1px solid #1c2b42}
+    .bar{height:100%; width:0%; background:linear-gradient(90deg,#4ea1ff,#7bd4ff)}
+    .status{font-size:13px}
+    .list{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas; font-size:13px; white-space:pre-wrap}
+    .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px}
+    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas; background:#0d1520; border:1px solid #21324a; padding:3px 6px; border-radius:6px}
+    .bottom-nav{position:fixed; bottom:0; left:0; right:0; z-index:60; background:rgba(9,14,20,.8); backdrop-filter:saturate(1.2) blur(8px); border-top:1px solid var(--line); display:flex; height:64px; padding-bottom:env(safe-area-inset-bottom);} .tab{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--muted); font-size:11px; cursor:pointer; user-select:none} .tab.active{color:#d6e7ff}
+    .page{display:none} .page.active{display:block}
   </style>
 </head>
 <body>
-  <header>
-    <h2>Quản Lý Truyện AI</h2>
-    <div id="g_id_onload"
-         data-client_id="398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse">
+<header>
+  <h1>📚 Quản Lý Truyện — Google Drive + ml5 (GIS)</h1>
+  <div style="display:flex; gap:8px; align-items:center">
+    <button id="signin" class="btn">Đăng nhập Google</button>
+    <button id="signout" class="btn" style="display:none">Đăng xuất</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+      <div class="pill">Thư mục gốc: <b>QuanLyTruyen</b></div>
+      <div class="pill" id="authState">Chưa đăng nhập</div>
+      <div class="pill" id="qltState">Chưa tải dữ liệu</div>
+      <div class="status" id="status"></div>
     </div>
-    <div class="g_id_signin" data-type="standard"></div>
-    <p id="login-status">Chưa đăng nhập</p>
-  </header>
-
-  <div class="content">
-    <section id="data-section">
-      <h3>Dữ liệu</h3>
-      <button onclick="listAllTxtFiles()">Tải toàn bộ .txt trong 'QuanLyTruyen'</button>
-      <ul id="file-list"></ul>
-    </section>
-    <section id="analysis-section" class="hidden">Phân tích dữ liệu</section>
-    <section id="write-section" class="hidden">Viết truyện</section>
-    <section id="add-section" class="hidden">Thêm truyện</section>
-    <section id="progress-section" class="hidden">Tiến trình</section>
+    <div class="progress" style="margin-top:10px"><div class="bar" id="bar"></div></div>
   </div>
 
-  <div class="menu">
-    <button onclick="showSection('data-section', this)" class="active">Dữ liệu</button>
-    <button onclick="showSection('analysis-section', this)">Phân tích</button>
-    <button onclick="showSection('write-section', this)">Viết truyện</button>
-    <button onclick="showSection('add-section', this)">Thêm truyện</button>
-    <button onclick="showSection('progress-section', this)">Tiến trình</button>
-  </div>
+  <!-- PAGE: DỮ LIỆU -->
+  <section id="page-data" class="page active">
+    <div class="row">
+      <div class="card">
+        <h3 style="margin:0 0 8px">1) Nạp dữ liệu từ Drive</h3>
+        <div class="grid3">
+          <div>
+            <label>Giới hạn số file</label>
+            <input id="maxFiles" type="number" value="200" min="1" />
+          </div>
+          <div>
+            <label>Kích thước tối đa tải (MB)</label>
+            <input id="maxMB" type="number" value="50" min="1" />
+          </div>
+          <div>
+            <label>Chỉ lấy trong thư mục con</label>
+            <input id="subFolder" type="text" placeholder="(tuỳ chọn) Ví dụ: TruyenNguon" />
+          </div>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap">
+          <button id="loadTexts" class="btn primary">Tải .txt trong “QuanLyTruyen”</button>
+          <button id="clearAll" class="btn">Xoá dữ liệu trong RAM</button>
+          <button id="saveCache" class="btn">Lưu cache phân tích lên Drive</button>
+          <button id="loadCache" class="btn">Tải cache phân tích</button>
+        </div>
+        <div class="footer muted" style="margin-top:8px">Cần quyền: <span class="kbd">drive.readonly</span> + <span class="kbd">drive.file</span> để lưu cache/chương.</div>
+        <div id="filesInfo" class="muted" style="margin-top:10px"></div>
+        <textarea id="corpusPreview" placeholder="Xem trước vài đoạn đã nạp..."></textarea>
+      </div>
 
-  <script>
-    let accessToken;
+      <div class="card">
+        <h3 style="margin:0 0 8px">2) Phân tích nâng cao (tiếng Việt + sentiment)</h3>
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+          <button id="analyze" class="btn">Phân tích</button>
+          <button id="exportStats" class="btn">Xuất JSON thống kê</button>
+        </div>
+        <div id="analysis" class="list" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </section>
 
-    function handleCredentialResponse(response) {
-      const client = google.accounts.oauth2.initTokenClient({
-        client_id: "398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com",
-        scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly",
-        callback: (tokenResponse) => {
-          accessToken = tokenResponse.access_token;
-          document.getElementById("login-status").innerText = "Đăng nhập thành công!";
-          gapiLoad();
-        }
-      });
-      client.requestAccessToken();
+  <!-- PAGE: VIẾT TRUYỆN -->
+  <section id="page-write" class="page">
+    <div class="card">
+      <h3 style="margin:0 0 8px">3) Viết truyện 50 chương (ngôi thứ nhất)</h3>
+      <div class="grid3">
+        <div>
+          <label>Mục tiêu từ mỗi chương</label>
+          <input id="wordsPerChapter" type="number" value="2300" min="1200" max="4000" />
+        </div>
+        <div>
+          <label>Bậc Markov (n-gram theo từ)</label>
+          <input id="order" type="number" value="3" min="1" max="5" />
+        </div>
+        <div>
+          <label>Cảm xúc mục tiêu (−1…+1)</label>
+          <input id="targetSentiment" type="number" step="0.1" min="-1" max="1" value="0.1" />
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:10px">
+        <div>
+          <label>Hạt giống mở truyện (tùy chọn)</label>
+          <input id="seed" type="text" placeholder="Ví dụ: 'Tôi tỉnh dậy giữa đêm mưa...'" />
+        </div>
+        <div>
+          <label>Tên truyện (để trống để AI tự đặt)</label>
+          <input id="titleInput" type="text" placeholder="AI sẽ tự đề xuất" />
+        </div>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap">
+        <button id="generateOutline" class="btn">Tạo dàn ý 50 chương</button>
+        <button id="startBook" class="btn primary">Bắt đầu sinh & upload 50 chương</button>
+        <button id="cancelGen" class="btn">Huỷ</button>
+      </div>
+      <div class="progress" style="margin-top:10px"><div class="bar" id="bookBar"></div></div>
+      <div id="bookStatus" class="list" style="margin-top:10px"></div>
+      <textarea id="outlineBox" placeholder="Dàn ý 50 chương sẽ hiển thị tại đây..."></textarea>
+    </div>
+  </section>
+
+  <!-- PAGE: THÊM TRUYỆN -->
+  <section id="page-add" class="page">
+    <div class="card">
+      <h3 style="margin:0 0 8px">4) Thêm truyện</h3>
+      <div class="grid2">
+        <div>
+          <h4 style="margin:6px 0">Tạo thư mục truyện mới</h4>
+          <label>Tên truyện</label>
+          <input id="newStoryTitle" type="text" placeholder="Nhập tên truyện..." />
+          <div style="margin-top:8px; display:flex; gap:10px; flex-wrap:wrap">
+            <button id="createStoryFolder" class="btn primary">Tạo thư mục trong QuanLyTruyen</button>
+          </div>
+          <div id="createStoryResult" class="muted" style="margin-top:8px"></div>
+        </div>
+        <div>
+          <h4 style="margin:6px 0">Chọn thư mục truyện đã có</h4>
+          <label>Danh sách thư mục con (tải)</label>
+          <button id="listSubfolders" class="btn">Liệt kê</button>
+          <select id="subfolders" size="8" style="margin-top:8px"></select>
+          <div class="muted" style="margin-top:8px">Chọn để dùng làm nơi upload chương.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE: TIẾN TRÌNH -->
+  <section id="page-progress" class="page">
+    <div class="card">
+      <h3 style="margin:0 0 8px">Tiến trình & nhật ký</h3>
+      <div id="log" class="list"></div>
+    </div>
+  </section>
+</div>
+
+<!-- Bottom navigation -->
+<nav class="bottom-nav">
+  <div class="tab active" data-page="page-data">📂<div>Dữ liệu</div></div>
+  <div class="tab" data-page="page-write">✍️<div>Viết truyện</div></div>
+  <div class="tab" data-page="page-add">➕<div>Thêm truyện</div></div>
+  <div class="tab" data-page="page-progress">⏱️<div>Tiến trình</div></div>
+</nav>
+
+<script>
+/** ================= CẤU HÌNH GOOGLE API ================= */
+const GAPI_CONFIG = {
+  apiKey: "AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o",
+  discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+};
+
+/** ================== TIỆN ÍCH UI ================== */
+const $ = (id) => document.getElementById(id);
+const setStatus = (msg) => { $("status").textContent = msg || ""; };
+const setAuthState = (txt) => { $("authState").innerHTML = txt; };
+const setQLTState = (txt) => { $("qltState").innerHTML = txt; };
+const setBar = (p, el='bar') => { $(el).style.width = Math.max(0, Math.min(100, p)) + "%"; };
+const log = (t) => { const el=$("log"); el.textContent += "\n" + new Date().toLocaleTimeString()+" • "+ t; el.scrollTop = el.scrollHeight; };
+
+// bottom nav
+for (const tab of document.querySelectorAll('.tab')){
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    tab.classList.add('active');
+    const page = tab.dataset.page;
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById(page).classList.add('active');
+  });
+}
+
+/** ================== TRẠNG THÁI BỘ NHỚ ================== */
+let signedIn = false;
+let accessToken = null; // GIS token
+let tokenClient = null; // GIS token client
+let corpusTexts = []; // mảng chuỗi txt
+let totalBytes = 0;
+let sentiment;
+let qltFolderId = null; // id thư mục QuanLyTruyen
+let cancelFlag = false;
+let activeStoryFolderId = null; // nơi upload chương
+
+/** ================= KHỞI TẠO GAPI + GIS (mới) ================= */
+function gapiLoad() { return new Promise((resolve) => gapi.load("client", resolve)); }
+async function initGapi(){
+  await gapiLoad();
+  await gapi.client.init({ apiKey: GAPI_CONFIG.apiKey, discoveryDocs: GAPI_CONFIG.discoveryDocs });
+  if (accessToken) gapi.client.setToken({access_token: accessToken});
+}
+
+function initGIS(){
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: "398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com",
+    scope: "https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file",
+    callback: (tokenResponse) => {
+      accessToken = tokenResponse.access_token;
+      gapi.client.setToken({ access_token: accessToken });
+      signedIn = true;
+      setAuthState("✅ Đã đăng nhập");
+      $("signin").style.display = "none";
+      $("signout").style.display = "inline-block";
+      ensureQLT();
     }
+  });
+}
 
-    function gapiLoad() {
-      gapi.load("client", () => {
-        gapi.client.init({
-          apiKey: "AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o",
-          discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]
-        }).then(() => {
-          gapi.client.setToken({ access_token: accessToken });
-          console.log("Google Drive API sẵn sàng");
-        });
-      });
-    }
+window.addEventListener('load', async () => {
+  await initGapi();
+  const waitGIS = () => new Promise(r=>{ const iv=setInterval(()=>{ if (window.google && google.accounts && google.accounts.oauth2){ clearInterval(iv); r(); } }, 50); });
+  await waitGIS();
+  initGIS();
+});
 
-    async function listAllTxtFiles() {
-      const folderName = "QuanLyTruyen";
-      try {
-        // Tìm thư mục gốc "QuanLyTruyen"
-        const folderRes = await gapi.client.drive.files.list({
-          q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-          fields: "files(id, name)",
-          spaces: "drive"
-        });
-        if (!folderRes.result.files || folderRes.result.files.length === 0) {
-          alert("Không tìm thấy thư mục QuanLyTruyen");
-          return;
-        }
-        const folderId = folderRes.result.files[0].id;
+$("signin").onclick = () => { if (!tokenClient){ setStatus('GIS chưa sẵn sàng'); return; } tokenClient.requestAccessToken({ prompt: 'consent' }); };
+$("signout").onclick = async () => {
+  try{ if (accessToken && google.accounts && google.accounts.oauth2){ google.accounts.oauth2.revoke(accessToken, ()=>{}); } }catch(e){}
+  accessToken = null; signedIn = false; gapi.client.setToken(null);
+  setAuthState("Chưa đăng nhập");
+  $("signin").style.display = "inline-block"; $("signout").style.display = "none"; setStatus('Đã đăng xuất.');
+};
 
-        let files = [];
-        let pageToken = null;
+/** ================== HÀM GOOGLE DRIVE ================== */
+async function findFolderIdByName(name, parentId=null){
+  let q = `name='${name.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  if (parentId) q += ` and '${parentId}' in parents`;
+  const res = await gapi.client.drive.files.list({ q, fields: "files(id,name,createdTime)", orderBy: "createdTime desc", pageSize: 50 });
+  const files = res.result.files || [];
+  return files.length ? files[0].id : null;
+}
+async function createFolder(name, parentId){
+  const metadata = { name, mimeType: 'application/vnd.google-apps.folder', parents: parentId ? [parentId] : undefined };
+  const res = await gapi.client.drive.files.create({ resource: metadata, fields: 'id,name' });
+  return res.result.id;
+}
+async function ensureQLT(){
+  setStatus("Đang kiểm tra thư mục QuanLyTruyen...");
+  qltFolderId = await findFolderIdByName('QuanLyTruyen');
+  if (!qltFolderId){ qltFolderId = await createFolder('QuanLyTruyen', null); }
+  setQLTState("📁 ID: " + qltFolderId);
+}
 
-        // Lấy tất cả file txt trong thư mục và các mục con bằng cách dùng 'parents in' + 'fullText' query
-        do {
-          const response = await gapi.client.drive.files.list({
-            q: `fullText contains '' and mimeType='text/plain' and '${folderId}' in parents`,
-            fields: "nextPageToken, files(id, name, parents)",
-            spaces: "drive",
-            pageSize: 1000,
-            pageToken: pageToken
-          });
-          files = files.concat(response.result.files);
-          pageToken = response.result.nextPageToken;
-        } while (pageToken);
+async function listTxtFilesInFolder(folderId, maxFiles = 200){
+  let files=[]; let pageToken=null;
+  do{
+    const res = await gapi.client.drive.files.list({ q: `'${folderId}' in parents and mimeType='text/plain' and trashed=false`, fields: 'nextPageToken, files(id,name,size,modifiedTime)', pageSize: 100, pageToken });
+    files = files.concat(res.result.files || []);
+    pageToken = res.result.nextPageToken || null;
+    if (files.length >= maxFiles) break;
+  } while(pageToken);
+  return files.slice(0, maxFiles);
+}
 
-        // Hàm đệ quy lấy file txt trong các thư mục con
-        async function getSubFiles(parentId) {
-          let subPageToken = null;
-          do {
-            const resp = await gapi.client.drive.files.list({
-              q: `'${parentId}' in parents and trashed=false`,
-              fields: "nextPageToken, files(id, name, mimeType)",
-              spaces: "drive",
-              pageSize: 1000,
-              pageToken: subPageToken
-            });
-            for (const f of resp.result.files) {
-              if (f.mimeType === 'application/vnd.google-apps.folder') {
-                await getSubFiles(f.id);
-              } else if (f.mimeType === 'text/plain') {
-                files.push(f);
-              }
-            }
-            subPageToken = resp.result.nextPageToken;
-          } while (subPageToken);
-        }
+async function listSubfolders(parentId){
+  const res = await gapi.client.drive.files.list({ q: `'${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`, fields: 'files(id,name,createdTime)', orderBy:'name' });
+  return res.result.files || [];
+}
 
-        await getSubFiles(folderId);
+function getAccessToken(){
+  // ưu tiên token GIS đã nhận
+  if (accessToken) return accessToken;
+  const tokenObj = gapi.client.getToken();
+  return tokenObj && (tokenObj.access_token || tokenObj.accessToken);
+}
 
-        // Hiển thị file
-        const listEl = document.getElementById("file-list");
-        listEl.innerHTML = "";
-        files.forEach(f => {
-          const li = document.createElement("li");
-          li.textContent = f.name;
-          listEl.appendChild(li);
-        });
+async function uploadMultipart({name, mimeType, content, parents, fileId=null}){
+  const boundary = '-------314159265358979323846';
+  const delimiter = "\r\n--" + boundary + "\r\n";
+  const closeDelim = "\r\n--" + boundary + "--";
+  const metadata = { name, mimeType, parents };
+  const base64Data = btoa(unescape(encodeURIComponent(content)));
+  const body = 
+    delimiter + 'Content-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata) +
+    delimiter + 'Content-Type: ' + mimeType + '\r\n' + 'Content-Transfer-Encoding: base64\r\n\r\n' + base64Data + closeDelim;
 
-        console.log("Tìm thấy", files.length, "file txt");
-      } catch (err) {
-        console.error("Lỗi khi tải file txt:", err);
-      }
-    }
+  const token = getAccessToken();
+  const method = fileId ? 'PATCH' : 'POST';
+  const url = fileId
+    ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`
+    : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
 
-    function showSection(id, btn) {
-      document.querySelectorAll('.content section').forEach(sec => sec.classList.add('hidden'));
-      document.getElementById(id).classList.remove('hidden');
-      document.querySelectorAll('.menu button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    }
-  </script>
+  const res = await fetch(url, { method, headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'multipart/related; boundary=' + boundary }, body });
+  if (!res.ok){ throw new Error('Upload thất bại ' + res.status + ' ' + await res.text()); }
+  return await res.json();
+}
+
+async function findChildByName(parentId, name){
+  const res = await gapi.client.drive.files.list({ q: `'${parentId}' in parents and name='${name.replace(/'/g, "\\'")}' and trashed=false`, fields: 'files(id,name,mimeType)' });
+  const files = res.result.files || [];
+  return files.length ? files[0] : null;
+}
+
+async function upsertTextFile(parentId, name, content){
+  const existing = await findChildByName(parentId, name);
+  const ret = await uploadMultipart({ name, mimeType:'text/plain', content, parents:[parentId], fileId: existing?.id || null });
+  return ret.id;
+}
+async function upsertJsonFile(parentId, name, obj){
+  const existing = await findChildByName(parentId, name);
+  const ret = await uploadMultipart({ name, mimeType:'application/json', content: JSON.stringify(obj, null, 2), parents:[parentId], fileId: existing?.id || null });
+  return ret.id;
+}
+
+/** ================== NẠP DỮ LIỆU ================== */
+$("clearAll").onclick = ()=>{ corpusTexts=[]; totalBytes=0; $("corpusPreview").value=''; $("filesInfo").textContent=''; setBar(0); setStatus('Đã xoá dữ liệu RAM.'); };
+$("loadTexts").onclick = loadAllTextsFromDriveFolder;
+$("saveCache").onclick = saveCacheToDrive;
+$("loadCache").onclick = loadCacheFromDrive;
+
+async function loadAllTextsFromDriveFolder(){
+  if (!signedIn){ setStatus('Vui lòng đăng nhập.'); return; }
+  await ensureQLT();
+  setStatus("Đang liệt kê .txt..."); setBar(5);
+  const maxFiles = parseInt($("maxFiles").value || '200', 10);
+  const maxMB = parseInt($("maxMB").value || '50', 10);
+  const byteLimit = maxMB * 1024 * 1024;
+  const sub = $("subFolder").value.trim();
+  let folderId = qltFolderId;
+  if (sub){ folderId = await findFolderIdByName(sub, qltFolderId) || await createFolder(sub, qltFolderId); }
+
+  const fileList = await listTxtFilesInFolder(folderId, maxFiles);
+  if (!fileList.length){ setStatus('Không có .txt trong thư mục.'); setBar(0); return; }
+
+  corpusTexts=[]; totalBytes=0; $("corpusPreview").value=''; $("filesInfo").innerHTML='';
+  let loaded=0;
+  for (const f of fileList){
+    if (totalBytes >= byteLimit) break;
+    try{
+      const txt = await downloadTxtFile(f.id);
+      const bytes = new Blob([txt]).size;
+      if (totalBytes + bytes > byteLimit){ setStatus(`Đạt giới hạn ~${maxMB}MB, dừng.`); break; }
+      corpusTexts.push(txt); totalBytes += bytes; loaded++;
+      const pct = Math.round((loaded / fileList.length) * 100);
+      setBar(Math.min(97, 5 + pct * 0.9));
+    }catch(e){ console.error(e); log('Lỗi tải: '+f.name); }
+  }
+
+  const preview = corpusTexts.slice(0,2).map(t=>t.substring(0,500)).join("\n---\n");
+  $("corpusPreview").value = preview;
+  $("filesInfo").innerHTML = `Đã nạp <b>${loaded}</b> / ${fileList.length} file (~${(totalBytes/1024/1024).toFixed(2)} MB).`;
+  setStatus('Hoàn tất nạp.'); setBar(100);
+}
+
+async function downloadTxtFile(fileId){
+  const token = getAccessToken();
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers:{ Authorization:'Bearer '+token } });
+  if (!res.ok) throw new Error('Tải file thất bại '+res.status);
+  return await res.text();
+}
+
+/** ================== TIẾNG VIỆT: tokenize + stopwords ================== */
+const VI_STOPWORDS = new Set(['và','là','của','những','các','một','như','đã','đang','sẽ','rằng','thì','lại','được','bị','trong','trên','dưới','từ','với','cho','đến','khi','này','kia','đó','ấy','nhiều','ít','rất','hơn','cũng','nhưng','nếu','vẫn','đều','đi','về','tại','qua','sau','trước','giữa','hay','hoặc','vì','nên','do','mà','nơi','ai','gì','đâu','nào','đây','tôi','ta','mình','chúng','anh','em','chị','cô','chú','bác','ông','bà','nó','họ','cậu','vậy','thế','ơi','à','ừ','ờ','ơ','hả','hử','nhỉ','nhé','cả','bởi','đến','khoảng','ngoài','cùng','từng','mỗi','mọi','rồi','nữa','thêm','bớt','gần','xa','hết','đủ']);
+function tokenizeVI(text){ const tokens = (text||'').toLowerCase().match(/[\p{L}\p{M}\d']+/gu) || []; return tokens.filter(w=>w && !VI_STOPWORDS.has(w)); }
+function splitSentencesVI(text){ return (text||'').split(/(?<=[\.!?…])\s+/).filter(s=>s.trim().length>0); }
+
+/** ================== PHÂN TÍCH (NÂNG CẤP) ================== */
+$("analyze").onclick = analyzeCorpus;
+$("exportStats").onclick = ()=>{ if (!window._lastStats){ setStatus('Chưa có thống kê.'); return; } const data = window._lastStats; const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='stats.json'; a.click(); URL.revokeObjectURL(url); };
+
+async function ensureSentiment(){ if (!sentiment){ sentiment = ml5.sentiment('movieReviews'); } }
+function topWords(tokens, n=40){ const f=new Map(); for(const w of tokens) f.set(w,(f.get(w)||0)+1); return [...f.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n); }
+function ngrams(tokens, n){ const m=new Map(); for(let i=0;i<=tokens.length-n;i++){ const key=tokens.slice(i,i+n).join(' '); const next=tokens[i+n]; if (!next) continue; if(!m.has(key)) m.set(key,[]); m.get(key).push(next);} return m; }
+
+async function analyzeCorpus(){
+  if (!corpusTexts.length){ setStatus('Chưa có dữ liệu.'); return; }
+  await ensureSentiment();
+  const joined = corpusTexts.join('\n');
+  const sentences = splitSentencesVI(joined);
+  const tokens = tokenizeVI(joined);
+  const uniq = new Set(tokens).size;
+  const sampleSize = Math.min(200, sentences.length);
+  let sum=0; for(let i=0;i<sampleSize;i++){ const s = sentences[Math.floor(Math.random()*sentences.length)]; try{ sum += sentiment.predict(s).score||0; }catch{} }
+  const avgSent = sampleSize? (sum/sampleSize) : 0;
+  const order = 3; const model = ngrams(tokens, order);
+  const vocabSize = new Set(tokens).size;
+  const tops = topWords(tokens, 40).map(([w,c])=>`${w.padEnd(16,' ')} : ${c}`).join('\n');
+  const stats = { chars: joined.length, words: tokens.length, uniqueWords: uniq, vocabSize, avgSentiment: +avgSent.toFixed(4), topWords: [...topWords(tokens, 100)], order, modelKeys: model.size };
+  window._lastStats = stats; window._lastTokens = tokens; window._lastModel = model;
+  $("analysis").textContent =
+`Tổng ký tự      : ${joined.length.toLocaleString()}
+Tổng từ          : ${tokens.length.toLocaleString()}
+Số từ khác nhau  : ${uniq.toLocaleString()}
+Kích thước vocab : ${vocabSize.toLocaleString()}
+Điểm cảm xúc TB  : ${avgSent.toFixed(3)} (ml5: movieReviews)
+Số khóa n-gram   : ${model.size.toLocaleString()}
+Top 40 từ phổ biến:\n${tops}`;
+  setStatus('Đã phân tích.'); log('Phân tích xong.');
+}
+
+/** ================== CACHE PHÂN TÍCH (Drive) ================== */
+async function saveCacheToDrive(){ if (!qltFolderId){ await ensureQLT(); } if (!window._lastTokens || !window._lastStats){ setStatus('Chưa phân tích để lưu.'); return; } const cache = { when: new Date().toISOString(), stats: window._lastStats }; const vocab = { tokens: window._lastTokens.slice(0, 500000) }; await upsertJsonFile(qltFolderId, 'QLT_analysis.json', cache); await upsertJsonFile(qltFolderId, 'QLT_vocab.json', vocab); setStatus('Đã lưu cache phân tích lên Drive.'); log('Lưu cache thành công.'); }
+async function loadCacheFromDrive(){ if (!qltFolderId){ await ensureQLT(); } async function downloadJsonIfExists(name){ const f = await findChildByName(qltFolderId, name); if (!f){ return null; } const token = getAccessToken(); const res = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`, { headers:{ Authorization:'Bearer '+token } }); if (!res.ok) return null; return await res.json(); } const cache = await downloadJsonIfExists('QLT_analysis.json'); const vocab = await downloadJsonIfExists('QLT_vocab.json'); if (cache && vocab){ window._lastStats = cache.stats; window._lastTokens = vocab.tokens; $("analysis").textContent = JSON.stringify(cache, null, 2); window._lastModel = ngrams(window._lastTokens, cache.stats.order || 3); setStatus('Đã tải cache phân tích.'); log('Tải cache thành công.'); } else { setStatus('Không tìm thấy cache.'); } }
+
+/** ================== VIẾT TRUYỆN 50 CHƯƠNG ================== */
+$("generateOutline").onclick = suggestOutline;
+$("startBook").onclick = startGeneratingBook;
+$("cancelGen").onclick = ()=>{ cancelFlag = true; setStatus('Đã gửi yêu cầu huỷ.'); };
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function buildWordModel(tokens, order){ const m = new Map(); for(let i=0;i<=tokens.length - order; i++){ const key = tokens.slice(i,i+order).join(' '); const next = tokens[i+order]; if (!next) continue; if (!m.has(key)) m.set(key, []); m.get(key).push(next);} return m; }
+async function ensureModel(){ if (!window._lastTokens){ if (!corpusTexts.length){ setStatus('Chưa có dữ liệu để học.'); throw new Error('no data'); } const tokens = tokenizeVI(corpusTexts.join('\n')); window._lastTokens = tokens; } if (!window._lastModel){ const order = parseInt($("order").value || '3', 10); window._lastModel = buildWordModel(window._lastTokens, order); } await ensureSentiment(); }
+
+function proposeTitleFromTokens(tokens){ const freq = new Map(); for(const w of tokens) freq.set(w,(freq.get(w)||0)+1); const weighted = [...freq.entries()].filter(([w])=>w.length>2 && !VI_STOPWORDS.has(w)); weighted.sort((a,b)=>b[1]-a[1]); const pool = weighted.slice(0,120).map(([w,c])=>({w,score:c})); const pickN = (n)=>{ const arr=[]; for(let i=0;i<n;i++){ const r = pool[Math.floor(Math.random()*pool.length)]; if(!r) break; arr.push(r.w); } return arr; }; const form1 = ["hành trình", "bí ẩn", "ký ức", "bóng đêm", "mùa gió", "dấu chân", "lằn ranh", "mặt trời", "đám mây", "cơn mưa"]; let cand = pick(form1) + ' ' + pickN(2).join(' '); cand = cand.replace(/\b\w/g, m=>m.toUpperCase()); return cand; }
+
+async function suggestOutline(){ await ensureModel(); const title = ($("titleInput").value.trim() || proposeTitleFromTokens(window._lastTokens)).replace(/\s+/g,' ').trim(); const chapters = []; const arcs = ['Khởi đầu & gọi mời cuộc phiêu lưu','Bước chân đầu tiên & mâu thuẫn nhen nhóm','Lời hứa và bí mật','Gặp gỡ đồng minh','Thử thách nhỏ, hậu quả lớn','Dấu vết quá khứ','Đối đầu lần đầu','Vùng tối của tôi','Lựa chọn khó khăn','Mất mát thứ nhất','Manh mối lộ diện','Nâng tầm xung đột','Cánh cửa khép hờ','Bước ngoặt','Lời nói dối','Chạy trốn','Tái ngộ','Học cách tin','Đổi vai','Bước vào tâm bão','Đêm trước bão','Sự thật thứ nhất','Vỡ vụn','Nhặt từng mảnh','Thắp lửa','Âm mưu lộ mặt','Cái bẫy','Hi sinh','Sụp đổ','Vực dậy','Đối mặt cuối','Cái giá phải trả','Mở khoá bí ẩn','Ánh sáng rạng đông','Vết sẹo còn lại','Tha thứ','Trở về','Cánh cửa mới','Chọn con đường','Lời hứa giữ lấy','Viết tiếp','Mùa mưa nữa','Bình yên mong manh','Dấu chấm hết','Ngoại truyện 1','Ngoại truyện 2','Ngoại truyện 3','Ngoại truyện 4','Ngoại truyện 5','Khép lại & mở ra']; for(let i=1;i<=50;i++){ const arc = arcs[i-1] || `Chương ${i}`; chapters.push({ index:i, name: arc }); } const outline = { title, chapters }; $("outlineBox").value = JSON.stringify(outline, null, 2); setStatus('Đã tạo dàn ý 50 chương.'); }
+
+function sampleWords(model, order, targetWords, seedWords){ const ENDERS=['.','!','?','…']; const ensureFirstPerson=(s)=>{ if (!/\btôi\b/i.test(s)) return 'Tôi ' + s.charAt(0).toLowerCase()+s.slice(1); return s; }; let keyTokens; if (seedWords && seedWords.length >= order) keyTokens = seedWords.slice(0, order); else { const keys = [...model.keys()]; keyTokens = keys[Math.floor(Math.random()*keys.length)].split(' '); } let out = keyTokens.slice(); while (out.length < targetWords){ const key = out.slice(out.length - order, out.length).join(' '); const choices = model.get(key) || []; if (!choices.length){ const keys = [...model.keys()]; const pickKey = keys[Math.floor(Math.random()*keys.length)]; const parts = pickKey.split(' '); out.push(...parts); continue; } let cand = choices[Math.floor(Math.random()*choices.length)]; out.push(cand); if (Math.random() < 0.08) out.push(pick([',', ',', ',', '.', '.'])); } let text = out.join(' ').replace(/\s+([,\.\!\?…])/g,'$1').replace(/\n\s+/g,'\n'); const sents = splitSentencesVI(text).map(s=>s.trim()).filter(Boolean); const paras=[]; let cur=[]; let count=0; for (const s of sents){ cur.push(s); count++; if (count>=5+Math.floor(Math.random()*4)){ paras.push(ensureFirstPerson(cur.join(' '))); cur=[]; count=0; } } if (cur.length) paras.push(ensureFirstPerson(cur.join(' '))); return paras.join('\n\n'); }
+
+async function generateChapter({model, order, wordsTarget, seed, targetSent=0.1}){ await ensureSentiment(); const seedWords = seed ? tokenizeVI(seed) : null; const candidates = []; for (let i=0;i<3;i++){ const text = sampleWords(model, order, wordsTarget, seedWords); const sents = splitSentencesVI(text); let sum=0, n=0; for (const s of sents.slice(0,50)){ try{ sum += sentiment.predict(s).score||0; n++; }catch{} } const score = n? sum/n : 0; candidates.push({text, dist: Math.abs(score - targetSent)}); } candidates.sort((a,b)=>a.dist-b.dist); return candidates[0].text; }
+
+async function startGeneratingBook(){ cancelFlag = false; try{ await ensureModel(); await ensureQLT(); let outline; try{ outline = JSON.parse($("outlineBox").value || '{}'); }catch{ outline=null; } if (!outline || !outline.title){ await suggestOutline(); outline = JSON.parse($("outlineBox").value); } const title = outline.title; const storyFolderId = await findFolderIdByName(title, qltFolderId) || await createFolder(title, qltFolderId); activeStoryFolderId = storyFolderId; const meta = { title, chapters: outline.chapters, createdAt: new Date().toISOString(), generator:'Markov-W3 + ml5 sentiment', wordsPerChapter:+$("wordsPerChapter").value }; await upsertJsonFile(storyFolderId, 'metadata.json', meta); const order = parseInt($("order").value || '3', 10); const wordsTarget = parseInt($("wordsPerChapter").value || '2300', 10); const targetSent = parseFloat($("targetSentiment").value || '0.1'); const chapters = outline.chapters || Array.from({length:50}, (_,i)=>({index:i+1, name:`Chương ${i+1}`})); for (let i=0; i<chapters.length; i++){ if (cancelFlag){ setStatus('Đã huỷ.'); break; } const ch = chapters[i]; $("bookStatus").textContent = `Đang sinh: Chương ${ch.index} – ${ch.name}`; log(`Sinh chương ${ch.index}`); const seed = (i===0? ($("seed").value.trim()||'Tôi') : `Tôi ${ch.name.toLowerCase()}`); const text = await generateChapter({ model: window._lastModel, order, wordsTarget, seed, targetSent }); const titleName = ch.name || `Chương ${i+1}`; const fileName = `${String(ch.index).padStart(2,'0')} - ${titleName}.txt`; await upsertTextFile(storyFolderId, fileName, titleName.toUpperCase()+"\n\n"+ text + "\n"); const p = Math.round(((i+1)/chapters.length)*100); setBar(p,'bookBar'); $("bookStatus").textContent = `Đã upload: ${fileName}`; await new Promise(r=>setTimeout(r, 350)); } await upsertJsonFile(storyFolderId, 'generation_summary.json', { finishedAt: new Date().toISOString(), wordsPerChapter: wordsTarget, order, targetSent }); setStatus('Hoàn tất sinh & upload.'); log('Hoàn tất toàn bộ.'); }catch(e){ console.error(e); setStatus('Lỗi: '+e.message); log('Lỗi: '+e.message); }}
+
+/** ============ THÊM TRUYỆN (UI) ============ */
+$("createStoryFolder").onclick = async ()=>{ try{ await ensureQLT(); const name = $("newStoryTitle").value.trim(); if (!name){ setStatus('Nhập tên truyện.'); return; } const id = await findFolderIdByName(name, qltFolderId) || await createFolder(name, qltFolderId); $("createStoryResult").textContent = `Đã sẵn sàng thư mục: ${name} (ID: ${id})`; activeStoryFolderId = id; }catch(e){ setStatus('Lỗi tạo thư mục: '+e.message); } };
+$("listSubfolders").onclick = async ()=>{ await ensureQLT(); const subs = await listSubfolders(qltFolderId); const sel = $("subfolders"); sel.innerHTML=''; for (const f of subs){ const opt = document.createElement('option'); opt.value=f.id; opt.textContent=f.name; sel.appendChild(opt); } sel.onchange = ()=>{ activeStoryFolderId = sel.value; setStatus('Chọn thư mục: '+ sel.options[sel.selectedIndex].text); }; };
+</script>
 </body>
 </html>
