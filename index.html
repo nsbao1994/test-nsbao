@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Story Analyzer - Website Cá Nhân</title>
     <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.10.0/tf.min.js"></script>
     <style>
         * {
@@ -100,6 +101,12 @@
             border: 1px solid #bee5eb;
         }
 
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
         .file-list {
             max-height: 300px;
             overflow-y: auto;
@@ -114,7 +121,7 @@
             padding: 10px;
             border-bottom: 1px solid #eee;
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
         }
 
@@ -179,6 +186,25 @@
         .hidden {
             display: none;
         }
+
+        .config-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .debug-info {
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -192,10 +218,21 @@
             <h2>🔗 Kết nối Google Drive</h2>
             <p>Kết nối với Google Drive để truy cập thư mục "QuanLyTruyen" và phân tích các file .txt</p>
             
+            <div class="config-warning">
+                <h4>⚠️ Cấu hình cần thiết:</h4>
+                <p>Để ứng dụng hoạt động, bạn cần:</p>
+                <ul>
+                    <li>Client ID và API Key hợp lệ từ Google Cloud Console</li>
+                    <li>Thêm domain này vào Authorized JavaScript origins</li>
+                    <li>Bật Google Drive API trong Google Cloud Console</li>
+                </ul>
+            </div>
+            
             <button id="authorizeBtn" class="button">🔐 Đăng nhập Google Drive</button>
             <button id="signoutBtn" class="button hidden">🚪 Đăng xuất</button>
             
             <div id="status" class="status hidden"></div>
+            <div id="debugInfo" class="debug-info hidden"></div>
             
             <div id="fileSection" class="hidden">
                 <h3>📁 Files trong thư mục QuanLyTruyen</h3>
@@ -255,8 +292,8 @@
 
     <script>
         // Google Drive API Configuration
-        const CLIENT_ID = '398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com'; // Thay bằng Client ID của bạn
-        const API_KEY = 'AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o'; // Thay bằng API Key của bạn
+        const CLIENT_ID = '398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com';
+        const API_KEY = 'AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o';
         const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
         const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
@@ -268,55 +305,104 @@
         let vocabulary = {};
         let sequences = [];
 
-        // Initialize Google APIs
+        // Debug function
+        function debugLog(message, data = null) {
+            console.log(message, data);
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.classList.remove('hidden');
+            debugInfo.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${message}</div>`;
+            if (data) {
+                debugInfo.innerHTML += `<div style="margin-left: 20px;">${JSON.stringify(data, null, 2)}</div>`;
+            }
+        }
+
+        // Initialize Google APIs with better error handling
         function gapiLoaded() {
+            debugLog('GAPI script loaded, initializing client...');
             gapi.load('client', initializeGapiClient);
         }
 
         async function initializeGapiClient() {
-            await gapi.client.init({
-                apiKey: API_KEY,
-                discoveryDocs: [DISCOVERY_DOC],
-            });
-            gapiInited = true;
-            maybeEnableButtons();
-        }
-
-        function gisLoaded() {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: '',
-            });
-            gisInited = true;
-            maybeEnableButtons();
-        }
-
-        function maybeEnableButtons() {
-            if (gapiInited && gisInited) {
-                document.getElementById('authorizeBtn').style.display = 'block';
+            try {
+                debugLog('Initializing GAPI client...');
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+                gapiInited = true;
+                debugLog('GAPI client initialized successfully');
+                maybeEnableButtons();
+            } catch (error) {
+                debugLog('Error initializing GAPI client:', error);
+                showStatus(`Lỗi khởi tạo GAPI: ${error.message}`, 'error');
             }
         }
 
-        // Authentication
-        function handleAuthClick() {
-            tokenClient.callback = async (resp) => {
-                if (resp.error !== undefined) {
-                    throw (resp);
-                }
-                document.getElementById('signoutBtn').classList.remove('hidden');
-                document.getElementById('authorizeBtn').classList.add('hidden');
-                await listFiles();
-            };
+        function gisLoaded() {
+            try {
+                debugLog('GIS script loaded, initializing token client...');
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: handleAuthCallback,
+                });
+                gisInited = true;
+                debugLog('GIS client initialized successfully');
+                maybeEnableButtons();
+            } catch (error) {
+                debugLog('Error initializing GIS client:', error);
+                showStatus(`Lỗi khởi tạo GIS: ${error.message}`, 'error');
+            }
+        }
 
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({prompt: 'consent'});
+        function maybeEnableButtons() {
+            debugLog(`Checking initialization status: GAPI=${gapiInited}, GIS=${gisInited}`);
+            if (gapiInited && gisInited) {
+                document.getElementById('authorizeBtn').style.display = 'block';
+                showStatus('Sẵn sàng kết nối với Google Drive', 'info');
             } else {
-                tokenClient.requestAccessToken({prompt: ''});
+                showStatus('Đang khởi tạo Google APIs...', 'info');
+            }
+        }
+
+        // Authentication with better error handling
+        function handleAuthCallback(resp) {
+            debugLog('Auth callback received:', resp);
+            if (resp.error !== undefined) {
+                debugLog('Auth error:', resp.error);
+                showStatus(`Lỗi xác thực: ${resp.error}`, 'error');
+                return;
+            }
+            
+            showStatus('Đăng nhập thành công!', 'success');
+            document.getElementById('signoutBtn').classList.remove('hidden');
+            document.getElementById('authorizeBtn').classList.add('hidden');
+            listFiles();
+        }
+
+        function handleAuthClick() {
+            debugLog('Auth button clicked');
+            if (!gapiInited || !gisInited) {
+                showStatus('Google APIs chưa sẵn sàng. Vui lòng tải lại trang.', 'error');
+                return;
+            }
+
+            try {
+                if (gapi.client.getToken() === null) {
+                    debugLog('Requesting new token...');
+                    tokenClient.requestAccessToken({prompt: 'consent'});
+                } else {
+                    debugLog('Using existing token...');
+                    tokenClient.requestAccessToken({prompt: ''});
+                }
+            } catch (error) {
+                debugLog('Error during auth:', error);
+                showStatus(`Lỗi khi xác thực: ${error.message}`, 'error');
             }
         }
 
         function handleSignoutClick() {
+            debugLog('Signing out...');
             const token = gapi.client.getToken();
             if (token !== null) {
                 google.accounts.oauth2.revoke(token.access_token);
@@ -325,38 +411,54 @@
                 document.getElementById('authorizeBtn').classList.remove('hidden');
                 document.getElementById('fileSection').classList.add('hidden');
                 showStatus('Đã đăng xuất', 'info');
+                debugLog('Signed out successfully');
             }
         }
 
-        // File operations
+        // File operations with improved error handling
         async function listFiles() {
             try {
+                debugLog('Starting file listing...');
                 showStatus('Đang tìm thư mục QuanLyTruyen...', 'info');
                 
-                // Tìm thư mục QuanLyTruyen
+                // Check if we have valid token
+                const token = gapi.client.getToken();
+                if (!token) {
+                    throw new Error('Không có token xác thực');
+                }
+                
+                debugLog('Token available, searching for folder...');
+                
+                // Find QuanLyTruyen folder
                 const folderResponse = await gapi.client.drive.files.list({
-                    q: "name='QuanLyTruyen' and mimeType='application/vnd.google-apps.folder'",
+                    q: "name='QuanLyTruyen' and mimeType='application/vnd.google-apps.folder' and trashed=false",
                     fields: 'files(id, name)',
                 });
 
+                debugLog('Folder search response:', folderResponse);
+                
                 const folders = folderResponse.result.files;
                 if (folders.length === 0) {
-                    showStatus('Không tìm thấy thư mục "QuanLyTruyen"', 'error');
+                    showStatus('Không tìm thấy thư mục "QuanLyTruyen". Hãy tạo thư mục này trong Google Drive của bạn.', 'warning');
                     return;
                 }
 
                 const folderId = folders[0].id;
+                debugLog(`Found folder: ${folders[0].name} (ID: ${folderId})`);
                 showStatus('Đang tải danh sách file .txt...', 'info');
 
-                // Lấy tất cả file .txt trong thư mục
+                // Get all .txt files in the folder
                 const filesResponse = await gapi.client.drive.files.list({
-                    q: `'${folderId}' in parents and name contains '.txt'`,
+                    q: `'${folderId}' in parents and name contains '.txt' and trashed=false`,
                     fields: 'files(id, name, size, modifiedTime)',
+                    pageSize: 100
                 });
+
+                debugLog('Files search response:', filesResponse);
 
                 const files = filesResponse.result.files;
                 if (files.length === 0) {
-                    showStatus('Không tìm thấy file .txt nào trong thư mục', 'error');
+                    showStatus('Không tìm thấy file .txt nào trong thư mục QuanLyTruyen', 'warning');
                     return;
                 }
 
@@ -365,7 +467,16 @@
                 document.getElementById('fileSection').classList.remove('hidden');
 
             } catch (error) {
-                showStatus(`Lỗi: ${error.message}`, 'error');
+                debugLog('Error in listFiles:', error);
+                showStatus(`Lỗi khi tải danh sách file: ${error.message}`, 'error');
+                
+                // Specific error handling
+                if (error.status === 401) {
+                    showStatus('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+                    handleSignoutClick();
+                } else if (error.status === 403) {
+                    showStatus('Không có quyền truy cập Google Drive API. Kiểm tra cấu hình API Key và Client ID.', 'error');
+                }
             }
         }
 
@@ -378,17 +489,36 @@
                 </div>
             `).join('');
             
-            // Lưu danh sách files để sử dụng sau
+            // Store files for later use
             window.storyFiles = files;
+            debugLog(`Displayed ${files.length} files`);
         }
 
-        // AI Analysis Functions
+        // Enhanced file download with better error handling
+        async function downloadFile(fileId, fileName) {
+            try {
+                debugLog(`Downloading file: ${fileName} (ID: ${fileId})`);
+                const response = await gapi.client.drive.files.get({
+                    fileId: fileId,
+                    alt: 'media'
+                });
+                debugLog(`Downloaded ${fileName}: ${response.body.length} characters`);
+                return response.body;
+            } catch (error) {
+                debugLog(`Error downloading ${fileName}:`, error);
+                showStatus(`Lỗi tải file ${fileName}: ${error.message}`, 'error');
+                return '';
+            }
+        }
+
+        // Rest of the AI analysis functions remain the same...
         async function analyzeStories() {
             if (!window.storyFiles || window.storyFiles.length === 0) {
                 showStatus('Không có file nào để phân tích', 'error');
                 return;
             }
 
+            debugLog(`Starting analysis of ${window.storyFiles.length} files`);
             showProgress(true);
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
@@ -398,16 +528,22 @@
                 for (let i = 0; i < window.storyFiles.length; i++) {
                     const file = window.storyFiles[i];
                     progressText.textContent = `Đang đọc file: ${file.name}`;
-                    progressFill.style.width = `${(i / window.storyFiles.length) * 100}%`;
+                    progressFill.style.width = `${(i / window.storyFiles.length) * 80}%`;
 
-                    const content = await downloadFile(file.id);
-                    storyData.push({
-                        name: file.name,
-                        content: content,
-                        analysis: analyzeText(content)
-                    });
+                    const content = await downloadFile(file.id, file.name);
+                    if (content) {
+                        storyData.push({
+                            name: file.name,
+                            content: content,
+                            analysis: analyzeText(content)
+                        });
+                    }
                     
                     await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                if (storyData.length === 0) {
+                    throw new Error('Không có nội dung nào được tải thành công');
                 }
 
                 progressText.textContent = 'Đang xây dựng mô hình AI...';
@@ -420,27 +556,16 @@
                 
                 showResults();
                 showStatus(`Đã phân tích thành công ${storyData.length} file truyện`, 'success');
+                debugLog(`Analysis completed for ${storyData.length} stories`);
                 
                 document.getElementById('trainBtn').disabled = false;
                 document.getElementById('generateBtn').disabled = false;
                 
             } catch (error) {
+                debugLog('Error in analyzeStories:', error);
                 showStatus(`Lỗi khi phân tích: ${error.message}`, 'error');
             } finally {
                 setTimeout(() => showProgress(false), 1000);
-            }
-        }
-
-        async function downloadFile(fileId) {
-            try {
-                const response = await gapi.client.drive.files.get({
-                    fileId: fileId,
-                    alt: 'media'
-                });
-                return response.body;
-            } catch (error) {
-                console.error('Error downloading file:', error);
-                return '';
             }
         }
 
@@ -449,7 +574,7 @@
             const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
             const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
             
-            // Phân tích cơ bản
+            // Basic analysis
             const wordFreq = {};
             words.forEach(word => {
                 wordFreq[word] = (wordFreq[word] || 0) + 1;
@@ -463,16 +588,17 @@
                 wordCount: words.length,
                 sentenceCount: sentences.length,
                 paragraphCount: paragraphs.length,
-                avgWordsPerSentence: Math.round(words.length / sentences.length),
-                avgSentencesPerParagraph: Math.round(sentences.length / paragraphs.length),
+                avgWordsPerSentence: Math.round(words.length / sentences.length) || 0,
+                avgSentencesPerParagraph: Math.round(sentences.length / paragraphs.length) || 0,
                 mostCommonWords: mostCommonWords,
                 uniqueWords: Object.keys(wordFreq).length,
-                lexicalDiversity: Object.keys(wordFreq).length / words.length
+                lexicalDiversity: Object.keys(wordFreq).length / words.length || 0
             };
         }
 
         async function buildAIModel() {
-            // Xây dựng từ vựng
+            debugLog('Building AI model...');
+            // Build vocabulary
             const allText = storyData.map(story => story.content).join(' ');
             const words = allText.toLowerCase().split(/\s+/).filter(word => word.length > 0);
             
@@ -484,7 +610,7 @@
                 }
             });
 
-            // Tạo sequences cho training
+            // Create sequences for training
             const sequenceLength = 50;
             sequences = [];
             
@@ -500,37 +626,43 @@
                 }
             }
 
-            // Xây dựng mô hình TensorFlow.js đơn giản
-            aiModel = tf.sequential({
-                layers: [
-                    tf.layers.embedding({
-                        inputDim: Object.keys(vocabulary).length + 1,
-                        outputDim: 128,
-                        inputLength: sequenceLength
-                    }),
-                    tf.layers.lstm({
-                        units: 128,
-                        returnSequences: true
-                    }),
-                    tf.layers.dropout({rate: 0.3}),
-                    tf.layers.lstm({
-                        units: 128
-                    }),
-                    tf.layers.dropout({rate: 0.3}),
-                    tf.layers.dense({
-                        units: Object.keys(vocabulary).length + 1,
-                        activation: 'softmax'
-                    })
-                ]
-            });
+            // Build simple TensorFlow.js model
+            try {
+                aiModel = tf.sequential({
+                    layers: [
+                        tf.layers.embedding({
+                            inputDim: Object.keys(vocabulary).length + 1,
+                            outputDim: 64,
+                            inputLength: sequenceLength
+                        }),
+                        tf.layers.lstm({
+                            units: 64,
+                            returnSequences: true
+                        }),
+                        tf.layers.dropout({rate: 0.3}),
+                        tf.layers.lstm({
+                            units: 64
+                        }),
+                        tf.layers.dropout({rate: 0.3}),
+                        tf.layers.dense({
+                            units: Object.keys(vocabulary).length + 1,
+                            activation: 'softmax'
+                        })
+                    ]
+                });
 
-            aiModel.compile({
-                optimizer: tf.train.adam(0.001),
-                loss: 'sparseCategoricalCrossentropy',
-                metrics: ['accuracy']
-            });
+                aiModel.compile({
+                    optimizer: tf.train.adam(0.001),
+                    loss: 'sparseCategoricalCrossentropy',
+                    metrics: ['accuracy']
+                });
 
-            document.getElementById('modelStatus').textContent = `✅ Đã khởi tạo (Từ vựng: ${Object.keys(vocabulary).length} từ, Sequences: ${sequences.length})`;
+                document.getElementById('modelStatus').textContent = `✅ Đã khởi tạo (Từ vựng: ${Object.keys(vocabulary).length} từ, Sequences: ${sequences.length})`;
+                debugLog(`Model built with vocab size: ${Object.keys(vocabulary).length}, sequences: ${sequences.length}`);
+            } catch (error) {
+                debugLog('Error building model:', error);
+                throw error;
+            }
         }
 
         async function trainAI() {
@@ -539,25 +671,27 @@
                 return;
             }
 
+            debugLog('Starting AI training...');
             showStatus('Đang huấn luyện mô hình AI...', 'info');
             document.getElementById('trainBtn').disabled = true;
 
             try {
-                // Chuẩn bị dữ liệu training
+                // Prepare training data
                 const batchSize = Math.min(32, sequences.length);
-                const epochs = 5;
+                const epochs = 3; // Reduced for demo
                 
                 const xs = tf.tensor2d(sequences.slice(0, batchSize).map(seq => seq.input));
                 const ys = tf.tensor1d(sequences.slice(0, batchSize).map(seq => seq.output));
 
-                // Training với callback
+                // Training with callbacks
                 await aiModel.fit(xs, ys, {
                     epochs: epochs,
                     batchSize: 8,
                     validationSplit: 0.1,
                     callbacks: {
                         onEpochEnd: (epoch, logs) => {
-                            console.log(`Epoch ${epoch + 1}: loss = ${logs.loss.toFixed(4)}, accuracy = ${logs.acc.toFixed(4)}`);
+                            debugLog(`Epoch ${epoch + 1}: loss = ${logs.loss.toFixed(4)}, accuracy = ${logs.acc.toFixed(4)}`);
+                            showStatus(`Epoch ${epoch + 1}/${epochs}: Loss = ${logs.loss.toFixed(4)}`, 'info');
                         }
                     }
                 });
@@ -567,8 +701,10 @@
 
                 showStatus('Huấn luyện hoàn thành!', 'success');
                 document.getElementById('modelStatus').textContent = '🎓 Đã huấn luyện xong';
+                debugLog('Training completed successfully');
                 
             } catch (error) {
+                debugLog('Error during training:', error);
                 showStatus(`Lỗi khi huấn luyện: ${error.message}`, 'error');
             } finally {
                 document.getElementById('trainBtn').disabled = false;
@@ -581,29 +717,30 @@
                 return;
             }
 
+            debugLog('Generating story...');
             showStatus('Đang tạo truyện...', 'info');
             document.getElementById('generateBtn').disabled = true;
 
             try {
-                // Tạo seed sequence
+                // Create seed sequence
                 const seedText = "Ngày xưa có một";
                 const seedWords = seedText.toLowerCase().split(' ');
                 let currentSequence = seedWords.map(word => vocabulary[word] || 0);
                 
-                // Đảm bảo sequence có đủ độ dài
+                // Ensure sequence has enough length
                 while (currentSequence.length < 50) {
                     currentSequence.unshift(0);
                 }
 
                 let generatedText = seedText;
-                const maxWords = 100;
+                const maxWords = 50; // Reduced for better performance
 
                 for (let i = 0; i < maxWords; i++) {
                     const inputTensor = tf.tensor2d([currentSequence.slice(-50)]);
                     const prediction = aiModel.predict(inputTensor);
                     const probabilities = await prediction.data();
                     
-                    // Chọn từ có xác suất cao nhất
+                    // Choose word with highest probability
                     let maxProb = 0;
                     let nextWordIndex = 0;
                     for (let j = 1; j < probabilities.length; j++) {
@@ -613,7 +750,7 @@
                         }
                     }
 
-                    // Tìm từ từ vocabulary
+                    // Find word from vocabulary
                     const nextWord = Object.keys(vocabulary).find(key => vocabulary[key] === nextWordIndex) || 'không_biết';
                     generatedText += ' ' + nextWord;
                     
@@ -635,8 +772,10 @@
                 `;
 
                 showStatus('Tạo truyện thành công!', 'success');
+                debugLog('Story generation completed');
                 
             } catch (error) {
+                debugLog('Error generating story:', error);
                 showStatus(`Lỗi khi tạo truyện: ${error.message}`, 'error');
             } finally {
                 document.getElementById('generateBtn').disabled = false;
@@ -647,7 +786,7 @@
             const analysisResults = document.getElementById('analysisResults');
             analysisResults.classList.remove('hidden');
 
-            // Thống kê tổng hợp
+            // Aggregate statistics
             const totalWords = storyData.reduce((sum, story) => sum + story.analysis.wordCount, 0);
             const totalSentences = storyData.reduce((sum, story) => sum + story.analysis.sentenceCount, 0);
             const avgLexicalDiversity = storyData.reduce((sum, story) => sum + story.analysis.lexicalDiversity, 0) / storyData.length;
@@ -659,36 +798,38 @@
                 <p><strong>Độ đa dạng từ vựng:</strong> ${(avgLexicalDiversity * 100).toFixed(1)}%</p>
             `;
 
-            // Phân tích nhân vật (từ khóa liên quan đến nhân vật)
+            // Character analysis (keywords related to characters)
             const characterKeywords = ['anh', 'cô', 'chàng', 'nàng', 'ông', 'bà', 'em', 'tôi'];
             let characterMentions = 0;
             storyData.forEach(story => {
                 characterKeywords.forEach(keyword => {
-                    characterMentions += (story.content.toLowerCase().match(new RegExp(keyword, 'g')) || []).length;
+                    characterMentions += (story.content.toLowerCase().match(new RegExp(`\\b${keyword}\\b`, 'g')) || []).length;
                 });
             });
 
             document.getElementById('characterAnalysis').innerHTML = `
                 <p><strong>Đề cập nhân vật:</strong> ${characterMentions} lần</p>
                 <p><strong>Mật độ nhân vật:</strong> ${(characterMentions / totalWords * 1000).toFixed(1)} lần/1000 từ</p>
+                <p><strong>Từ khóa nhân vật phổ biến:</strong> ${characterKeywords.slice(0, 3).join(', ')}</p>
             `;
 
-            // Phong cách viết
+            // Writing style
             const avgWordsPerSentence = totalWords / totalSentences;
-            const shortSentences = storyData.reduce((count, story) => {
-                return count + story.analysis.sentenceCount;
-            }, 0);
+            const avgParagraphs = storyData.reduce((sum, story) => sum + story.analysis.paragraphCount, 0) / storyData.length;
 
             document.getElementById('writingStyle').innerHTML = `
                 <p><strong>Trung bình từ/câu:</strong> ${avgWordsPerSentence.toFixed(1)}</p>
+                <p><strong>Trung bình đoạn/truyện:</strong> ${avgParagraphs.toFixed(1)}</p>
                 <p><strong>Phong cách:</strong> ${avgWordsPerSentence < 15 ? 'Ngắn gọn' : avgWordsPerSentence < 25 ? 'Vừa phải' : 'Dài, phức tạp'}</p>
             `;
 
-            // Chủ đề (từ khóa phổ biến)
+            // Themes (common keywords)
             const allWords = {};
             storyData.forEach(story => {
                 story.analysis.mostCommonWords.forEach(([word, freq]) => {
-                    allWords[word] = (allWords[word] || 0) + freq;
+                    if (word.length > 3 && !['trong', 'một', 'này', 'đây', 'của', 'với', 'và', 'cho'].includes(word)) {
+                        allWords[word] = (allWords[word] || 0) + freq;
+                    }
                 });
             });
 
@@ -701,6 +842,8 @@
                 <p><strong>Từ khóa phổ biến:</strong></p>
                 <ul>${topThemes.map(theme => `<li>${theme}</li>`).join('')}</ul>
             `;
+            
+            debugLog('Results displayed successfully');
         }
 
         // Helper functions
@@ -709,6 +852,15 @@
             status.textContent = message;
             status.className = `status ${type}`;
             status.classList.remove('hidden');
+            
+            // Auto-hide info messages after 5 seconds
+            if (type === 'info') {
+                setTimeout(() => {
+                    if (status.classList.contains('info')) {
+                        status.classList.add('hidden');
+                    }
+                }, 5000);
+            }
         }
 
         function showProgress(show) {
@@ -717,11 +869,13 @@
                 progressSection.classList.remove('hidden');
             } else {
                 progressSection.classList.add('hidden');
+                // Reset progress
+                document.getElementById('progressFill').style.width = '0%';
             }
         }
 
         function formatFileSize(bytes) {
-            if (!bytes) return 'N/A';
+            if (!bytes || bytes === 0) return 'N/A';
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(1024));
             return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
@@ -729,7 +883,11 @@
 
         function formatDate(dateString) {
             if (!dateString) return 'N/A';
-            return new Date(dateString).toLocaleDateString('vi-VN');
+            return new Date(dateString).toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
         }
 
         // Event listeners
@@ -739,15 +897,50 @@
         document.getElementById('trainBtn').addEventListener('click', trainAI);
         document.getElementById('generateBtn').addEventListener('click', generateStory);
 
-        // Load Google APIs when page loads
-        window.onload = function() {
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            debugLog('Page loaded, checking APIs...');
+            
+            // Check if Google APIs are available
             if (typeof gapi !== 'undefined') {
+                debugLog('GAPI available, loading...');
                 gapiLoaded();
+            } else {
+                debugLog('GAPI not available, will retry...');
+                setTimeout(() => {
+                    if (typeof gapi !== 'undefined') {
+                        gapiLoaded();
+                    } else {
+                        showStatus('Không thể tải Google APIs. Kiểm tra kết nối internet.', 'error');
+                    }
+                }, 2000);
             }
-            if (typeof google !== 'undefined') {
+            
+            if (typeof google !== 'undefined' && google.accounts) {
+                debugLog('GIS available, loading...');
                 gisLoaded();
+            } else {
+                debugLog('GIS not available, will retry...');
+                setTimeout(() => {
+                    if (typeof google !== 'undefined' && google.accounts) {
+                        gisLoaded();
+                    } else {
+                        showStatus('Không thể tải Google Identity Services. Kiểm tra kết nối internet.', 'error');
+                    }
+                }, 2000);
             }
-        };
+        });
+
+        // Handle network errors
+        window.addEventListener('online', function() {
+            debugLog('Network connection restored');
+            showStatus('Kết nối mạng đã khôi phục', 'success');
+        });
+
+        window.addEventListener('offline', function() {
+            debugLog('Network connection lost');
+            showStatus('Mất kết nối mạng', 'error');
+        });
     </script>
 </body>
 </html>
