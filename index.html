@@ -279,20 +279,29 @@ async function ensureQLT(){
   setQLTState("📁 ID: " + qltFolderId);
 }
 
-async function listTxtFilesInFolder(folderId, maxFiles = 200){
-  let files=[]; let pageToken=null;
-  do{
-    const res = await gapi.client.drive.files.list({ q: `'${folderId}' in parents and mimeType='text/plain' and trashed=false`, fields: 'nextPageToken, files(id,name,size,modifiedTime)', pageSize: 100, pageToken });
-    files = files.concat(res.result.files || []);
-    pageToken = res.result.nextPageToken || null;
-    if (files.length >= maxFiles) break;
-  } while(pageToken);
-  return files.slice(0, maxFiles);
-}
+async function listAllTxtRecursive(folderId, maxFiles = 200, collected = [], pageToken = null) {
+  // lấy file txt trong folder hiện tại
+  let res = await gapi.client.drive.files.list({
+    q: `'${folderId}' in parents and mimeType='text/plain' and trashed=false`,
+    fields: 'nextPageToken, files(id,name,size,modifiedTime)',
+    pageSize: 100,
+    pageToken
+  });
+  collected.push(...(res.result.files || []));
+  if (collected.length >= maxFiles) return collected.slice(0, maxFiles);
 
-async function listSubfolders(parentId){
-  const res = await gapi.client.drive.files.list({ q: `'${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`, fields: 'files(id,name,createdTime)', orderBy:'name' });
-  return res.result.files || [];
+  // lấy subfolders
+  let subRes = await gapi.client.drive.files.list({
+    q: `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: 'files(id,name)',
+    orderBy: 'name'
+  });
+  for (const sub of subRes.result.files || []) {
+    if (collected.length >= maxFiles) break;
+    await listAllTxtRecursive(sub.id, maxFiles, collected);
+  }
+
+  return collected.slice(0, maxFiles);
 }
 
 function getAccessToken(){
@@ -357,7 +366,7 @@ async function loadAllTextsFromDriveFolder(){
   let folderId = qltFolderId;
   if (sub){ folderId = await findFolderIdByName(sub, qltFolderId) || await createFolder(sub, qltFolderId); }
 
-  const fileList = await listTxtFilesInFolder(folderId, maxFiles);
+  const fileList = await listAllTxtRecursive(folderId, maxFiles);
   if (!fileList.length){ setStatus('Không có .txt trong thư mục.'); setBar(0); return; }
 
   corpusTexts=[]; totalBytes=0; $("corpusPreview").value=''; $("filesInfo").innerHTML='';
