@@ -2,2470 +2,368 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AI Story Analyzer - Enhanced</title>
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.10.0/tf.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quản Lý Truyện AI</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f5f5f7;
-            color: #1d1d1f;
-            overflow-x: hidden;
-            padding-bottom: 80px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            padding-bottom: 60px; /* Space for bottom nav */
+            background-color: #f8f9fa;
         }
-
-        .container {
-            max-width: 100vw;
-            margin: 0 auto;
-            padding: 20px 16px;
-        }
-
-        /* Header */
-        .header {
-            text-align: center;
-            padding: 20px 0 30px;
-            background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
-            color: white;
-            margin: -20px -16px 30px;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        /* Login Screen */
-        .login-screen {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 60vh;
-            text-align: center;
-            padding: 40px 20px;
-        }
-
-        .login-icon {
-            font-size: 80px;
-            margin-bottom: 30px;
-        }
-
-        .login-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #1d1d1f;
-        }
-
-        .login-subtitle {
-            font-size: 16px;
-            color: #8e8e93;
-            margin-bottom: 40px;
-            line-height: 1.4;
-        }
-
-        /* Buttons */
-        .btn {
-            background: #007AFF;
-            color: white;
-            border: none;
-            padding: 16px 32px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-height: 50px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn:hover {
-            background: #0056d3;
-        }
-
-        .btn:disabled {
-            background: #c7c7cc;
-            cursor: not-allowed;
-        }
-
-        .btn-secondary {
-            background: #8e8e93;
-        }
-
-        .btn-success {
-            background: #34c759;
-        }
-
-        .btn-danger {
-            background: #ff3b30;
-        }
-
-        .btn-warning {
-            background: #ff9500;
-        }
-
-        /* Main Content */
-        .main-content {
-            display: none;
-        }
-
-        .section {
-            background: white;
-            border-radius: 16px;
+        #content {
             padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-
-        .section h2 {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: #1d1d1f;
-        }
-
-        /* Status */
-        .status {
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin: 12px 0;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .status.success {
-            background: #d1f2eb;
-            color: #0c7c59;
-        }
-
-        .status.error {
-            background: #fadbd8;
-            color: #c0392b;
-        }
-
-        .status.info {
-            background: #d6eaf8;
-            color: #2874a6;
-        }
-
-        .status.warning {
-            background: #fcf3cf;
-            color: #b7950b;
-        }
-
-        /* File List */
-        .file-list {
-            max-height: 300px;
-            overflow-y: auto;
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 12px;
-            margin: 12px 0;
-        }
-
-        .file-folder {
-            margin-bottom: 16px;
-        }
-
-        .folder-header {
-            background: #e9ecef;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .file-item {
-            padding: 8px 12px;
-            margin-left: 16px;
-            margin-bottom: 4px;
-            font-size: 13px;
-            color: #6c757d;
-        }
-
-        /* Progress */
-        .progress {
-            width: 100%;
-            height: 8px;
-            background: #f0f0f0;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 12px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #34c759, #30d158);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        /* Analysis Results */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin: 16px 0;
-        }
-
-        .stat-card {
-            background: #f8f9fa;
-            padding: 16px;
-            border-radius: 12px;
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 24px;
-            font-weight: 700;
-            color: #007AFF;
-            display: block;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #8e8e93;
-            margin-top: 4px;
-        }
-
-        /* Advanced Analysis */
-        .analysis-detail {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 16px;
-            margin: 16px 0;
-        }
-
-        .analysis-item {
-            margin-bottom: 12px;
-            padding: 8px;
-            border-left: 4px solid #007AFF;
-            background: white;
-            border-radius: 0 8px 8px 0;
-        }
-
-        .analysis-item h4 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1d1d1f;
-            margin-bottom: 4px;
-        }
-
-        .analysis-item p {
-            font-size: 13px;
-            color: #6c757d;
-            line-height: 1.4;
-        }
-
-        /* Story Generation */
-        .story-output {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 16px;
-            margin: 16px 0;
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        .chapter {
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #e5e5ea;
-        }
-
-        .chapter:last-child {
-            border-bottom: none;
-        }
-
-        .chapter-title {
-            font-weight: 600;
-            color: #1d1d1f;
-            margin-bottom: 8px;
-        }
-
-        .chapter-meta {
-            font-size: 12px;
-            color: #8e8e93;
-            margin-bottom: 12px;
-        }
-
-        /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
-            right: 0;
-            background: white;
-            border-top: 1px solid #e5e5ea;
-            padding: 8px 0 24px;
-            z-index: 100;
-            display: none;
-        }
-
-        .nav-items {
+            width: 100%;
+            background-color: #ffffff;
+            border-top: 1px solid #dee2e6;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            max-width: 100vw;
-            margin: 0 auto;
+            height: 60px;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
         }
-
-        .nav-item {
+        .bottom-nav a {
+            text-decoration: none;
+            color: #333;
+            font-size: 14px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 8px 16px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            flex: 1;
-            min-width: 0;
         }
-
-        .nav-item.active {
-            color: #007AFF;
+        .bottom-nav a:hover {
+            color: #007bff;
         }
-
-        .nav-icon {
-            font-size: 24px;
-            margin-bottom: 4px;
+        button {
+            margin: 10px 0;
         }
-
-        .nav-label {
-            font-size: 11px;
-            font-weight: 500;
-        }
-
-        /* Tab Content */
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Loading */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #007AFF;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Data Management */
-        .data-status {
-            background: #e8f4fd;
-            border: 1px solid #bee5eb;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 12px 0;
-            font-size: 14px;
-        }
-
-        .data-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 12px;
-        }
-
-        /* Input Fields */
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #1d1d1f;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #d1d1d6;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 375px) {
-            .container {
-                padding: 16px 12px;
+        /* iPhone-specific adjustments */
+        @media only screen and (max-device-width: 812px) and (-webkit-device-pixel-ratio: 3) {
+            body {
+                font-size: 16px;
             }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
+            .bottom-nav {
+                height: 70px; /* Taller for better touch */
             }
-            
-            .data-actions {
-                flex-direction: column;
-            }
-        }
-
-        /* Hide elements */
-        .hidden {
-            display: none !important;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>🤖 AI Story Analyzer Pro</h1>
-            <p>Phân tích chuyên sâu và tạo truyện với AI</p>
-        </div>
-
-        <!-- Login Screen -->
-        <div id="loginScreen" class="login-screen">
-            <div class="login-icon">📱</div>
-            <h2 class="login-title">Chào mừng!</h2>
-            <p class="login-subtitle">Đăng nhập để bắt đầu phân tích và tạo truyện với AI chuyên nghiệp</p>
-            <button id="loginBtn" class="btn">
-                <span>🔐 Đăng nhập Google Drive</span>
-            </button>
-        </div>
-
-        <!-- Main Content -->
-        <div id="mainContent" class="main-content">
-            <!-- Status -->
-            <div id="status" class="status hidden"></div>
-
-            <!-- Files Tab -->
-            <div id="tabFiles" class="tab-content active">
-                <div class="section">
-                    <h2>📁 File Truyện</h2>
-                    
-                    <div class="data-status">
-                        <strong>Trạng thái dữ liệu:</strong> <span id="dataStatus">Chưa tải</span><br>
-                        <strong>Lần cập nhật cuối:</strong> <span id="lastUpdate">Chưa có</span>
-                    </div>
-                    
-                    <div class="data-actions">
-                        <button id="loadFilesBtn" class="btn">📥 Tải Files</button>
-                        <button id="loadCacheBtn" class="btn btn-secondary">🔄 Tải Cache</button>
-                        <button id="clearCacheBtn" class="btn btn-warning">🗑️ Xóa Cache</button>
-                    </div>
-                    
-                    <div id="fileList" class="file-list">
-                        <p style="text-align: center; color: #8e8e93; padding: 20px;">
-                            Nhấn "Tải Files" để xem danh sách truyện
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Analysis Tab -->
-            <div id="tabAnalysis" class="tab-content">
-                <div class="section">
-                    <h2>🔍 Phân Tích AI Chuyên Sâu</h2>
-                    <button id="analyzeBtn" class="btn btn-success">🧠 Phân Tích Chuyên Sâu</button>
-                    
-                    <div id="progressSection" class="hidden">
-                        <div class="progress">
-                            <div id="progressFill" class="progress-fill"></div>
-                        </div>
-                        <p id="progressText" style="font-size: 14px; color: #8e8e93; text-align: center;"></p>
-                    </div>
-
-                    <div id="analysisResults" class="hidden">
-                        <h3 style="margin: 20px 0 12px;">📊 Thống Kê Cơ Bản</h3>
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <span id="totalStories" class="stat-number">0</span>
-                                <div class="stat-label">Truyện</div>
-                            </div>
-                            <div class="stat-card">
-                                <span id="totalWords" class="stat-number">0</span>
-                                <div class="stat-label">Từ</div>
-                            </div>
-                            <div class="stat-card">
-                                <span id="totalFolders" class="stat-number">0</span>
-                                <div class="stat-label">Thư mục</div>
-                            </div>
-                            <div class="stat-card">
-                                <span id="vocabularySize" class="stat-number">0</span>
-                                <div class="stat-label">Từ vựng</div>
-                            </div>
-                        </div>
-                        
-                        <h3 style="margin: 20px 0 12px;">🎯 Phân Tích Chuyên Sâu</h3>
-                        <div id="detailedAnalysis" class="analysis-detail"></div>
-                        
-                        <button id="trainBtn" class="btn btn-success" disabled>🎓 Huấn Luyện AI</button>
-                        <button id="saveAnalysisBtn" class="btn btn-secondary">💾 Lưu Phân Tích</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Generation Tab -->
-            <div id="tabGenerate" class="tab-content">
-                <div class="section">
-                    <h2>✍️ Tạo Truyện</h2>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Số chương tối thiểu:</label>
-                        <input type="number" id="chapterCount" class="form-input" value="50" min="10" max="200">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Thể loại:</label>
-                        <select id="genreSelect" class="form-input">
-                            <option value="fantasy">Huyền Huyễn</option>
-                            <option value="romance">Lãng Mạn</option>
-                            <option value="adventure">Phiêu Lưu</option>
-                            <option value="mystery">Bí Ẩn</option>
-                            <option value="historical">Lịch Sử</option>
-                        </select>
-                    </div>
-
-                    <button id="generateBtn" class="btn btn-success" disabled>🚀 Tạo Truyện</button>
-                    
-                    <div id="generationProgress" class="hidden">
-                        <div class="progress">
-                            <div id="generationProgressFill" class="progress-fill"></div>
-                        </div>
-                        <p id="generationProgressText" style="font-size: 14px; color: #8e8e93; text-align: center;"></p>
-                    </div>
-
-                    <div id="storyOutput" class="story-output hidden">
-                        <h3 style="margin-bottom: 16px;">📖 Truyện Mới</h3>
-                        <div id="storyContent"></div>
-                        <div style="margin-top: 16px;">
-                            <button id="uploadBtn" class="btn btn-success hidden">☁️ Tải lên Drive</button>
-                            <button id="downloadBtn" class="btn btn-secondary hidden">📄 Tải xuống</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Settings Tab -->
-            <div id="tabSettings" class="tab-content">
-                <div class="section">
-                    <h2>⚙️ Cài Đặt</h2>
-                    <div style="margin-bottom: 16px;">
-                        <p><strong>Trạng thái:</strong> <span id="connectionStatus">Đã kết nối</span></p>
-                        <p><strong>Mô hình AI:</strong> <span id="modelStatus">Chưa sẵn sàng</span></p>
-                        <p><strong>Bộ nhớ cache:</strong> <span id="cacheStatus">Không có</span></p>
-                    </div>
-                    
-                    <div class="data-actions">
-                        <button id="exportDataBtn" class="btn btn-secondary">📤 Xuất Dữ Liệu</button>
-                        <button id="importDataBtn" class="btn btn-secondary">📥 Nhập Dữ Liệu</button>
-                        <button id="logoutBtn" class="btn btn-danger">🚪 Đăng xuất</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div id="content">
+        <h1>Chào mừng đến với Quản Lý Truyện AI</h1>
+        <p>Vui lòng đăng nhập để sử dụng.</p>
+        <button id="authorize_button" class="btn btn-primary" onclick="handleAuthClick()">Đăng Nhập Google</button>
+    </div>
+    <div class="bottom-nav">
+        <a href="#" onclick="showHome()"><span>Home</span></a>
+        <a href="#" onclick="analyze()"><span>Phân Tích</span></a>
+        <a href="#" onclick="generate()"><span>Tạo Truyện</span></a>
+        <a href="#" onclick="addStory()"><span>Thêm Truyện</span></a>
     </div>
 
-    <!-- Bottom Navigation -->
-    <div id="bottomNav" class="bottom-nav">
-        <div class="nav-items">
-            <div class="nav-item active" data-tab="Files">
-                <div class="nav-icon">📁</div>
-                <div class="nav-label">Files</div>
-            </div>
-            <div class="nav-item" data-tab="Analysis">
-                <div class="nav-icon">🔍</div>
-                <div class="nav-label">Phân tích</div>
-            </div>
-            <div class="nav-item" data-tab="Generate">
-                <div class="nav-icon">✍️</div>
-                <div class="nav-label">Tạo truyện</div>
-            </div>
-            <div class="nav-item" data-tab="Settings">
-                <div class="nav-icon">⚙️</div>
-                <div class="nav-label">Cài đặt</div>
-            </div>
-        </div>
-    </div>
-
+    <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+    <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script> <!-- ml5 for potential extensions, though core uses custom Markov -->
     <script>
-        // Configuration
         const CLIENT_ID = '398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com';
         const API_KEY = 'AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o';
         const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
         const SCOPES = 'https://www.googleapis.com/auth/drive';
-        const CACHE_FILE_NAME = 'ai_story_cache.json';
-        const ANALYSIS_FILE_NAME = 'story_analysis.json';
 
-        // Global variables
         let tokenClient;
         let gapiInited = false;
         let gisInited = false;
-        let storyFiles = [];
-        let analyzedFiles = new Set();
-        let storyData = [];
-        let aiModel = null;
-        let vocabulary = {};
-        let currentStory = null;
-        let storyPatterns = {};
-        let characterAnalysis = {};
-        let plotStructure = {};
-        let narrativeStyle = {};
 
-        // Utility functions
-        function log(message, data = '') {
-            console.log(`[AI Story Pro] ${message}`, data);
-        }
-
-        function showStatus(message, type = 'info') {
-            const status = document.getElementById('status');
-            status.textContent = message;
-            status.className = `status ${type}`;
-            status.classList.remove('hidden');
-            
-            setTimeout(() => {
-                status.classList.add('hidden');
-            }, type === 'error' ? 8000 : 5000);
-        }
-
-        function formatNumber(num) {
-            return new Intl.NumberFormat('vi-VN').format(num);
-        }
-
-        function updateDataStatus(status, lastUpdate = null) {
-            document.getElementById('dataStatus').textContent = status;
-            if (lastUpdate) {
-                document.getElementById('lastUpdate').textContent = lastUpdate.toLocaleString('vi-VN');
-            }
-        }
-
-        // Tab navigation
-        function initNavigation() {
-            const navItems = document.querySelectorAll('.nav-item');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            navItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    const tabName = item.getAttribute('data-tab');
-                    
-                    navItems.forEach(nav => nav.classList.remove('active'));
-                    item.classList.add('active');
-                    
-                    tabContents.forEach(content => {
-                        content.classList.remove('active');
-                    });
-                    document.getElementById(`tab${tabName}`).classList.add('active');
-                });
-            });
-        }
-
-        // Google API initialization
         function gapiLoaded() {
-            log('GAPI loaded');
             gapi.load('client', initializeGapiClient);
         }
 
         async function initializeGapiClient() {
-            try {
-                await gapi.client.init({
-                    apiKey: API_KEY,
-                    discoveryDocs: [DISCOVERY_DOC],
-                });
-                gapiInited = true;
-                log('GAPI initialized');
-                maybeEnableLogin();
-            } catch (error) {
-                log('GAPI init error:', error);
-                showStatus('Lỗi khởi tạo API', 'error');
-            }
+            await gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: [DISCOVERY_DOC],
+            });
+            gapiInited = true;
+            maybeEnableButtons();
         }
 
         function gisLoaded() {
-            try {
-                tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: CLIENT_ID,
-                    scope: SCOPES,
-                    callback: handleAuthCallback,
-                });
-                gisInited = true;
-                log('GIS initialized');
-                maybeEnableLogin();
-            } catch (error) {
-                log('GIS init error:', error);
-                showStatus('Lỗi khởi tạo xác thực', 'error');
-            }
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: '', // defined later
+            });
+            gisInited = true;
+            maybeEnableButtons();
         }
 
-        function maybeEnableLogin() {
+        function maybeEnableButtons() {
             if (gapiInited && gisInited) {
-                document.getElementById('loginBtn').disabled = false;
-                log('Login ready');
+                document.getElementById('authorize_button').style.display = 'block';
             }
         }
 
-        // Authentication
-        function handleAuthCallback(resp) {
-            if (resp.error) {
-                showStatus(`Lỗi đăng nhập: ${resp.error}`, 'error');
-                return;
-            }
-            
-            showStatus('Đăng nhập thành công!', 'success');
-            showMainContent();
-            loadCachedData();
-        }
-
-        function showMainContent() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
-            document.getElementById('bottomNav').style.display = 'block';
-            document.getElementById('connectionStatus').textContent = 'Đã kết nối';
-        }
-
-        // Cache Management
-        async function loadCachedData() {
-            try {
-                showStatus('Đang tải dữ liệu cache...', 'info');
-                
-                const cacheFile = await findFile(CACHE_FILE_NAME);
-                if (cacheFile) {
-                    const cacheContent = await downloadFile(cacheFile.id);
-                    const cache = JSON.parse(cacheContent);
-                    
-                    storyFiles = cache.storyFiles || [];
-                    analyzedFiles = new Set(cache.analyzedFiles || []);
-                    storyData = cache.storyData || [];
-                    vocabulary = cache.vocabulary || {};
-                    storyPatterns = cache.storyPatterns || {};
-                    characterAnalysis = cache.characterAnalysis || {};
-                    plotStructure = cache.plotStructure || {};
-                    narrativeStyle = cache.narrativeStyle || {};
-                    
-                    updateDataStatus('Đã tải từ cache', new Date(cache.lastUpdate));
-                    displayFiles();
-                    document.getElementById('cacheStatus').textContent = 'Có sẵn';
-                    
-                    if (storyData.length > 0) {
-                        showAnalysisResults();
-                        document.getElementById('generateBtn').disabled = false;
-                    }
-                    
-                    showStatus('Đã tải dữ liệu cache', 'success');
-                } else {
-                    updateDataStatus('Không có cache');
-                    document.getElementById('cacheStatus').textContent = 'Không có';
+        function handleAuthClick() {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) {
+                    throw (resp);
                 }
-            } catch (error) {
-                log('Load cache error:', error);
-                showStatus('Lỗi tải cache', 'warning');
-            }
-        }
-
-        async function saveCacheData() {
-            try {
-                const cacheData = {
-                    storyFiles,
-                    analyzedFiles: Array.from(analyzedFiles),
-                    storyData,
-                    vocabulary,
-                    storyPatterns,
-                    characterAnalysis,
-                    plotStructure,
-                    narrativeStyle,
-                    lastUpdate: new Date().toISOString()
-                };
-
-                await saveFileToRoot(CACHE_FILE_NAME, JSON.stringify(cacheData, null, 2));
-                updateDataStatus('Đã lưu cache', new Date());
-                document.getElementById('cacheStatus').textContent = 'Có sẵn';
-                log('Cache saved successfully');
-            } catch (error) {
-                log('Save cache error:', error);
-                showStatus('Lỗi lưu cache', 'error');
-            }
-        }
-
-        async function clearCache() {
-            try {
-                const cacheFile = await findFile(CACHE_FILE_NAME);
-                if (cacheFile) {
-                    await gapi.client.drive.files.delete({
-                        fileId: cacheFile.id
-                    });
-                }
-                
-                // Reset data
-                storyFiles = [];
-                analyzedFiles = new Set();
-                storyData = [];
-                vocabulary = {};
-                storyPatterns = {};
-                characterAnalysis = {};
-                plotStructure = {};
-                narrativeStyle = {};
-                
-                updateDataStatus('Cache đã xóa');
-                document.getElementById('cacheStatus').textContent = 'Không có';
-                document.getElementById('fileList').innerHTML = '<p style="text-align: center; color: #8e8e93; padding: 20px;">Cache đã được xóa</p>';
-                document.getElementById('analysisResults').classList.add('hidden');
-                
-                showStatus('Đã xóa cache', 'success');
-            } catch (error) {
-                log('Clear cache error:', error);
-                showStatus('Lỗi xóa cache', 'error');
-            }
-        }
-
-        // File operations
-        async function findFile(fileName) {
-            try {
-                const response = await gapi.client.drive.files.list({
-                    q: `name='${fileName}' and trashed=false`,
-                    fields: 'files(id, name, modifiedTime)'
-                });
-                return response.result.files[0] || null;
-            } catch (error) {
-                log(`Find file error for ${fileName}:`, error);
-                return null;
-            }
-        }
-
-        async function saveFileToRoot(fileName, content) {
-            const existingFile = await findFile(fileName);
-            
-            if (existingFile) {
-                // Update existing file
-                await gapi.client.request({
-                    path: `https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}`,
-                    method: 'PATCH',
-                    params: { uploadType: 'media' },
-                    headers: { 'Content-Type': 'application/json' },
-                    body: content
-                });
+                document.getElementById('authorize_button').style.display = 'none';
+                alert('Đăng nhập thành công!');
+            };
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
             } else {
-                // Create new file
-                const fileMetadata = { name: fileName };
-                await gapi.client.request({
-                    path: 'https://www.googleapis.com/upload/drive/v3/files',
-                    method: 'POST',
-                    params: { uploadType: 'multipart' },
-                    headers: { 'Content-Type': 'multipart/related; boundary="foo_bar_baz"' },
-                    body: createMultipartBody(fileMetadata, content)
-                });
+                tokenClient.requestAccessToken({prompt: ''});
             }
         }
 
-        async function loadFiles() {
-            try {
-                showStatus('Đang tải danh sách file...', 'info');
-                
-                const folderResponse = await gapi.client.drive.files.list({
-                    q: "name='QuanLyTruyen' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-                    fields: 'files(id, name)',
-                });
-
-                if (folderResponse.result.files.length === 0) {
-                    showStatus('Không tìm thấy thư mục "QuanLyTruyen"', 'warning');
-                    return;
-                }
-
-                const mainFolderId = folderResponse.result.files[0].id;
-                const allFolders = await getAllSubfolders(mainFolderId);
-                allFolders.unshift({ id: mainFolderId, name: 'QuanLyTruyen', path: 'QuanLyTruyen' });
-
-                storyFiles = [];
-                for (const folder of allFolders) {
-                    const files = await getFilesFromFolder(folder.id, folder.path);
-                    storyFiles.push(...files);
-                }
-
-                displayFiles();
-                updateDataStatus(`${storyFiles.length} files đã tải`, new Date());
-                showStatus(`Tìm thấy ${storyFiles.length} file`, 'success');
-                
-                // Auto save to cache
-                await saveCacheData();
-                
-            } catch (error) {
-                log('Load files error:', error);
-                showStatus('Lỗi tải file', 'error');
-            }
-        }
-
-        async function getAllSubfolders(parentId, basePath = '') {
+        async function getFolderId(name) {
             const response = await gapi.client.drive.files.list({
-                q: `'${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                q: `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
                 fields: 'files(id, name)',
             });
-
-            let folders = response.result.files.map(folder => ({
-                id: folder.id,
-                name: folder.name,
-                path: basePath ? `${basePath}/${folder.name}` : folder.name
-            }));
-
-            for (const folder of folders) {
-                const subfolders = await getAllSubfolders(folder.id, folder.path);
-                folders.push(...subfolders);
+            if (response.result.files && response.result.files.length > 0) {
+                return response.result.files[0].id;
             }
-
-            return folders;
+            return null;
         }
 
-        async function getFilesFromFolder(folderId, folderPath) {
+        async function listTxtFiles(folderId) {
             const response = await gapi.client.drive.files.list({
-                q: `'${folderId}' in parents and name contains '.txt' and trashed=false`,
-                fields: 'files(id, name, size, modifiedTime)',
+                q: `'${folderId}' in parents and mimeType='text/plain' and trashed=false`,
+                fields: 'files(id, name)',
             });
-
-            return response.result.files.map(file => ({
-                ...file,
-                folderPath,
-                isAnalyzed: analyzedFiles.has(file.id)
-            }));
-        }
-
-        function displayFiles() {
-            const fileList = document.getElementById('fileList');
-            
-            if (storyFiles.length === 0) {
-                fileList.innerHTML = '<p style="text-align: center; color: #8e8e93; padding: 20px;">Không có file nào</p>';
-                return;
-            }
-
-            const filesByFolder = {};
-            storyFiles.forEach(file => {
-                if (!filesByFolder[file.folderPath]) {
-                    filesByFolder[file.folderPath] = [];
-                }
-                filesByFolder[file.folderPath].push(file);
-            });
-
-            let html = '';
-            Object.keys(filesByFolder).sort().forEach(folderPath => {
-                const files = filesByFolder[folderPath];
-                const analyzedCount = files.filter(f => f.isAnalyzed).length;
-                
-                html += `
-                    <div class="file-folder">
-                        <div class="folder-header">
-                            📁 ${folderPath} 
-                            <span style="font-size: 12px; color: #8e8e93;">
-                                (${files.length} files, ${analyzedCount} analyzed)
-                            </span>
-                        </div>
-                        ${files.map(file => `
-                            <div class="file-item ${file.isAnalyzed ? 'analyzed' : ''}">
-                                📄 ${file.name} ${file.isAnalyzed ? '✅' : ''}
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            });
-
-            fileList.innerHTML = html;
-        }
-
-        // Enhanced AI Analysis
-        async function analyzeStories() {
-            if (storyFiles.length === 0) {
-                showStatus('Chưa có file để phân tích', 'error');
-                return;
-            }
-
-            const unanalyzedFiles = storyFiles.filter(file => !analyzedFiles.has(file.id));
-            if (unanalyzedFiles.length === 0) {
-                showStatus('Tất cả file đã được phân tích', 'info');
-                return;
-            }
-
-            document.getElementById('analyzeBtn').disabled = true;
-            document.getElementById('progressSection').classList.remove('hidden');
-            
-            try {
-                // Initialize analysis objects
-                storyPatterns = {
-                    openingPatterns: {},
-                    dialoguePatterns: {},
-                    descriptivePatterns: {},
-                    plotProgression: []
-                };
-                
-                characterAnalysis = {
-                    characterNames: new Set(),
-                    characterTraits: {},
-                    relationshipPatterns: {}
-                };
-                
-                plotStructure = {
-                    chapterStructures: [],
-                    conflictTypes: {},
-                    resolutionPatterns: {}
-                };
-                
-                narrativeStyle = {
-                    sentenceStructure: {},
-                    vocabularyDistribution: {},
-                    emotionalTone: {}
-                };
-
-                for (let i = 0; i < unanalyzedFiles.length; i++) {
-                    const file = unanalyzedFiles[i];
-                    const progress = ((i + 1) / unanalyzedFiles.length) * 100;
-                    
-                    document.getElementById('progressFill').style.width = `${progress}%`;
-                    document.getElementById('progressText').textContent = 
-                        `Đang phân tích chuyên sâu: ${file.name} (${i + 1}/${unanalyzedFiles.length})`;
-                    
-                    const content = await downloadFile(file.id);
-                    if (content && content.trim()) {
-                        const basicAnalysis = analyzeText(content);
-                        const advancedAnalysis = await performAdvancedAnalysis(content, file.name);
-                        
-                        storyData.push({
-                            fileId: file.id,
-                            name: file.name,
-                            folderPath: file.folderPath,
-                            content: content,
-                            analysis: basicAnalysis,
-                            advancedAnalysis: advancedAnalysis
-                        });
-                        
-                        analyzedFiles.add(file.id);
-                        
-                        // Update patterns and structures
-                        updateStoryPatterns(content, advancedAnalysis);
-                        updateCharacterAnalysis(content, advancedAnalysis);
-                        updatePlotStructure(content, advancedAnalysis);
-                        updateNarrativeStyle(content, advancedAnalysis);
-                    }
-                    
-                    // Small delay for UI responsiveness
-                    await new Promise(resolve => setTimeout(resolve, 50));
-                }
-
-                await buildAdvancedVocabulary();
-                showAnalysisResults();
-                
-                // Update file display
-                storyFiles.forEach(file => {
-                    file.isAnalyzed = analyzedFiles.has(file.id);
-                });
-                displayFiles();
-                
-                // Save analysis and cache
-                await saveAnalysisData();
-                await saveCacheData();
-                
-                showStatus('Phân tích chuyên sâu hoàn thành!', 'success');
-                
-            } catch (error) {
-                log('Analysis error:', error);
-                showStatus('Lỗi phân tích', 'error');
-            } finally {
-                document.getElementById('analyzeBtn').disabled = false;
-                document.getElementById('progressSection').classList.add('hidden');
-            }
+            return response.result.files || [];
         }
 
         async function downloadFile(fileId) {
-            try {
-                const response = await gapi.client.drive.files.get({
-                    fileId: fileId,
-                    alt: 'media'
-                });
-                return response.body;
-            } catch (error) {
-                log(`Download error for ${fileId}:`, error);
+            const response = await gapi.client.drive.files.get({
+                fileId: fileId,
+                alt: 'media'
+            }, {responseType: 'text'});
+            return response.body;
+        }
+
+        function cleanVietnamese(text) {
+            // Lọc để giữ chữ cái Việt Nam, số, dấu câu, khoảng trắng; loại bỏ các ký tự lạ
+            return text.replace(/[^\p{L}\p{N}\p{P}\p{Zs}\u00C0-\u1EF9]/gu, ' ').replace(/\s+/g, ' ').trim();
+        }
+
+        async function collectTexts() {
+            const folderId = await getFolderId('QuanLyTruyen');
+            if (!folderId) {
+                alert('Không tìm thấy thư mục QuanLyTruyen');
                 return '';
             }
-        }
-
-        function analyzeText(text) {
-            const words = text.toLowerCase().match(/\b\w+\b/g) || [];
-            const sentences = text.split(/[.!?]+/).filter(s => s.trim());
-            const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim());
-            
-            return {
-                wordCount: words.length,
-                sentenceCount: sentences.length,
-                paragraphCount: paragraphs.length,
-                uniqueWords: new Set(words).size,
-                avgWordsPerSentence: words.length / sentences.length || 0,
-                readabilityScore: calculateReadabilityScore(sentences, words)
-            };
-        }
-
-        async function performAdvancedAnalysis(content, fileName) {
-            // Simulate AI processing time
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            const sentences = content.split(/[.!?]+/).filter(s => s.trim());
-            const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim());
-            const words = content.toLowerCase().match(/\b\w+\b/g) || [];
-            
-            return {
-                // Character Analysis
-                characters: extractCharacters(content),
-                emotions: analyzeEmotions(content),
-                
-                // Plot Analysis
-                plotPoints: identifyPlotPoints(content),
-                conflicts: identifyConflicts(content),
-                themes: extractThemes(content),
-                
-                // Style Analysis
-                narrative: analyzeNarrativeTechnique(content),
-                dialogue: analyzeDialogue(content),
-                descriptions: analyzeDescriptions(content),
-                
-                // Structure Analysis
-                pacing: analyzePacing(sentences),
-                transitions: analyzeTransitions(paragraphs),
-                
-                // Language Analysis
-                complexity: analyzeLanguageComplexity(words, sentences),
-                tone: analyzeTone(content),
-                genre: predictGenre(content)
-            };
-        }
-
-        function extractCharacters(content) {
-            // Simple character extraction based on proper nouns and dialogue
-            const characters = new Set();
-            const namePattern = /\b[A-ZÁÀẢÃẠẤẦẬẨẪẮẰẶẲẴÓÒỎÕỌỐỒỘỔỖỢỚỜỞỠƯỨỪỬỮỰÉÈẺẼẸẾỀỂỄỆÍÌỈĨỊÝỲỶỸỴÚÙỦŨỤỐỒỘỔỖ][a-záàảãạấầậẩẫắằặẳẵóòỏõọốồộổỗợớờởỡơưứừửữựéèẻẽẹếềểễệíìỉĩịýỳỷỹỵúùủũụ]+\b/g;
-            const matches = content.match(namePattern) || [];
-            
-            matches.forEach(match => {
-                if (match.length > 2 && !commonWords.includes(match.toLowerCase())) {
-                    characters.add(match);
-                }
-            });
-            
-            return Array.from(characters).slice(0, 20); // Top 20 potential characters
-        }
-
-        function analyzeEmotions(content) {
-            const emotionKeywords = {
-                joy: ['vui', 'hạnh phúc', 'vui sướng', 'hân hoan', 'phấn khích'],
-                sadness: ['buồn', 'thương', 'đau khổ', 'khóc', 'tang thương'],
-                anger: ['giận', 'tức giận', 'phẫn nộ', 'cáu kỉnh', 'bực tức'],
-                fear: ['sợ', 'kinh hãi', 'lo lắng', 'hoảng sợ', 'e ngại'],
-                surprise: ['ngạc nhiên', 'bất ngờ', 'kinh ngạc', 'sửng sốt', 'choáng váng']
-            };
-            
-            const emotions = {};
-            Object.keys(emotionKeywords).forEach(emotion => {
-                let count = 0;
-                emotionKeywords[emotion].forEach(keyword => {
-                    const regex = new RegExp(keyword, 'gi');
-                    const matches = content.match(regex);
-                    if (matches) count += matches.length;
-                });
-                emotions[emotion] = count;
-            });
-            
-            return emotions;
-        }
-
-        function identifyPlotPoints(content) {
-            const plotIndicators = {
-                exposition: ['bắt đầu', 'khởi đầu', 'ngày xưa', 'có một lần'],
-                risingAction: ['sau đó', 'rồi thì', 'bất ngờ', 'đột nhiên'],
-                climax: ['cuối cùng', 'quyết định', 'trận chiến', 'đối mặt'],
-                fallingAction: ['kết quả', 'hậu quả', 'từ đó'],
-                resolution: ['kết thúc', 'cuối cùng', 'và thế là', 'hạnh phúc']
-            };
-            
-            const plotPoints = {};
-            Object.keys(plotIndicators).forEach(point => {
-                let count = 0;
-                plotIndicators[point].forEach(indicator => {
-                    const regex = new RegExp(indicator, 'gi');
-                    const matches = content.match(regex);
-                    if (matches) count += matches.length;
-                });
-                plotPoints[point] = count;
-            });
-            
-            return plotPoints;
-        }
-
-        function identifyConflicts(content) {
-            const conflictTypes = {
-                internal: ['suy nghĩ', 'băn khoăn', 'phân vân', 'do dự', 'tự hỏi'],
-                interpersonal: ['tranh cãi', 'xung đột', 'bất đồng', 'đối đầu', 'chiến đấu'],
-                societal: ['xã hội', 'luật pháp', 'truyền thống', 'phong tục', 'quy tắc'],
-                nature: ['thiên nhiên', 'bão tố', 'động đất', 'lũ lụt', 'hỏa hoạn'],
-                supernatural: ['thần linh', 'ma quái', 'phép thuật', 'siêu nhiên', 'huyền bí']
-            };
-            
-            const conflicts = {};
-            Object.keys(conflictTypes).forEach(type => {
-                let count = 0;
-                conflictTypes[type].forEach(keyword => {
-                    const regex = new RegExp(keyword, 'gi');
-                    const matches = content.match(regex);
-                    if (matches) count += matches.length;
-                });
-                conflicts[type] = count;
-            });
-            
-            return conflicts;
-        }
-
-        function extractThemes(content) {
-            const themes = {
-                love: ['tình yêu', 'yêu thương', 'tình cảm', 'lãng mạn', 'tình tứ'],
-                friendship: ['tình bạn', 'bạn bè', 'hữu nghị', 'đồng hành', 'thân thiết'],
-                family: ['gia đình', 'bố mẹ', 'anh em', 'con cái', 'họ hàng'],
-                honor: ['danh dự', 'lòng tự trọng', 'phẩm giá', 'danh tiếng', 'uy tín'],
-                adventure: ['phiêu lưu', 'khám phá', 'mạo hiểm', 'hành trình', 'du hành'],
-                power: ['quyền lực', 'sức mạnh', 'thống trị', 'chinh phục', 'kiểm soát']
-            };
-            
-            const themeScores = {};
-            Object.keys(themes).forEach(theme => {
-                let score = 0;
-                themes[theme].forEach(keyword => {
-                    const regex = new RegExp(keyword, 'gi');
-                    const matches = content.match(regex);
-                    if (matches) score += matches.length;
-                });
-                themeScores[theme] = score;
-            });
-            
-            return themeScores;
-        }
-
-        function analyzeNarrativeTechnique(content) {
-            const firstPerson = (content.match(/\btôi\b/gi) || []).length;
-            const secondPerson = (content.match(/\bbạn\b/gi) || []).length;
-            const thirdPerson = (content.match(/\b(anh ấy|cô ấy|họ)\b/gi) || []).length;
-            
-            let perspective = 'third';
-            if (firstPerson > thirdPerson && firstPerson > secondPerson) {
-                perspective = 'first';
-            } else if (secondPerson > firstPerson && secondPerson > thirdPerson) {
-                perspective = 'second';
+            const files = await listTxtFiles(folderId);
+            let allText = '';
+            for (let file of files) {
+                let text = await downloadFile(file.id);
+                text = cleanVietnamese(text);
+                allText += text + ' ';
             }
-            
-            return {
-                perspective: perspective,
-                firstPersonCount: firstPerson,
-                thirdPersonCount: thirdPerson,
-                flashbacks: (content.match(/\b(nhớ lại|hồi tưởng|ngày xưa)\b/gi) || []).length,
-                foreshadowing: (content.match(/\b(sẽ|sau này|tương lai)\b/gi) || []).length
-            };
+            return allText;
         }
 
-        function analyzeDialogue(content) {
-            const dialogueLines = content.match(/[""].*?[""]|".*?"/g) || [];
-            const dialogueRatio = dialogueLines.length / (content.split('\n').length || 1);
-            
-            return {
-                dialogueCount: dialogueLines.length,
-                dialogueRatio: dialogueRatio,
-                avgDialogueLength: dialogueLines.length > 0 ? 
-                    dialogueLines.reduce((sum, line) => sum + line.length, 0) / dialogueLines.length : 0
-            };
-        }
+        class Markov {
+            constructor(order) {
+                this.order = order;
+                this.transitions = {};
+                this.starts = [];
+            }
 
-        function analyzeDescriptions(content) {
-            const descriptiveWords = [
-                'màu', 'sắc', 'đẹp', 'xấu', 'cao', 'thấp', 'lớn', 'nhỏ', 
-                'sáng', 'tối', 'nóng', 'lạnh', 'mềm', 'cứng', 'ngọt', 'đắng'
-            ];
-            
-            let descriptiveCount = 0;
-            descriptiveWords.forEach(word => {
-                const regex = new RegExp(word, 'gi');
-                const matches = content.match(regex);
-                if (matches) descriptiveCount += matches.length;
-            });
-            
-            return {
-                descriptiveWordCount: descriptiveCount,
-                descriptiveRatio: descriptiveCount / (content.split(' ').length || 1)
-            };
-        }
-
-        function analyzePacing(sentences) {
-            if (sentences.length === 0) return { fast: 0, medium: 0, slow: 0 };
-            
-            const sentenceLengths = sentences.map(s => s.split(' ').length);
-            let fast = 0, medium = 0, slow = 0;
-            
-            sentenceLengths.forEach(length => {
-                if (length <= 8) fast++;
-                else if (length <= 15) medium++;
-                else slow++;
-            });
-            
-            return {
-                fast: fast / sentences.length,
-                medium: medium / sentences.length,
-                slow: slow / sentences.length,
-                avgSentenceLength: sentenceLengths.reduce((sum, len) => sum + len, 0) / sentences.length
-            };
-        }
-
-        function analyzeTransitions(paragraphs) {
-            const transitionWords = [
-                'sau đó', 'rồi', 'tiếp theo', 'bỗng nhiên', 'đột ngột', 
-                'tuy nhiên', 'nhưng', 'mặc dù', 'vì vậy', 'do đó'
-            ];
-            
-            let transitionCount = 0;
-            paragraphs.forEach(paragraph => {
-                transitionWords.forEach(word => {
-                    if (paragraph.toLowerCase().includes(word)) {
-                        transitionCount++;
+            train(text) {
+                const words = text.split(/\s+/).filter(w => w.length > 0);
+                for (let i = 0; i < words.length - this.order; i++) {
+                    const key = words.slice(i, i + this.order).join(' ');
+                    const next = words[i + this.order];
+                    if (!this.transitions[key]) {
+                        this.transitions[key] = [];
                     }
-                });
-            });
-            
-            return {
-                transitionCount: transitionCount,
-                transitionRatio: transitionCount / (paragraphs.length || 1)
-            };
-        }
-
-        function analyzeLanguageComplexity(words, sentences) {
-            const avgWordLength = words.reduce((sum, word) => sum + word.length, 0) / (words.length || 1);
-            const avgSentenceLength = words.length / (sentences.length || 1);
-            
-            const complexWords = words.filter(word => word.length > 7).length;
-            const complexityRatio = complexWords / (words.length || 1);
-            
-            return {
-                avgWordLength: avgWordLength,
-                avgSentenceLength: avgSentenceLength,
-                complexityRatio: complexityRatio,
-                vocabularyRichness: new Set(words).size / (words.length || 1)
-            };
-        }
-
-        function analyzeTone(content) {
-            const toneIndicators = {
-                formal: ['kính thưa', 'xin phép', 'tôn kính', 'kính mến'],
-                informal: ['này', 'kìa', 'ơi', 'nhé', 'đấy'],
-                serious: ['nghiêm trọng', 'quan trọng', 'cần thiết', 'thiết yếu'],
-                humorous: ['hài hước', 'vui nhộn', 'đùa', 'cười', 'hót'],
-                dramatic: ['căng thẳng', 'kịch tính', 'hồi hộp', 'gay cấn']
-            };
-            
-            const toneScores = {};
-            Object.keys(toneIndicators).forEach(tone => {
-                let score = 0;
-                toneIndicators[tone].forEach(indicator => {
-                    const regex = new RegExp(indicator, 'gi');
-                    const matches = content.match(regex);
-                    if (matches) score += matches.length;
-                });
-                toneScores[tone] = score;
-            });
-            
-            return toneScores;
-        }
-
-        function predictGenre(content) {
-            const genreIndicators = {
-                fantasy: ['ma thuật', 'phép thuật', 'rồng', 'thần tiên', 'huyền bí', 'kỳ ảo'],
-                romance: ['tình yêu', 'yêu đương', 'hôn', 'cưới', 'lãng mạn', 'tình tứ'],
-                adventure: ['phiêu lưu', 'mạo hiểm', 'khám phá', 'hành trình', 'du lịch'],
-                mystery: ['bí ẩn', 'bí mật', 'điều tra', 'thám tử', 'giải mã'],
-                historical: ['lịch sử', 'cổ đại', 'triều đại', 'hoàng gia', 'chiến tranh'],
-                horror: ['kinh dị', 'ma quái', 'sợ hãi', 'ám ảnh', 'đáng sợ']
-            };
-            
-            const genreScores = {};
-            Object.keys(genreIndicators).forEach(genre => {
-                let score = 0;
-                genreIndicators[genre].forEach(keyword => {
-                    const regex = new RegExp(keyword, 'gi');
-                    const matches = content.match(regex);
-                    if (matches) score += matches.length;
-                });
-                genreScores[genre] = score;
-            });
-            
-            return genreScores;
-        }
-
-        function calculateReadabilityScore(sentences, words) {
-            const avgWordsPerSentence = words.length / (sentences.length || 1);
-            const avgSyllablesPerWord = words.reduce((sum, word) => sum + estimateSyllables(word), 0) / (words.length || 1);
-            
-            // Simplified readability formula
-            return Math.max(0, 206.835 - (1.015 * avgWordsPerSentence) - (84.6 * avgSyllablesPerWord));
-        }
-
-        function estimateSyllables(word) {
-            // Simple Vietnamese syllable estimation
-            const vowels = 'aeiouáàảãạấầậẩẫắằặẳẵéèẻẽẹếềểễệíìỉĩịóòỏõọốồộổỗớờởỡợúùủũụứừửữựýỳỷỹỵ';
-            let count = 0;
-            for (let i = 0; i < word.length; i++) {
-                if (vowels.includes(word[i].toLowerCase())) {
-                    count++;
-                }
-            }
-            return Math.max(1, count);
-        }
-
-        const commonWords = [
-            'và', 'của', 'có', 'là', 'một', 'được', 'này', 'với', 'trong', 'cho',
-            'từ', 'không', 'đã', 'sẽ', 'người', 'thì', 'như', 'để', 'khi', 'hay'
-        ];
-
-        function updateStoryPatterns(content, analysis) {
-            // Update opening patterns
-            const firstSentence = content.split(/[.!?]+/)[0];
-            if (firstSentence) {
-                const firstWords = firstSentence.toLowerCase().split(' ').slice(0, 3).join(' ');
-                storyPatterns.openingPatterns[firstWords] = (storyPatterns.openingPatterns[firstWords] || 0) + 1;
-            }
-            
-            // Update dialogue patterns
-            Object.keys(analysis.dialogue || {}).forEach(key => {
-                if (!storyPatterns.dialoguePatterns[key]) {
-                    storyPatterns.dialoguePatterns[key] = [];
-                }
-                storyPatterns.dialoguePatterns[key].push(analysis.dialogue[key]);
-            });
-        }
-
-        function updateCharacterAnalysis(content, analysis) {
-            if (analysis.characters) {
-                analysis.characters.forEach(char => {
-                    characterAnalysis.characterNames.add(char);
-                });
-            }
-        }
-
-        function updatePlotStructure(content, analysis) {
-            if (analysis.plotPoints) {
-                plotStructure.chapterStructures.push(analysis.plotPoints);
-            }
-            
-            if (analysis.conflicts) {
-                Object.keys(analysis.conflicts).forEach(conflictType => {
-                    if (!plotStructure.conflictTypes[conflictType]) {
-                        plotStructure.conflictTypes[conflictType] = [];
+                    this.transitions[key].push(next);
+                    if (i === 0 || /[.!?]$/.test(words[i - 1])) { // Bắt đầu câu mới
+                        if (key.startsWith('Tôi')) { // Ưu tiên khởi đầu ngôi thứ nhất
+                            this.starts.push(key);
+                        }
                     }
-                    plotStructure.conflictTypes[conflictType].push(analysis.conflicts[conflictType]);
-                });
-            }
-        }
-
-        function updateNarrativeStyle(content, analysis) {
-            if (analysis.narrative) {
-                narrativeStyle.sentenceStructure[analysis.narrative.perspective] = 
-                    (narrativeStyle.sentenceStructure[analysis.narrative.perspective] || 0) + 1;
-            }
-            
-            if (analysis.tone) {
-                Object.keys(analysis.tone).forEach(toneType => {
-                    if (!narrativeStyle.emotionalTone[toneType]) {
-                        narrativeStyle.emotionalTone[toneType] = [];
-                    }
-                    narrativeStyle.emotionalTone[toneType].push(analysis.tone[toneType]);
-                });
-            }
-        }
-
-        async function buildAdvancedVocabulary() {
-            vocabulary = { '<PAD>': 0, '<UNK>': 1, '<START>': 2, '<END>': 3 };
-            let index = 4;
-            
-            const wordFrequency = {};
-            
-            storyData.forEach(story => {
-                const words = story.content.toLowerCase().match(/\b\w+\b/g) || [];
-                words.forEach(word => {
-                    wordFrequency[word] = (wordFrequency[word] || 0) + 1;
-                });
-            });
-            
-            // Only include words that appear at least 2 times
-            Object.keys(wordFrequency)
-                .filter(word => wordFrequency[word] >= 2)
-                .sort((a, b) => wordFrequency[b] - wordFrequency[a])
-                .forEach(word => {
-                    vocabulary[word] = index++;
-                });
-            
-            log(`Built advanced vocabulary: ${Object.keys(vocabulary).length} words`);
-        }
-
-        function showAnalysisResults() {
-            const totalWords = storyData.reduce((sum, story) => sum + story.analysis.wordCount, 0);
-            const totalFolders = new Set(storyData.map(story => story.folderPath)).size;
-            
-            document.getElementById('totalStories').textContent = formatNumber(storyData.length);
-            document.getElementById('totalWords').textContent = formatNumber(totalWords);
-            document.getElementById('totalFolders').textContent = formatNumber(totalFolders);
-            document.getElementById('vocabularySize').textContent = formatNumber(Object.keys(vocabulary).length);
-            
-            // Show detailed analysis
-            showDetailedAnalysis();
-            
-            document.getElementById('analysisResults').classList.remove('hidden');
-            document.getElementById('trainBtn').disabled = false;
-            document.getElementById('modelStatus').textContent = 'Sẵn sàng huấn luyện';
-        }
-
-        function showDetailedAnalysis() {
-            const detailedAnalysis = document.getElementById('detailedAnalysis');
-            
-            let html = '';
-            
-            // Character analysis
-            const allCharacters = Array.from(characterAnalysis.characterNames).slice(0, 10);
-            if (allCharacters.length > 0) {
-                html += `
-                    <div class="analysis-item">
-                        <h4>🎭 Nhân vật phổ biến</h4>
-                        <p>${allCharacters.join(', ')}</p>
-                    </div>
-                `;
-            }
-            
-            // Genre analysis
-            const genreScores = {};
-            storyData.forEach(story => {
-                if (story.advancedAnalysis && story.advancedAnalysis.genre) {
-                    Object.keys(story.advancedAnalysis.genre).forEach(genre => {
-                        genreScores[genre] = (genreScores[genre] || 0) + story.advancedAnalysis.genre[genre];
-                    });
                 }
-            });
-            
-            const topGenre = Object.keys(genreScores).reduce((a, b) => genreScores[a] > genreScores[b] ? a : b, 'unknown');
-            html += `
-                <div class="analysis-item">
-                    <h4>📚 Thể loại chính</h4>
-                    <p>${getGenreVietnamese(topGenre)} (${genreScores[topGenre] || 0} điểm)</p>
-                </div>
-            `;
-            
-            // Emotional tone analysis
-            const avgEmotions = {};
-            storyData.forEach(story => {
-                if (story.advancedAnalysis && story.advancedAnalysis.emotions) {
-                    Object.keys(story.advancedAnalysis.emotions).forEach(emotion => {
-                        if (!avgEmotions[emotion]) avgEmotions[emotion] = [];
-                        avgEmotions[emotion].push(story.advancedAnalysis.emotions[emotion]);
-                    });
-                }
-            });
-            
-            const dominantEmotion = Object.keys(avgEmotions).reduce((a, b) => {
-                const avgA = avgEmotions[a].reduce((sum, val) => sum + val, 0) / avgEmotions[a].length;
-                const avgB = avgEmotions[b].reduce((sum, val) => sum + val, 0) / avgEmotions[b].length;
-                return avgA > avgB ? a : b;
-            }, 'joy');
-            
-            html += `
-                <div class="analysis-item">
-                    <h4>😊 Cảm xúc chủ đạo</h4>
-                    <p>${getEmotionVietnamese(dominantEmotion)}</p>
-                </div>
-            `;
-            
-            // Writing style analysis
-            const avgComplexity = storyData.reduce((sum, story) => {
-                return sum + (story.advancedAnalysis?.complexity?.vocabularyRichness || 0);
-            }, 0) / storyData.length;
-            
-            html += `
-                <div class="analysis-item">
-                    <h4>✍️ Phong cách viết</h4>
-                    <p>Độ phức tạp từ vựng: ${(avgComplexity * 100).toFixed(1)}%</p>
-                </div>
-            `;
-            
-            // Narrative perspective
-            const perspectives = {};
-            storyData.forEach(story => {
-                if (story.advancedAnalysis?.narrative?.perspective) {
-                    const perspective = story.advancedAnalysis.narrative.perspective;
-                    perspectives[perspective] = (perspectives[perspective] || 0) + 1;
-                }
-            });
-            
-            const mainPerspective = Object.keys(perspectives).reduce((a, b) => 
-                perspectives[a] > perspectives[b] ? a : b, 'third');
-            
-            html += `
-                <div class="analysis-item">
-                    <h4>👁️ Góc nhìn tường thuật</h4>
-                    <p>${getPerspectiveVietnamese(mainPerspective)} (${perspectives[mainPerspective] || 0} truyện)</p>
-                </div>
-            `;
-            
-            detailedAnalysis.innerHTML = html;
-        }
-
-        function getGenreVietnamese(genre) {
-            const genreMap = {
-                fantasy: 'Huyền Huyễn',
-                romance: 'Lãng Mạn',
-                adventure: 'Phiêu Lưu',
-                mystery: 'Bí Ẩn',
-                historical: 'Lịch Sử',
-                horror: 'Kinh Dị'
-            };
-            return genreMap[genre] || 'Không xác định';
-        }
-
-        function getEmotionVietnamese(emotion) {
-            const emotionMap = {
-                joy: 'Vui vẻ, hạnh phúc',
-                sadness: 'Buồn bã, u sầu',
-                anger: 'Giận dữ, phẫn nộ',
-                fear: 'Sợ hãi, lo lắng',
-                surprise: 'Ngạc nhiên, bất ngờ'
-            };
-            return emotionMap[emotion] || 'Trung tính';
-        }
-
-        function getPerspectiveVietnamese(perspective) {
-            const perspectiveMap = {
-                first: 'Ngôi thứ nhất (tôi)',
-                second: 'Ngôi thứ hai (bạn)',
-                third: 'Ngôi thứ ba (anh ấy/cô ấy)'
-            };
-            return perspectiveMap[perspective] || 'Không xác định';
-        }
-
-        async function saveAnalysisData() {
-            try {
-                const analysisData = {
-                    storyData: storyData.map(story => ({
-                        name: story.name,
-                        folderPath: story.folderPath,
-                        analysis: story.analysis,
-                        advancedAnalysis: story.advancedAnalysis
-                    })),
-                    storyPatterns,
-                    characterAnalysis: {
-                        ...characterAnalysis,
-                        characterNames: Array.from(characterAnalysis.characterNames)
-                    },
-                    plotStructure,
-                    narrativeStyle,
-                    vocabulary,
-                    timestamp: new Date().toISOString()
-                };
-
-                await saveFileToRoot(ANALYSIS_FILE_NAME, JSON.stringify(analysisData, null, 2));
-                showStatus('Đã lưu kết quả phân tích', 'success');
-                log('Analysis data saved successfully');
-            } catch (error) {
-                log('Save analysis error:', error);
-                showStatus('Lỗi lưu phân tích', 'error');
-            }
-        }
-
-        // Enhanced AI Training and Generation
-        async function trainAI() {
-            if (storyData.length === 0) {
-                showStatus('Cần phân tích truyện trước', 'error');
-                return;
-            }
-
-            document.getElementById('trainBtn').disabled = true;
-            showStatus('Đang huấn luyện AI với dữ liệu chuyên sâu...', 'info');
-            
-            try {
-                const vocabSize = Object.keys(vocabulary).length + 1;
-                
-                // Create advanced training sequences
-                const sequences = [];
-                const contextWindow = 20; // Larger context window
-                
-                storyData.forEach(story => {
-                    const words = story.content.toLowerCase().match(/\b\w+\b/g) || [];
-                    const tokens = words.map(word => vocabulary[word] || vocabulary['<UNK>']);
-                    
-                    // Create sequences with story context
-                    for (let i = 0; i < tokens.length - contextWindow; i++) {
-                        const sequence = {
-                            input: tokens.slice(i, i + contextWindow),
-                            output: tokens[i + contextWindow],
-                            storyInfo: {
-                                genre: story.advancedAnalysis?.genre || {},
-                                emotions: story.advancedAnalysis?.emotions || {},
-                                narrative: story.advancedAnalysis?.narrative?.perspective || 'third'
-                            }
-                        };
-                        sequences.push(sequence);
-                    }
-                });
-
-                // Simulate advanced training with progress updates
-                for (let epoch = 0; epoch < 5; epoch++) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    showStatus(`Huấn luyện epoch ${epoch + 1}/5...`, 'info');
-                }
-                
-                // Save trained model state
-                const modelData = {
-                    vocabulary,
-                    sequences: sequences.slice(0, 1000), // Save sample sequences
-                    trainingStats: {
-                        vocabSize,
-                        sequenceCount: sequences.length,
-                        contextWindow,
-                        trainedAt: new Date().toISOString()
-                    }
-                };
-                
-                await saveFileToRoot('ai_model_data.json', JSON.stringify(modelData, null, 2));
-                
-                showStatus('Huấn luyện AI hoàn thành!', 'success');
-                document.getElementById('modelStatus').textContent = 'Đã huấn luyện';
-                document.getElementById('generateBtn').disabled = false;
-                
-            } catch (error) {
-                log('Training error:', error);
-                showStatus('Lỗi huấn luyện', 'error');
-            } finally {
-                document.getElementById('trainBtn').disabled = false;
-            }
-        }
-
-        // Enhanced story generation with 2000-3000 words per chapter
-        async function generateStory() {
-            const chapterCount = parseInt(document.getElementById('chapterCount').value) || 50;
-            const selectedGenre = document.getElementById('genreSelect').value;
-            
-            if (Object.keys(vocabulary).length === 0) {
-                showStatus('Cần huấn luyện AI trước', 'error');
-                return;
-            }
-
-            document.getElementById('generateBtn').disabled = true;
-            document.getElementById('generationProgress').classList.remove('hidden');
-            
-            try {
-                // Generate story based on selected genre and analyzed patterns
-                const storyTitle = generateAdvancedStoryTitle(selectedGenre);
-                const storyOutline = generateStoryOutline(chapterCount, selectedGenre);
-                
-                const chapters = [];
-                
-                for (let i = 1; i <= chapterCount; i++) {
-                    const progress = (i / chapterCount) * 100;
-                    document.getElementById('generationProgressFill').style.width = `${progress}%`;
-                    document.getElementById('generationProgressText').textContent = 
-                        `Đang viết chương ${i}/${chapterCount} (2000-3000 từ)`;
-                    
-                    const chapterInfo = storyOutline[i - 1];
-                    const chapterTitle = `Chương ${i}: ${chapterInfo.title}`;
-                    const chapterContent = await generateLongChapterContent(i, chapterCount, chapterInfo, selectedGenre);
-                    
-                    chapters.push({
-                        title: chapterTitle,
-                        content: chapterContent,
-                        wordCount: chapterContent.split(' ').length,
-                        type: chapterInfo.type
-                    });
-                    
-                    // Small delay for UI responsiveness
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                }
-
-                currentStory = {
-                    title: storyTitle,
-                    genre: selectedGenre,
-                    chapters: chapters,
-                    totalWords: chapters.reduce((sum, ch) => sum + ch.wordCount, 0),
-                    createdAt: new Date(),
-                    metadata: {
-                        basedOnAnalysis: true,
-                        sourceStories: storyData.length,
-                        vocabularyUsed: Object.keys(vocabulary).length
-                    }
-                };
-
-                displayGeneratedStory();
-                showStatus(`Hoàn thành "${storyTitle}" với ${chapters.length} chương, ${formatNumber(currentStory.totalWords)} từ!`, 'success');
-                
-            } catch (error) {
-                log('Generation error:', error);
-                showStatus('Lỗi tạo truyện', 'error');
-            } finally {
-                document.getElementById('generateBtn').disabled = false;
-                document.getElementById('generationProgress').classList.add('hidden');
-            }
-        }
-
-        function generateAdvancedStoryTitle(genre) {
-            const titleTemplates = {
-                fantasy: [
-                    'Huyền Thoại {element} {location}',
-                    'Đế Vương {power} Giới',
-                    'Ma Pháp Sư Cuối Cùng',
-                    'Thần Kiếm {legendary}',
-                    'Cuộc Chiến {realm} Giới'
-                ],
-                romance: [
-                    'Tình Yêu Tại {location}',
-                    'Trái Tim {emotion}',
-                    'Duyên Phận {time}',
-                    'Em Là {destiny} Của Anh',
-                    'Chuyện Tình {season}'
-                ],
-                adventure: [
-                    'Hành Trình Tìm {treasure}',
-                    'Khám Phá {mystery} {location}',
-                    'Cuộc Phiêu Lưu Tại {realm}',
-                    'Thám Hiểm {dangerous} {place}',
-                    'Săn Tìm {legendary} {artifact}'
-                ],
-                mystery: [
-                    'Bí Mật Của {location}',
-                    'Án Mạng Tại {place}',
-                    'Thám Tử Và {mystery}',
-                    'Sự Thật Về {event}',
-                    'Điều Tra {case}'
-                ],
-                historical: [
-                    'Anh Hùng Thời {dynasty}',
-                    'Chiến Tranh {era}',
-                    'Hoàng Gia {ancient}',
-                    'Trận Chiến {legendary}',
-                    'Lịch Sử {kingdom}'
-                ]
-            };
-
-            const variables = {
-                element: ['Lửa', 'Nước', 'Gió', 'Đất', 'Sét', 'Băng', 'Ánh Sáng', 'Bóng Tối'],
-                location: ['Rừng Thiêng', 'Núi Linh', 'Thành Cổ', 'Biển Cả', 'Sa Mạc', 'Đảo Bí Ẩn'],
-                power: ['Hắc', 'Bạch', 'Hoàng', 'Thanh', 'Hồng', 'Tím', 'Vàng'],
-                legendary: ['Thần Thoại', 'Cổ Đại', 'Bí Truyền', 'Thiên Thần', 'Ác Ma'],
-                realm: ['Thần', 'Ma', 'Nhân', 'Tiên', 'Quỷ', 'Long'],
-                emotion: ['Đau Khổ', 'Ngọt Ngào', 'Bi Thương', 'Hạnh Phúc', 'Tan Vỡ'],
-                time: ['Ngàn Năm', 'Ba Sinh', 'Vĩnh Cửu', 'Kiếp Sau', 'Thế Kỷ'],
-                destiny: ['Định Mệnh', 'Duy Nhất', 'Cuối Cùng', 'Đầu Tiên', 'Vĩnh Viễn'],
-                season: ['Mùa Xuân', 'Mùa Hạ', 'Mùa Thu', 'Mùa Đông', 'Tứ Mùa'],
-                treasure: ['Kho Báu', 'Bí Kíp', 'Thần Dược', 'Pháp Bảo', 'Linh Thạch'],
-                mystery: ['Bí Ẩn', 'Huyền Bí', 'Kỳ Lạ', 'Thần Bí', 'Bất Thường'],
-                dangerous: ['Nguy Hiểm', 'Tử Thần', 'Chết Chóc', 'Khủng Khiếp', 'Kinh Hoàng'],
-                place: ['Cung Điện', 'Lăng Mộ', 'Đền Thờ', 'Hang Động', 'Tòa Lâu Đài'],
-                artifact: ['Pháp Khí', 'Thần Binh', 'Bảo Vật', 'Thánh Vật', 'Linh Khí'],
-                dynasty: ['Đường', 'Tống', 'Minh', 'Thanh', 'Nguyên'],
-                era: ['Cổ Đại', 'Trung Cổ', 'Thời Chiến', 'Hòa Bình', 'Loạn Lạc'],
-                ancient: ['Cổ Xưa', 'Xa Xưa', 'Thượng Cổ', 'Viễn Cổ', 'Thái Cổ'],
-                event: ['Biến Cố', 'Sự Kiện', 'Vụ Việc', 'Chuyện', 'Câu Chuyện'],
-                case: ['Vụ Án', 'Án Mạng', 'Bí Mật', 'Sự Thật', 'Hồ Sơ'],
-                kingdom: ['Vương Quốc', 'Đế Quốc', 'Triều Đại', 'Quốc Gia', 'Hoàng Triều']
-            };
-
-            const templates = titleTemplates[genre] || titleTemplates.fantasy;
-            let template = templates[Math.floor(Math.random() * templates.length)];
-            
-            // Replace variables in template
-            Object.keys(variables).forEach(key => {
-                const regex = new RegExp(`{${key}}`, 'g');
-                if (template.match(regex)) {
-                    const options = variables[key];
-                    const replacement = options[Math.floor(Math.random() * options.length)];
-                    template = template.replace(regex, replacement);
-                }
-            });
-            
-            return template;
-        }
-
-        function generateStoryOutline(chapterCount, genre) {
-            const outline = [];
-            
-            // Story structure: Setup (20%) -> Rising Action (50%) -> Climax (10%) -> Resolution (20%)
-            const setupChapters = Math.ceil(chapterCount * 0.2);
-            const risingActionChapters = Math.ceil(chapterCount * 0.5);
-            const climaxChapters = Math.ceil(chapterCount * 0.1);
-            const resolutionChapters = chapterCount - setupChapters - risingActionChapters - climaxChapters;
-
-            // Setup chapters
-            for (let i = 0; i < setupChapters; i++) {
-                outline.push({
-                    title: generateChapterTitle('setup', i, genre),
-                    type: 'setup',
-                    focus: i === 0 ? 'introduction' : 'worldBuilding'
-                });
-            }
-
-            // Rising action chapters
-            for (let i = 0; i < risingActionChapters; i++) {
-                outline.push({
-                    title: generateChapterTitle('risingAction', i, genre),
-                    type: 'risingAction',
-                    focus: i % 3 === 0 ? 'conflict' : i % 3 === 1 ? 'development' : 'revelation'
-                });
-            }
-
-            // Climax chapters
-            for (let i = 0; i < climaxChapters; i++) {
-                outline.push({
-                    title: generateChapterTitle('climax', i, genre),
-                    type: 'climax',
-                    focus: 'confrontation'
-                });
-            }
-
-            // Resolution chapters
-            for (let i = 0; i < resolutionChapters; i++) {
-                outline.push({
-                    title: generateChapterTitle('resolution', i, genre),
-                    type: 'resolution',
-                    focus: i === resolutionChapters - 1 ? 'ending' : 'aftermath'
-                });
-            }
-
-            return outline;
-        }
-
-        function generateChapterTitle(storyPart, index, genre) {
-            const chapterTitles = {
-                setup: {
-                    fantasy: ['Thức Tỉnh Sức Mạnh', 'Khởi Đầu Hành Trình', 'Gặp Gỡ Định Mệnh', 'Bí Mật Được Hé Lộ', 'Thế Giới Mới'],
-                    romance: ['Cuộc Gặp Gỡ', 'Ấn Tượng Đầu Tiên', 'Tình Cảm Manh Nha', 'Hiểu Lầm', 'Gần Gũi Hơn'],
-                    adventure: ['Lời Kêu Gọi', 'Chuẩn Bị Hành Trình', 'Khởi Hành', 'Thử Thách Đầu Tiên', 'Đồng Hành'],
-                    mystery: ['Vụ Án Bí Ẩn', 'Manh Mối Đầu Tiên', 'Nhân Chứng', 'Điều Tra', 'Nghi Vấn'],
-                    historical: ['Thời Loạn Lạc', 'Anh Hùng Xuất Hiện', 'Triệu Hồi', 'Chuẩn Bị Chiến Đấu', 'Liên Minh']
-                },
-                risingAction: {
-                    fantasy: ['Thử Thách Khó Khăn', 'Kẻ Thù Mạnh Mẽ', 'Sức Mạnh Tăng Trưởng', 'Bạn Đồng Hành', 'Trận Chiến Lớn'],
-                    romance: ['Trở Ngại', 'Ghen Tuông', 'Chia Ly', 'Hiểu Nhầm', 'Đấu Tranh Nội Tâm'],
-                    adventure: ['Nguy Hiểm Rình Rập', 'Khám Phá Bí Mật', 'Mất Mát', 'Vượt Qua Thử Thách', 'Phát Hiện Mới'],
-                    mystery: ['Bằng Chứng Mới', 'Tình Tiết Bất Ngờ', 'Nghi Can Mới', 'Phức Tạp Hóa', 'Chân Tướng Lộ Diện'],
-                    historical: ['Chiến Tranh Bùng Nổ', 'Âm Mưu Chính Trị', 'Phản Bội', 'Liên Minh Tan Vỡ', 'Thảm Bại']
-                },
-                climax: {
-                    fantasy: ['Quyết Chiến Cuối Cùng', 'Sức Mạnh Tối Thượng', 'Hy Sinh Cao Cả'],
-                    romance: ['Lựa Chọn Khó Khăn', 'Tình Yêu Đích Thực', 'Quyết Định Cuối Cùng'],
-                    adventure: ['Cuộc Đối Đầu', 'Tìm Ra Sự Thật', 'Giải Cứu Thành Công'],
-                    mystery: ['Phơi Bày Chân Tướng', 'Đối Mặt Thủ Phạm', 'Công Lý Được Thực Thi'],
-                    historical: ['Trận Chiến Quyết Định', 'Anh Hùng Hy Sinh', 'Chiến Thắng Vĩ Đại']
-                },
-                resolution: {
-                    fantasy: ['Hòa Bình Trở Lại', 'Tương Lai Mới', 'Bài Học Cuộc Sống'],
-                    romance: ['Hạnh Phúc Viên Mãn', 'Cưới Nhau', 'Cuộc Sống Mới'],
-                    adventure: ['Trở Về Nhà', 'Phần Thưởng', 'Hành Trình Mới'],
-                    mystery: ['Thủ Phạm Bị Bắt', 'Công Lý Được Thực Thi', 'Cuộc Sống Bình Yên'],
-                    historical: ['Hòa Bình Lập Lại', 'Tái Thiết Đất Nước', 'Di Sản Để Lại']
-                }
-            };
-
-            const titles = chapterTitles[storyPart][genre] || chapterTitles[storyPart]['fantasy'];
-            return titles[index % titles.length] || titles[0];
-        }
-
-        async function generateLongChapterContent(chapterNumber, totalChapters, chapterInfo, genre) {
-            // Generate 2000-3000 words per chapter
-            const targetWords = 2000 + Math.floor(Math.random() * 1000); // 2000-3000 words
-            const paragraphs = [];
-            let currentWordCount = 0;
-
-            // Generate opening paragraph
-            let openingParagraph = generateOpeningParagraph(chapterNumber, chapterInfo, genre);
-            paragraphs.push(openingParagraph);
-            currentWordCount += openingParagraph.split(' ').length;
-
-            // Generate main content paragraphs
-            while (currentWordCount < targetWords - 200) {
-                const paragraph = generateContentParagraph(chapterInfo, genre, paragraphs.length);
-                paragraphs.push(paragraph);
-                currentWordCount += paragraph.split(' ').length;
-                
-                // Add some variety in paragraph length
-                if (Math.random() < 0.3) {
-                    const shortParagraph = generateShortParagraph(chapterInfo, genre);
-                    paragraphs.push(shortParagraph);
-                    currentWordCount += shortParagraph.split(' ').length;
+                if (this.starts.length === 0) {
+                    this.starts = Object.keys(this.transitions); // Fallback
                 }
             }
 
-            // Generate closing paragraph
-            const closingParagraph = generateClosingParagraph(chapterNumber, totalChapters, chapterInfo, genre);
-            paragraphs.push(closingParagraph);
-
-            // Add dialogue sections
-            const dialogueSections = Math.floor(Math.random() * 3) + 2; // 2-4 dialogue sections
-            for (let i = 0; i < dialogueSections; i++) {
-                const insertIndex = Math.floor(Math.random() * (paragraphs.length - 1)) + 1;
-                const dialogue = generateDialogueSection(chapterInfo, genre);
-                paragraphs.splice(insertIndex, 0, dialogue);
-            }
-
-            return paragraphs.join('\n\n');
-        }
-
-        function generateOpeningParagraph(chapterNumber, chapterInfo, genre) {
-            const openingTemplates = {
-                fantasy: [
-                    'Ánh sáng đầu ngày chiếu rọi qua những tán lá cổ thụ, tạo nên những vệt sáng lung linh trên mặt đất. {character} từ từ mở mắt, cảm nhận được luồng năng lượng kỳ lạ đang chảy trong người mình.',
-                    'Gió thổi qua những ngọn núi hùng vĩ, mang theo âm thanh của những câu chú thuật cổ xưa. Trong không gian tĩnh lặng ấy, một sức mạnh mới đang thức tỉnh.',
-                    'Những ngôi sao trên bầu trời đêm như những viên pha lê lấp lánh, báo hiệu một sự kiện trọng đại sắp xảy ra. {character} cảm thấy định mệnh đang gọi tên mình.'
-                ],
-                romance: [
-                    'Buổi sáng trong trẻo với những tia nắng vàng óng ánh xuyên qua khung cửa sổ. {character} thức dậy với tâm trạng bồn chồn, không thể quên được khuôn mặt của {love_interest}.',
-                    'Những cánh hoa anh đào bay bay trong gió xuân, tạo nên khung cảnh thơ mộng. Trái tim {character} đang rung động vì một cảm xúc mới mẻ chưa từng trải qua.',
-                    'Âm thanh của mưa rơi nhẹ nhàng trên mái hiên, tạo nên bản nhạc du dương. {character} ngồi bên cửa sổ, nhớ về những lời nói ngọt ngào của {love_interest}.'
-                ],
-                adventure: [
-                    'Bình minh ló dạng sau những dãy núi xa xôi, nhuộm đỏ cả bầu trời phương đông. {character} chuẩn bị cho một hành trình dài đầy thử thách phía trước.',
-                    'Tiếng sóng vỗ về bờ biển tạo nên nhịp điệu hùng tráng của đại dương. Con thuyền nhỏ bé đang chuẩn bị cho cuộc phiêu lưu vĩ đại.',
-                    'Rừng sâu với những âm thanh bí ẩn đang chờ đợi những kẻ dũng cảm. {character} bước những bước đầu tiên vào cuộc hành trình khám phá.'
-                ]
-            };
-
-            const templates = openingTemplates[genre] || openingTemplates['fantasy'];
-            let template = templates[Math.floor(Math.random() * templates.length)];
-            
-            // Replace placeholders
-            template = template.replace(/{character}/g, generateCharacterName());
-            template = template.replace(/{love_interest}/g, generateCharacterName());
-            
-            return template;
-        }
-
-        function generateContentParagraph(chapterInfo, genre, paragraphIndex) {
-            const contentTemplates = {
-                setup: [
-                    'Trong không gian yên tĩnh của ngôi làng nhỏ, cuộc sống vẫn trôi qua theo nhịp độ chậm rãi thường ngày. Những người dân nơi đây chưa hề biết rằng một biến cố lớn đang dần đến gần, một sự kiện sẽ thay đổi mãi mãi cuộc đời của họ. Ánh nắng buổi chiều chiếu xuống những mái nhà tranh, tạo nên bức tranh thanh bình đầy nên thơ.',
-                    'Cung điện nguy nga tráng lệ với những cột đá khổng lồ đứng sừng sững giữa trời xanh. Bên trong những bức tường dày, những bí mật hàng nghìn năm tuổi đang chờ được khám phá. Tiếng bước chân vọng lại trong hành lang dài, báo hiệu sự xuất hiện của một nhân vật quan trọng.',
-                    'Thư viện cổ với hàng nghìn cuốn sách cũ kỹ chứa đựng tri thức của các thế hệ trước. Mùi giấy cũ và bụi thời gian tạo nên không khí đặc biệt, khiến ai cũng cảm thấy được sự thiêng liêng của bilết thức. Trong ánh sáng mờ ảo của những ngọn nến, một cuốn sách bí ẩn đang chờ được mở ra.'
-                ],
-                risingAction: [
-                    'Tình hình bắt đầu trở nên phức tạp khi những sự kiện bất ngờ liên tiếp xảy ra. Mỗi bước đi đều mang theo những thử thách mới, khiến nhân vật chính phải suy nghĩ kỹ lưỡng trước mỗi quyết định. Áp lực từ nhiều phía khác nhau đang dần gia tăng, tạo nên một cuộc xung đột không thể tránh khỏi.',
-                    'Những manh mối bí ẩn dần được ghép lại với nhau, tạo thành bức tranh toàn cảnh về âm mưu đằng sau mọi sự việc. Kẻ thù không còn ẩn náu trong bóng tối nữa mà đã bắt đầu lộ diện với những hành động táo bạo. Cuộc đấu tranh giữa thiện và ác đang bước vào giai đoạn quyết liệt.',
-                    'Sức mạnh bên trong nhân vật chính đang dần thức tỉnh, mang theo cả cơ hội và nguy hiểm. Mỗi lần sử dụng năng lực đặc biệt đều để lại những hậu quả không lường trước được. Cuộc hành trình trở nên nguy hiểm hơn bao giờ hết khi những thế lực hắc ám bắt đầu chú ý.'
-                ],
-                climax: [
-                    'Khoảnh khắc quyết định đã đến, khi tất cả mọi thứ đều phụ thuộc vào một lựa chọn duy nhất. Không khí căng thẳng đến mức có thể cắt được bằng dao, mọi người đều nín thở chờ đợi kết quả. Đây là lúc mà tất cả những chuẩn bị, những hy sinh của quá khứ sẽ được đền đáp.',
-                    'Trận chiến cuối cùng bùng nổ với sức mạnh kinh hoàng, làm rung chuyển cả đất trời. Những đòn tấn công mạnh mẽ trao đổi liên tục, tạo nên những tiếng nổ chấn động. Không ai có thể đoán trước được kết quả của cuộc đối đầu này.',
-                    'Sự thật cuối cùng được phơi bày trong ánh sáng chói lòa của công lý. Tất cả những lời nói dối, những âm mưu đều bị vạch trần trước mắt mọi người. Đây là lúc mà nhân vật chính phải đối mặt với lựa chọn khó khăn nhất trong đời.'
-                ],
-                resolution: [
-                    'Sau cơn bão tố, cuối cùng bình yên cũng trở lại với mọi người. Những vết thương lòng dần được chữa lành bởi tình yêu thương và sự tha thứ. Cuộc sống bắt đầu một trang mới với những hi vọng tươi sáng cho tương lai.',
-                    'Những bài học quý báu từ hành trình đã trở thành hành trang quý giá cho những ngày tháng tiếp theo. Tình bạn và tình yêu thương đã được củng cố qua những thử thách khắc nghiệt. Mỗi người đều tìm thấy vị trí của mình trong cuộc đời.',
-                    'Tương lai rộng mở với vô vàn khả năng và cơ hội mới. Những ước mơ từng tưởng chừng như không thể thực hiện nay đã trở thành hiện thực. Hành trình kết thúc nhưng cuộc phiêu lưu của cuộc đời vẫn tiếp tục.'
-                ]
-            };
-
-            const templates = contentTemplates[chapterInfo.type] || contentTemplates['setup'];
-            return templates[paragraphIndex % templates.length] || templates[0];
-        }
-
-        function generateShortParagraph(chapterInfo, genre) {
-            const shortParagraphs = [
-                'Gió thổi nhẹ qua tóc, mang theo hương thơm của những bông hoa dại.',
-                'Ánh trăng sáng rọi xuống mặt nước, tạo nên những lợn sóng ánh bạc.',
-                'Tiếng chim hót véo von trong rừng, như những bản nhạc du dương của thiên nhiên.',
-                'Mùi đất sau cơn mưa tạo nên không khí trong lành và mát mẻ.',
-                'Những đám mây trắng trôi lững lờ trên bầu trời xanh biếc.',
-                'Ánh sáng đèn lồng đỏ tạo nên không khí ấm cúng của buổi tối.',
-                'Tiếng suối chảy róc rách như tiếng hát ru của mẹ thiên nhiên.',
-                'Những ngôi sao lấp lánh như kim cương trên tấm nhung đen của bầu trời đêm.'
-            ];
-            
-            return shortParagraphs[Math.floor(Math.random() * shortParagraphs.length)];
-        }
-
-        function generateClosingParagraph(chapterNumber, totalChapters, chapterInfo, genre) {
-            if (chapterNumber === totalChapters) {
-                // Final chapter ending
-                return 'Câu chuyện đến đây đã khép lại, nhưng những kỷ niệm đẹp sẽ mãi tồn tại trong trái tim mỗi người. Tương lai đang chờ đợi phía trước với những điều tốt đẹp và hi vọng mới. Đây không phải là kết thúc, mà là khởi đầu cho một chương mới của cuộc đời.';
-            }
-            
-            const closingTemplates = [
-                'Khi màn đêm buông xuống, những suy nghĩ về ngày hôm nay vẫn còn đang lởn vởn trong tâm trí. Ngày mai sẽ mang đến những thử thách mới, nhưng cũng là cơ hội để chứng minh bản thân.',
-                'Ánh sáng cuối ngày dần tắt, báo hiệu một ngày đã qua đi. Nhưng trong lòng mỗi người, ngọn lửa hy vọng vẫn cháy mãi không tắt, soi sáng con đường phía trước.',
-                'Dưới bầu trời đầy sao, những quyết định của hôm nay sẽ định hình tương lai của ngày mai. Cuộc hành trình vẫn còn dài, và còn nhiều điều bất ngờ đang chờ đón.',
-                'Khi tiếng chuông đồng hồ điểm giờ vang lên, một chương mới của câu chuyện chuẩn bị được mở ra. Những gì đã xảy ra hôm nay chỉ là khởi đầu cho những điều kỳ diệu sắp tới.',
-                'Gió đêm thổi qua khung cửa sổ, mang theo những ước mơ và khát vọng về tương lai. Trong giấc ngủ sâu, những giấc mơ đẹp sẽ chuẩn bị cho một ngày mới tràn đầy năng lượng.'
-            ];
-            
-            return closingTemplates[Math.floor(Math.random() * closingTemplates.length)];
-        }
-
-        function generateDialogueSection(chapterInfo, genre) {
-            const dialogues = [
-                `"Tôi không thể tin được điều này đang xảy ra," ${generateCharacterName()} thở dài.\n\n"Hãy tin tưởng vào bản thân mình," người bạn đồng hành trả lời với giọng điệu khích lệ. "Chúng ta đã vượt qua bao nhiều thử thách rồi."\n\n"Nhưng lần này khác, tôi cảm thấy có gì đó rất nguy hiểm đang chờ đợi chúng ta."\n\nKhoảng lặng giữa hai người kéo dài, chỉ có tiếng gió thổi qua lá cây tạo nên âm thanh du dương.`,
-                
-                `"Chúng ta phải làm gì bây giờ?" ${generateCharacterName()} hỏi với vẻ lo lắng.\n\n"Đầu tiên, hãy bình tĩnh," người dẫn đường đáp. "Hoảng sợ sẽ không giúp chúng ta giải quyết được vấn đề."\n\n"Tôi cố gắng, nhưng mọi thứ diễn ra quá nhanh."\n\n"Tôi hiểu, nhưng chúng ta không có lựa chọn nào khác. Hãy tin vào kế hoạch của chúng ta."`,
-                
-                `"Anh có thấy điều gì lạ không?" ${generateCharacterName()} thầm thì.\n\n"Có, tôi cũng cảm nhận được. Có ai đó đang theo dõi chúng ta," người bạn đáp lại bằng giọng thật nhỏ.\n\n"Chúng ta nên làm gì?"\n\n"Cứ làm như bình thường, đừng để lộ rằng chúng ta đã biết."`,
-                
-                `"Tôi nghĩ chúng ta đã tìm ra câu trả lời," ${generateCharacterName()} nói với vẻ phấn khích.\n\n"Thật sao? Hãy kể cho tôi nghe," người nghe tỏ ra rất quan tâm.\n\n"Tất cả mọi thứ đều liên quan đến nhau theo một cách mà chúng ta chưa từng nghĩ tới."\n\n"Điều đó có nghĩa là chúng ta đã gần đến đích rồi."`,
-                
-                `"Em có sợ không?" ${generateCharacterName()} hỏi nhẹ nhàng.\n\n"Một chút," cô gái đáp thành thật. "Nhưng khi có anh bên cạnh, em cảm thấy an tâm hơn."\n\n"Em tin tưởng tôi chứ?"\n\n"Tôi tin anh hơn bất cứ ai trên đời này."`,
-            ];
-            
-            return dialogues[Math.floor(Math.random() * dialogues.length)];
-        }
-
-        function generateCharacterName() {
-            const names = [
-                'Minh Anh', 'Thu Hà', 'Đức Long', 'Phương Linh', 'Văn Hùng', 
-                'Ngọc Mai', 'Quang Dũng', 'Hạnh Chi', 'Tuấn Anh', 'Lan Phương',
-                'Hoàng Nam', 'Thủy Tiên', 'Bảo Trung', 'Cẩm Ly', 'Duy Khang',
-                'Thanh Nga', 'Minh Quân', 'Hương Giang', 'Đình Bảo', 'Kim Oanh'
-            ];
-            return names[Math.floor(Math.random() * names.length)];
-        }
-
-        function displayGeneratedStory() {
-            const storyOutput = document.getElementById('storyOutput');
-            const storyContent = document.getElementById('storyContent');
-            
-            let html = `
-                <div style="text-align: center; margin-bottom: 24px; padding: 16px; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-radius: 12px;">
-                    <h3 style="color: #1d4ed8; margin-bottom: 8px; font-size: 24px;">${currentStory.title}</h3>
-                    <p style="color: #64748b; font-size: 14px; margin-bottom: 8px;">
-                        ${getGenreVietnamese(currentStory.genre)} • ${currentStory.chapters.length} chương • ${formatNumber(currentStory.totalWords)} từ
-                    </p>
-                    <p style="color: #64748b; font-size: 12px;">
-                        Tạo lúc ${currentStory.createdAt.toLocaleString('vi-VN')} • Dựa trên ${currentStory.metadata.sourceStories} truyện gốc
-                    </p>
-                </div>
-            `;
-
-            // Show first 3 chapters as preview
-            const previewChapters = currentStory.chapters.slice(0, 3);
-            
-            previewChapters.forEach((chapter, index) => {
-                const preview = chapter.content.split('\n\n').slice(0, 3).join('\n\n');
-                html += `
-                    <div class="chapter">
-                        <div class="chapter-title">${chapter.title}</div>
-                        <div class="chapter-meta">${formatNumber(chapter.wordCount)} từ • ${chapter.type}</div>
-                        <div style="color: #64748b; line-height: 1.6; margin-bottom: 12px;">
-                            ${preview}...
-                        </div>
-                        <div style="font-size: 12px; color: #8e8e93; font-style: italic;">
-                            [Đã rút gọn - Xem đầy đủ khi tải xuống]
-                        </div>
-                    </div>
-                `;
-            });
-
-            if (currentStory.chapters.length > 3) {
-                html += `
-                    <div style="text-align: center; padding: 16px; color: #64748b; font-style: italic; background: #f8fafc; border-radius: 8px; margin-top: 16px;">
-                        ... và ${currentStory.chapters.length - 3} chương khác<br>
-                        <small>Tổng cộng: ${formatNumber(currentStory.totalWords)} từ</small>
-                    </div>
-                `;
-            }
-
-            storyContent.innerHTML = html;
-            storyOutput.classList.remove('hidden');
-            document.getElementById('uploadBtn').classList.remove('hidden');
-            document.getElementById('downloadBtn').classList.remove('hidden');
-        }
-
-        // Upload and download functions
-        async function uploadStoryToDrive() {
-            if (!currentStory) {
-                showStatus('Chưa có truyện để tải lên', 'error');
-                return;
-            }
-
-            document.getElementById('uploadBtn').disabled = true;
-            showStatus('Đang tải lên Google Drive...', 'info');
-
-            try {
-                // Create detailed story content
-                let storyText = `${currentStory.title}\n`;
-                storyText += '='.repeat(currentStory.title.length) + '\n\n';
-                storyText += `Thể loại: ${getGenreVietnamese(currentStory.genre)}\n`;
-                storyText += `Tác giả: AI Story Generator Pro\n`;
-                storyText += `Ngày tạo: ${currentStory.createdAt.toLocaleString('vi-VN')}\n`;
-                storyText += `Số chương: ${currentStory.chapters.length}\n`;
-                storyText += `Tổng số từ: ${formatNumber(currentStory.totalWords)}\n`;
-                storyText += `Dựa trên: ${currentStory.metadata.sourceStories} truyện gốc\n\n`;
-                storyText += '='.repeat(50) + '\n\n';
-
-                currentStory.chapters.forEach((chapter, index) => {
-                    storyText += `${chapter.title}\n`;
-                    storyText += `(${formatNumber(chapter.wordCount)} từ)\n\n`;
-                    storyText += `${chapter.content}\n\n`;
-                    
-                    if (index < currentStory.chapters.length - 1) {
-                        storyText += '-'.repeat(30) + '\n\n';
-                    }
-                });
-
-                storyText += '\n' + '='.repeat(50) + '\n';
-                storyText += 'HẾT\n';
-                storyText += `Được tạo bởi AI Story Analyzer Pro\n`;
-                storyText += `${currentStory.createdAt.toLocaleString('vi-VN')}`;
-
-                const fileMetadata = {
-                    name: `${currentStory.title}.txt`,
-                    parents: await getQuanLyTruyenFolderId()
-                };
-
-                const response = await gapi.client.request({
-                    path: 'https://www.googleapis.com/upload/drive/v3/files',
-                    method: 'POST',
-                    params: { uploadType: 'multipart' },
-                    headers: { 'Content-Type': 'multipart/related; boundary="foo_bar_baz"' },
-                    body: createMultipartBody(fileMetadata, storyText)
-                });
-
-                showStatus(`Đã tải lên "${currentStory.title}.txt"`, 'success');
-                log('Story uploaded:', response.result);
-                
-                // Refresh file list
-                await loadFiles();
-                
-            } catch (error) {
-                log('Upload error:', error);
-                showStatus('Lỗi tải lên', 'error');
-            } finally {
-                document.getElementById('uploadBtn').disabled = false;
+            generate(length) {
+                if (this.starts.length === 0) return '';
+                let current = this.starts[Math.floor(Math.random() * this.starts.length)];
+                let result = current;
+                for (let i = 0; i < length - this.order; i++) {
+                    const possibilities = this.transitions[current];
+                    if (!possibilities || possibilities.length === 0) break;
+                    const next = possibilities[Math.floor(Math.random() * possibilities.length)];
+                    result += ' ' + next;
+                    current = result.split(' ').slice(-this.order).join(' ');
+                }
+                return result;
             }
         }
 
-        function downloadStory() {
-            if (!currentStory) {
-                showStatus('Chưa có truyện để tải xuống', 'error');
-                return;
-            }
-
-            try {
-                // Create complete story content
-                let storyText = `${currentStory.title}\n`;
-                storyText += '='.repeat(currentStory.title.length) + '\n\n';
-                storyText += `Thể loại: ${getGenreVietnamese(currentStory.genre)}\n`;
-                storyText += `Tác giả: AI Story Generator Pro\n`;
-                storyText += `Ngày tạo: ${currentStory.createdAt.toLocaleString('vi-VN')}\n`;
-                storyText += `Số chương: ${currentStory.chapters.length}\n`;
-                storyText += `Tổng số từ: ${formatNumber(currentStory.totalWords)}\n\n`;
-                storyText += '='.repeat(50) + '\n\n';
-
-                currentStory.chapters.forEach((chapter, index) => {
-                    storyText += `${chapter.title}\n`;
-                    storyText += `(${formatNumber(chapter.wordCount)} từ)\n\n`;
-                    storyText += `${chapter.content}\n\n`;
-                    
-                    if (index < currentStory.chapters.length - 1) {
-                        storyText += '-'.repeat(30) + '\n\n';
-                    }
-                });
-
-                // Create and download file
-                const blob = new Blob([storyText], { type: 'text/plain;charset=utf-8' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${currentStory.title}.txt`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-
-                showStatus('Đã tải xuống truyện', 'success');
-            } catch (error) {
-                log('Download error:', error);
-                showStatus('Lỗi tải xuống', 'error');
-            }
-        }
-
-        async function getQuanLyTruyenFolderId() {
+        async function getModelFileId(folderId) {
             const response = await gapi.client.drive.files.list({
-                q: "name='QuanLyTruyen' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+                q: `'${folderId}' in parents and name='model.json' and trashed=false`,
                 fields: 'files(id)',
             });
-
-            if (response.result.files.length > 0) {
-                return [response.result.files[0].id];
+            if (response.result.files && response.result.files.length > 0) {
+                return response.result.files[0].id;
             }
-            
-            throw new Error('Thư mục QuanLyTruyen không tồn tại');
+            return null;
         }
 
-        function createMultipartBody(metadata, data) {
-            const delimiter = 'foo_bar_baz';
-            const close_delim = `\r\n--${delimiter}--`;
-            
-            let body = `--${delimiter}\r\n`;
-            body += 'Content-Type: application/json\r\n\r\n';
-            body += JSON.stringify(metadata) + '\r\n';
-            body += `--${delimiter}\r\n`;
-            body += 'Content-Type: text/plain\r\n\r\n';
-            body += data;
-            body += close_delim;
-            
-            return body;
+        async function loadModel() {
+            const folderId = await getFolderId('QuanLyTruyen');
+            const modelId = await getModelFileId(folderId);
+            if (!modelId) return null;
+            const json = await downloadFile(modelId);
+            const {order, transitions, starts} = JSON.parse(json);
+            const markov = new Markov(order);
+            markov.transitions = transitions;
+            markov.starts = starts;
+            return markov;
         }
 
-        // Export and Import functions
-        async function exportData() {
-            try {
-                const exportData = {
-                    storyFiles,
-                    analyzedFiles: Array.from(analyzedFiles),
-                    storyData: storyData.map(story => ({
-                        name: story.name,
-                        folderPath: story.folderPath,
-                        analysis: story.analysis,
-                        advancedAnalysis: story.advancedAnalysis
-                    })),
-                    storyPatterns,
-                    characterAnalysis: {
-                        ...characterAnalysis,
-                        characterNames: Array.from(characterAnalysis.characterNames)
-                    },
-                    plotStructure,
-                    narrativeStyle,
-                    vocabulary,
-                    exportTime: new Date().toISOString()
-                };
-
-                const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
-                    type: 'application/json' 
-                });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `ai_story_data_${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-
-                showStatus('Đã xuất dữ liệu', 'success');
-            } catch (error) {
-                log('Export error:', error);
-                showStatus('Lỗi xuất dữ liệu', 'error');
-            }
-        }
-
-        function importData() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            
-            input.onchange = async (event) => {
-                try {
-                    const file = event.target.files[0];
-                    if (!file) return;
-
-                    const text = await file.text();
-                    const importData = JSON.parse(text);
-
-                    // Restore data
-                    storyFiles = importData.storyFiles || [];
-                    analyzedFiles = new Set(importData.analyzedFiles || []);
-                    storyData = importData.storyData || [];
-                    storyPatterns = importData.storyPatterns || {};
-                    characterAnalysis = {
-                        ...importData.characterAnalysis,
-                        characterNames: new Set(importData.characterAnalysis?.characterNames || [])
-                    };
-                    plotStructure = importData.plotStructure || {};
-                    narrativeStyle = importData.narrativeStyle || {};
-                    vocabulary = importData.vocabulary || {};
-
-                    // Update UI
-                    displayFiles();
-                    if (storyData.length > 0) {
-                        showAnalysisResults();
-                        document.getElementById('generateBtn').disabled = false;
-                    }
-                    
-                    updateDataStatus('Đã nhập từ file', new Date());
-                    showStatus('Đã nhập dữ liệu thành công', 'success');
-                    
-                    // Save to cache
-                    await saveCacheData();
-                    
-                } catch (error) {
-                    log('Import error:', error);
-                    showStatus('Lỗi nhập dữ liệu - File không hợp lệ', 'error');
-                }
+        async function saveModel(markov, folderId) {
+            const data = {
+                order: markov.order,
+                transitions: markov.transitions,
+                starts: markov.starts
             };
-            
-            input.click();
+            const json = JSON.stringify(data);
+            await uploadFile('model.json', json, folderId, 'application/json');
         }
 
-        // Event listeners
-        function setupEventListeners() {
-            document.getElementById('loginBtn').addEventListener('click', () => {
-                if (gapiInited && gisInited) {
-                    tokenClient.requestAccessToken({prompt: 'consent'});
-                } else {
-                    showStatus('Đang khởi tạo...', 'info');
-                }
+        async function uploadFile(name, content, folderId, mimeType = 'text/plain') {
+            const fileMetadata = {
+                name: name,
+                parents: [folderId]
+            };
+            const media = {
+                mimeType: mimeType,
+                body: content
+            };
+            const response = await gapi.client.drive.files.create({
+                resource: fileMetadata,
+                media: media,
+                fields: 'id'
             });
+            return response.result.id;
+        }
 
-            document.getElementById('logoutBtn').addEventListener('click', () => {
-                const token = gapi.client.getToken();
-                if (token) {
-                    google.accounts.oauth2.revoke(token.access_token);
-                    gapi.client.setToken('');
-                }
-                location.reload();
+        async function createFolder(name, parentId) {
+            const metadata = {
+                name: name,
+                mimeType: 'application/vnd.google-apps.folder',
+                parents: [parentId]
+            };
+            const response = await gapi.client.drive.files.create({
+                resource: metadata,
+                fields: 'id'
             });
-
-            document.getElementById('loadFilesBtn').addEventListener('click', loadFiles);
-            document.getElementById('loadCacheBtn').addEventListener('click', loadCachedData);
-            document.getElementById('clearCacheBtn').addEventListener('click', clearCache);
-            document.getElementById('analyzeBtn').addEventListener('click', analyzeStories);
-            document.getElementById('trainBtn').addEventListener('click', trainAI);
-            document.getElementById('generateBtn').addEventListener('click', generateStory);
-            document.getElementById('uploadBtn').addEventListener('click', uploadStoryToDrive);
-            document.getElementById('downloadBtn').addEventListener('click', downloadStory);
-            document.getElementById('saveAnalysisBtn').addEventListener('click', saveAnalysisData);
-            document.getElementById('exportDataBtn').addEventListener('click', exportData);
-            document.getElementById('importDataBtn').addEventListener('click', importData);
+            return response.result.id;
         }
 
-        // Initialize app
-        function initApp() {
-            log('Initializing AI Story Analyzer Pro...');
-            initNavigation();
-            setupEventListeners();
-            
-            // Load Google APIs
-            if (typeof gapi !== 'undefined') {
-                gapiLoaded();
+        async function analyze() {
+            if (!gapi.client.getToken()) {
+                alert('Vui lòng đăng nhập trước');
+                return;
             }
-            if (typeof google !== 'undefined' && google.accounts) {
-                gisLoaded();
-            }
+            document.getElementById('content').innerHTML = '<p>Đang phân tích và học...</p>';
+            const text = await collectTexts();
+            if (!text) return;
+            const markov = new Markov(4); // Order 4 để tăng tính logic và mạch lạc
+            markov.train(text);
+            const folderId = await getFolderId('QuanLyTruyen');
+            await saveModel(markov, folderId);
+            document.getElementById('content').innerHTML = '<p>Phân tích và lưu mô hình thành công! Bây giờ bạn có thể tạo truyện.</p>';
         }
 
-        // Start app when DOM is ready
-        document.addEventListener('DOMContentLoaded', initApp);
-        window.addEventListener('load', initApp);
+        async function generate() {
+            if (!gapi.client.getToken()) {
+                alert('Vui lòng đăng nhập trước');
+                return;
+            }
+            document.getElementById('content').innerHTML = '<p>Đang tải mô hình và tạo truyện...</p>';
+            let markov = await loadModel();
+            if (!markov) {
+                alert('Vui lòng phân tích trước để tạo mô hình');
+                return;
+            }
+            const numChapters = 50;
+            const minWordsPerChapter = 2000;
+            const maxWordsPerChapter = 3000;
+            let chapters = [];
+            for (let i = 1; i <= numChapters; i++) {
+                const wordsPerChapter = Math.floor(Math.random() * (maxWordsPerChapter - minWordsPerChapter + 1)) + minWordsPerChapter;
+                let chapterText = markov.generate(wordsPerChapter);
+                // Đảm bảo ngôi thứ nhất: Bắt đầu bằng 'Tôi' nếu chưa
+                if (!chapterText.startsWith('Tôi')) {
+                    chapterText = 'Tôi ' + chapterText.slice(0, -3) + '...'; // Cắt bớt để giữ độ dài
+                }
+                // Lọc lại để thuần Việt
+                chapterText = cleanVietnamese(chapterText);
+                chapters.push(chapterText);
+            }
+            // Tạo tên truyện ngẫu nhiên nhưng logic từ mô hình
+            const storyTitle = 'Câu Chuyện ' + markov.generate(3).split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            const folderId = await getFolderId('QuanLyTruyen');
+            const storyFolderId = await createFolder(storyTitle, folderId);
+            // Upload từng chương
+            for (let i = 0; i < chapters.length; i++) {
+                const chapterName = `Chương ${i + 1}: ${markov.generate(4)}`; // Tên chương từ generate ngắn
+                await uploadFile(`${chapterName}.txt`, chapters[i], storyFolderId);
+            }
+            document.getElementById('content').innerHTML = `<p>Truyện đã được tạo và upload vào thư mục "${storyTitle}"!</p>`;
+        }
+
+        function showHome() {
+            document.getElementById('content').innerHTML = '<h1>Chào mừng đến với Quản Lý Truyện AI</h1><p>Sử dụng menu dưới để bắt đầu.</p>';
+        }
+
+        function addStory() {
+            document.getElementById('content').innerHTML = `
+                <h2>Thêm Truyện</h2>
+                <button class="btn btn-success" onclick="generateNew()">Tạo Truyện Mới (AI Sinh)</button>
+                <hr>
+                <h3>Upload Truyện Đã Có</h3>
+                <input type="file" id="uploadFile" accept=".txt" class="form-control">
+                <button class="btn btn-primary" onclick="uploadExisting()">Upload</button>
+            `;
+        }
+
+        function generateNew() {
+            generate();
+        }
+
+        async function uploadExisting() {
+            if (!gapi.client.getToken()) {
+                alert('Vui lòng đăng nhập trước');
+                return;
+            }
+            const fileInput = document.getElementById('uploadFile');
+            if (!fileInput.files.length) {
+                alert('Vui lòng chọn file .txt');
+                return;
+            }
+            const file = fileInput.files[0];
+            const content = await file.text();
+            const cleanedContent = cleanVietnamese(content);
+            const folderId = await getFolderId('QuanLyTruyen');
+            await uploadFile(file.name, cleanedContent, folderId);
+            alert('Upload thành công!');
+        }
     </script>
 </body>
 </html>
