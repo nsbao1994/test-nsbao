@@ -1,3 +1,24 @@
+let tokenClient;
+const CLIENT_ID = '398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive';
+function initializeGoogleAuth() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (resp) => {
+            if (resp.error !== undefined) {
+                throw (resp);
+            }
+            // Handle successful auth
+        }
+    });
+}
+
+// Call this on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeGoogleAuth();
+    // ... rest of your initialization
+});
 function handleAuthClick() {
             tokenClient.callback = async (resp) => {
                 if (resp.error !== undefined) {
