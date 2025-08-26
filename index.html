@@ -1411,17 +1411,16 @@
             let sentence = sentenceTemplates[templateIndex];
             
             // Thêm từ nhạy cảm nếu có và nếu độ nhạy cảm đủ cao
-            // Thêm từ nhạy cảm nếu có và nếu độ nhạy cảm đủ cao
-            if (sensitiveWordsList.length > 0 && sensitivityLevel >= 7) {
-                const sensitiveWord = sensitiveWordsList[Math.floor(Math.random() * sensitiveWordsList.length)];
-                sentence = sentence.replace('.', ` ${sensitiveWord}.`);
-            }
-                const shouldAddSensitive = Math.random() < (sensitivityLevel / 10);
-                if (shouldAddSensitive) {
-                    const sensitiveWord = sensitiveWordsList[Math.floor(Math.random() * sensitiveWordsList.length)];
-                    sentence = sentence.replace('.', ` ${sensitiveWord}.`);
-                }
-            }
+if (sensitiveWordsList.length > 0 && sensitivityLevel >= 7) {
+    const sensitiveWord = sensitiveWordsList[Math.floor(Math.random() * sensitiveWordsList.length)];
+    sentence = sentence.replace('.', ` ${sensitiveWord}.`);
+}
+
+const shouldAddSensitive = Math.random() < (sensitivityLevel / 10);
+if (shouldAddSensitive) {
+    const sensitiveWord = sensitiveWordsList[Math.floor(Math.random() * sensitiveWordsList.length)];
+    sentence = sentence.replace('.', ` ${sensitiveWord}.`);
+}
             
             // Thêm hội thoại nếu có
             if (analysisData.some(a => a.dialogueAnalysis && a.dialogueAnalysis.dialogueCount > 0)) {
