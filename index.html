@@ -8,17 +8,17 @@
     <script src="https://accounts.google.com/gsi/client"></script>
     <style>
         :root {
-            --primary-color: #8e44ad;
-            --secondary-color: #3498db;
-            --dark-color: #2c3e50;
-            --light-color: #ecf0f1;
-            --accent-color: #e74c3c;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --text-color: #333;
-            --card-bg: rgba(255, 255, 255, 0.95);
-            --border-radius: 16px;
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+           --primary-color: #9b59b6;
+    --secondary-color: #2980b9;
+    --dark-color: #1e1e1e;
+    --light-color: #bdc3c7;
+    --accent-color: #e74c3c;
+    --success-color: #2ecc71;
+    --warning-color: #f39c12;
+    --text-color: #ecf0f1;
+    --card-bg: rgba(30, 30, 30, 0.95);
+    --border-radius: 16px;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
             --safe-area-inset-top: env(safe-area-inset-top);
             --safe-area-inset-bottom: env(safe-area-inset-bottom);
             --safe-area-inset-left: env(safe-area-inset-left);
@@ -34,11 +34,11 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #8e44ad 0%, #2c3e50 100%);
-            min-height: 100vh;
-            color: var(--text-color);
-            padding: var(--safe-area-inset-top) var(--safe-area-inset-right) var(--safe-area-inset-bottom) var(--safe-area-inset-left);
-            line-height: 1.6;
+    background: #121212;   /* nền đen thuần */
+    min-height: 100vh;
+    color: var(--text-color);
+    padding: var(--safe-area-inset-top) var(--safe-area-inset-right) var(--safe-area-inset-bottom) var(--safe-area-inset-left);
+    line-height: 1.6;
         }
 
         .container {
@@ -163,7 +163,7 @@
         }
 
         .story-content {
-            background: #f8f9fa;
+            background: #1e1e1e;
             border-radius: 12px;
             padding: 16px;
             margin: 12px 0;
@@ -344,7 +344,7 @@
         .analysis-result-item {
             margin: 10px 0;
             padding: 10px;
-            background: #f8f9fa;
+            background: #2c2c2c;
             border-radius: 8px;
         }
 
@@ -387,6 +387,7 @@
                 max-height: 45vh;
             }
         }
+        
     </style>
 </head>
 <body>
@@ -438,6 +439,9 @@
             </div>
             
             <div class="card">
+                <button class="btn btn-secondary" id="downloadScanCacheBtn" onclick="downloadScanCache()" disabled>
+    📥 Tải danh sách đã quét
+</button>
                 <h3>📊 Kết quả phân tích</h3>
                 <div id="analysisResults">
                     <p>Chưa có dữ liệu phân tích. Vui lòng quét và phân tích thư mục trước.</p>
@@ -500,6 +504,13 @@
                 
                 <div id="storiesLibrary">
                     <p>Chưa có truyện nào trong thư viện.</p>
+                    <div id="readerContainer" style="display:none; margin-top:20px;">
+    <h3 id="readerTitle">📖 Đang đọc truyện</h3>
+    <div id="readerContent" class="story-content"></div>
+    <div style="margin-top:10px; display:flex; justify-content:space-between;">
+        <button class="btn btn-secondary" onclick="prevChapter()">⬅️ Chương trước</button>
+        <button class="btn btn-secondary" onclick="nextChapter()">Chương tiếp ➡️</button>
+    </div>
                 </div>
                 
                 <button class="btn btn-secondary" id="loadStoriesBtn" onclick="loadStories()">
@@ -1278,6 +1289,7 @@
                 updateProgress(100);
                 updateStatus(`✅ Đã tìm thấy ${allFiles.length} file văn bản`);
                 document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('downloadScanCacheBtn').disabled = false;
                 
                 // Lưu cache scan
                 scanCache = {
@@ -1382,6 +1394,7 @@
                     if (cacheAge < 24 * 60 * 60 * 1000) {
                         window.txtFiles = scanCache.files;
                         document.getElementById('analyzeBtn').disabled = false;
+                         document.getElementById('downloadScanCacheBtn').disabled = false;
                         updateStatus(`✅ Đã tải cache scan với ${scanCache.files.length} file`);
                         return true;
                     }
@@ -1394,47 +1407,50 @@
         }
 
         async function autoSaveAnalysis() {
-            try {
-                const analysisContent = {
-                    analysisData: analysisData,
-                    timestamp: new Date().toISOString()
-                };
-                
-                const contentString = JSON.stringify(analysisContent);
-                const media = {
-                    mimeType: 'application/json',
-                    body: contentString
-                };
-                
-                // Kiểm tra xem file đã tồn tại chưa
-                const response = await gapi.client.drive.files.list({
-                    q: `name='${ANALYSIS_CACHE_NAME}' and trashed=false`,
-                    fields: 'files(id)'
-                });
-                
-                if (response.result.files.length > 0) {
-                    // Cập nhật file đã tồn tại
-                    await gapi.client.drive.files.update({
-                        fileId: response.result.files[0].id,
-                        media: media
-                    });
-                } else {
-                    // Tạo file mới
-                    const metadata = {
-                        name: ANALYSIS_CACHE_NAME,
-                        mimeType: 'application/json'
-                    };
-                    
-                    await gapi.client.drive.files.create({
-                        resource: metadata,
-                        media: media,
-                        fields: 'id'
-                    });
-                }
-            } catch (error) {
-                console.error('Error auto-saving analysis:', error);
-            }
+    try {
+        const analysisContent = {
+            analysisData: analysisData,
+            timestamp: new Date().toISOString()
+        };
+
+        const contentString = JSON.stringify(analysisContent);
+        const media = {
+            mimeType: 'application/json',
+            body: contentString
+        };
+
+        // Kiểm tra xem file đã tồn tại chưa
+        const response = await gapi.client.drive.files.list({
+            q: `name='${ANALYSIS_CACHE_NAME}' and trashed=false`,
+            fields: 'files(id)'
+        });
+
+        if (response.result.files.length > 0) {
+            // 🔄 Update file duy nhất
+            await gapi.client.request({
+                path: `/upload/drive/v3/files/${response.result.files[0].id}`,
+                method: 'PATCH',
+                params: { uploadType: 'media' },
+                body: contentString
+            });
+        } else {
+            // ➕ Create file mới
+            const metadata = {
+                name: ANALYSIS_CACHE_NAME,
+                mimeType: 'application/json'
+            };
+
+            await gapi.client.drive.files.create({
+                resource: metadata,
+                media: media,
+                fields: 'id'
+            });
         }
+    } catch (error) {
+        console.error('Error auto-saving analysis:', error);
+    }
+}
+
 
         async function loadAnalysisData() {
             try {
@@ -1467,117 +1483,105 @@
         }
 
         async function downloadAnalysis() {
-            if (!analysisData || analysisData.length === 0) {
-                alert('Không có dữ liệu phân tích để tải xuống!');
-                return;
-            }
-            
-            try {
-                const content = JSON.stringify({ analysisData }, null, 2);
-                const blob = new Blob([content], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'phan_tich_truyen.json';
-                document.body.appendChild(a);
-                a.click();
-                
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }, 100);
-                
-                updateStatus('✅ Đã tải xuống file phân tích');
-            } catch (error) {
-                console.error('Error downloading analysis:', error);
-                updateStatus('❌ Lỗi khi tải xuống file phân tích');
-            }
+           try {
+        const response = await gapi.client.drive.files.list({
+            q: `name='${ANALYSIS_CACHE_NAME}' and trashed=false`,
+            fields: 'files(id, name)'
+        });
+
+        if (response.result.files.length === 0) {
+            alert("❌ Không tìm thấy file phân tích trên Google Drive!");
+            return;
+        }
+
+        const fileId = response.result.files[0].id;
+        const analysisResponse = await gapi.client.drive.files.get({
+            fileId: fileId,
+            alt: 'media'
+        });
+
+        const analysisContent = JSON.parse(analysisResponse.body);
+        analysisData = analysisContent.analysisData;
+
+        displayAdvancedAnalysisResults();
+        updateStatus('✅ Đã tải dữ liệu phân tích từ Google Drive');
+    } catch (error) {
+        console.error('Error downloading analysis:', error);
+        updateStatus('❌ Lỗi khi tải dữ liệu phân tích từ Google Drive');
+    }
         }
 
         // Story generation functions
         async function generateStories() {
             if (!analysisData || analysisData.length === 0) {
-                alert('Vui lòng phân tích dữ liệu trước khi tạo truyện!');
-                return;
-            }
-            
-            updateWriteStatus('✍️ Bắt đầu viết truyện...');
-            updateWriteProgress(0);
-            
-            const minChapters = parseInt(document.getElementById('minChapters').value) || 50;
-            const sensitivityLevel = parseInt(document.getElementById('sensitivityLevel').value) || 5;
-            
-            generatedStories = [];
-            
-            // Tạo thư mục lưu trữ truyện nếu chưa tồn tại
-            let storiesFolderId = await findOrCreateFolder('QuanLyTruyen');
-            
-            for (let i = 0; i < analysisData.length; i++) {
-                const data = analysisData[i];
-                updateWriteStatus(`📖 Đang viết truyện từ: ${data.fileName} (${i+1}/${analysisData.length})`);
-                updateWriteProgress((i / analysisData.length) * 50);
-                
-                try {
-                    const story = await generateStoryFromAnalysis(data, minChapters, sensitivityLevel);
-                    generatedStories.push(story);
-                    
-                    // Lưu truyện vào Google Drive
-                    await saveStoryToDrive(story, storiesFolderId);
-                    
-                    updateWriteDetailedStatus(`Đã tạo: ${story.title} (${story.chapters.length} chương)`);
-                    
-                } catch (error) {
-                    console.error(`Error generating story from ${data.fileName}:`, error);
-                    updateWriteDetailedStatus(`Lỗi với ${data.fileName}: ${error.message}`);
-                }
-                
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-            
-            displayGeneratedStories();
-            updateWriteProgress(100);
-            updateWriteStatus(`✅ Đã hoàn thành tạo ${generatedStories.length} truyện`);
-            
-            // Lưu cache truyện đã tạo
-            await saveGeneratedStoriesCache();
+        alert('⚠️ Vui lòng phân tích dữ liệu trước khi tạo truyện!');
+        return;
+    }
+
+    updateWriteStatus('✍️ Bắt đầu viết truyện...');
+    updateWriteProgress(0);
+
+    const minChapters = parseInt(document.getElementById('minChapters').value) || 50;
+    const sensitivityLevel = parseInt(document.getElementById('sensitivityLevel').value) || 5;
+
+    generatedStories = [];
+
+    // Tìm hoặc tạo thư mục cha QuanLyTruyen
+    let storiesFolderId = await findOrCreateFolder('QuanLyTruyen');
+
+    for (let i = 0; i < analysisData.length; i++) {
+        const data = analysisData[i];
+        updateWriteStatus(`📖 Đang viết truyện từ: ${data.fileName} (${i+1}/${analysisData.length})`);
+        updateWriteProgress((i / analysisData.length) * 50);
+
+        try {
+            // Tạo truyện từ data phân tích
+            const story = await generateStoryFromAnalysis(data, minChapters, sensitivityLevel);
+            generatedStories.push(story);
+
+            // Lưu vào Google Drive
+            await saveStoryToDrive(story, storiesFolderId);
+
+            updateWriteDetailedStatus(`✅ Đã tạo: ${story.title} (${story.chapters.length} chương)`);
+        } catch (error) {
+            console.error(`Error generating story from ${data.fileName}:`, error);
+            updateWriteDetailedStatus(`❌ Lỗi với ${data.fileName}: ${error.message}`);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    displayGeneratedStories();
+    updateWriteProgress(100);
+    updateWriteStatus(`🎉 Hoàn thành tạo ${generatedStories.length} truyện`);
         }
 
         async function generateStoryFromAnalysis(analysis, minChapters, sensitivityLevel) {
-            // Tạo tiêu đề dựa trên phân tích
-            const title = generateTitle(analysis);
-            
-            // Tạo mô tả dựa trên phân tích
-            const description = generateDescription(analysis);
-            
-            // Tạo các chương với độ dài 2000-3000 từ
-            const chapters = [];
-            const numChapters = Math.max(minChapters, Math.floor(analysis.basicStats.wordCount / 2500));
-            
-            for (let i = 1; i <= numChapters; i++) {
-                const chapterTitle = `Chương ${i}: ${generateChapterTitle(analysis, i)}`;
-                const chapterContent = generateChapterContent(analysis, sensitivityLevel, 2000, 3000);
-                
-                chapters.push({
-                    title: chapterTitle,
-                    content: chapterContent,
-                    wordCount: chapterContent.split(/\s+/).length
-                });
-                
-                if (i % 10 === 0) {
-                    updateWriteDetailedStatus(`Đang viết chương ${i}/${numChapters} của "${title}"`);
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-            }
-            
-            return {
-                title: title,
-                description: description,
-                chapters: chapters,
-                source: analysis.fileName,
-                generatedAt: new Date().toLocaleString('vi-VN'),
-                totalWords: chapters.reduce((sum, ch) => sum + ch.wordCount, 0)
-            };
+           const title = generateTitle(analysis);       // tên truyện tự sinh
+    const description = generateDescription(analysis);
+
+    const chapters = [];
+    const numChapters = Math.max(minChapters, Math.floor(analysis.basicStats.wordCount / 2500));
+
+    for (let i = 1; i <= numChapters; i++) {
+        const chapterTitle = `Chương ${i}: ${generateChapterTitle(analysis, i)}`;
+        const chapterContent = generateChapterContent(analysis, sensitivityLevel, 2000, 3000);
+
+        chapters.push({
+            title: chapterTitle,
+            content: chapterContent,
+            wordCount: chapterContent.split(/\s+/).length
+        });
+    }
+
+    return {
+        title: title,
+        description: description,
+        chapters: chapters,
+        source: analysis.fileName,
+        generatedAt: new Date().toLocaleString('vi-VN'),
+        totalWords: chapters.reduce((sum, ch) => sum + ch.wordCount, 0)
+    };
         }
 
         function generateTitle(analysis) {
@@ -1760,73 +1764,46 @@
         }
 
         async function saveStoryToDrive(story, parentFolderId) {
-            try {
-                // Tạo thư mục cho truyện
-                const storyFolderMetadata = {
-                    name: story.title,
-                    mimeType: 'application/vnd.google-apps.folder',
-                    parents: [parentFolderId]
-                };
-                
-                const storyFolder = await gapi.client.drive.files.create({
-                    resource: storyFolderMetadata,
-                    fields: 'id'
-                });
-                
-                const storyFolderId = storyFolder.result.id;
-                
-                // Tạo file mô tả truyện
-                const descriptionContent = `Tựa đề: ${story.title}\n\nMô tả: ${story.description}\n\nNguồn: ${story.source}\n\nĐược tạo lúc: ${story.generatedAt}\n\nTổng số chương: ${story.chapters.length}\n\nTổng số từ: ${story.totalWords}`;
-                
-                const descriptionMetadata = {
-                    name: 'Mô tả.txt',
-                    mimeType: 'text/plain',
-                    parents: [storyFolderId]
-                };
-                
-                const descriptionMedia = {
-                    mimeType: 'text/plain',
-                    body: descriptionContent
-                };
-                
-                await gapi.client.drive.files.create({
-                    resource: descriptionMetadata,
-                    media: descriptionMedia,
-                    fields: 'id'
-                });
-                
-                // Lưu từng chương
-                for (let i = 0; i < story.chapters.length; i++) {
-                    const chapter = story.chapters[i];
-                    const chapterContent = `${chapter.title}\n\n${chapter.content}`;
-                    
-                    const chapterMetadata = {
-                        name: `Chương ${i+1}.txt`,
-                        mimeType: 'text/plain',
-                        parents: [storyFolderId]
-                    };
-                    
-                    const chapterMedia = {
-                        mimeType: 'text/plain',
-                        body: chapterContent
-                    };
-                    
-                    await gapi.client.drive.files.create({
-                        resource: chapterMetadata,
-                        media: chapterMedia,
-                        fields: 'id'
-                    });
-                    
-                    if ((i + 1) % 10 === 0) {
-                        updateWriteDetailedStatus(`Đang lưu chương ${i+1}/${story.chapters.length} của "${story.title}"`);
-                    }
-                }
-                
-                return storyFolderId;
-            } catch (error) {
-                console.error('Error saving story to drive:', error);
-                throw error;
-            }
+           try {
+        // Tạo thư mục riêng cho truyện
+        const storyFolderMetadata = {
+            name: story.title,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [parentFolderId]
+        };
+
+        const storyFolder = await gapi.client.drive.files.create({
+            resource: storyFolderMetadata,
+            fields: 'id'
+        });
+
+        const storyFolderId = storyFolder.result.id;
+
+        // Tạo file mô tả
+        const descriptionContent = `Tựa đề: ${story.title}\nMô tả: ${story.description}\nNguồn: ${story.source}\nNgày tạo: ${story.generatedAt}\nSố chương: ${story.chapters.length}\nTổng số từ: ${story.totalWords}`;
+        await gapi.client.drive.files.create({
+            resource: { name: 'Mô tả.txt', mimeType: 'text/plain', parents: [storyFolderId] },
+            media: { mimeType: 'text/plain', body: descriptionContent },
+            fields: 'id'
+        });
+
+        // Tạo từng chương
+        for (let i = 0; i < story.chapters.length; i++) {
+            const chapter = story.chapters[i];
+            const content = `${chapter.title}\n\n${chapter.content}`;
+
+            await gapi.client.drive.files.create({
+                resource: { name: `Chương ${i+1}.txt`, mimeType: 'text/plain', parents: [storyFolderId] },
+                media: { mimeType: 'text/plain', body: content },
+                fields: 'id'
+            });
+        }
+
+        return storyFolderId;
+    } catch (error) {
+        console.error('❌ Error saving story to drive:', error);
+        throw error;
+    }
         }
 
         function displayGeneratedStories() {
@@ -1962,42 +1939,33 @@
 
         // Load stories from library
         async function loadStories() {
-            updateStatus('📚 Đang tải danh sách truyện...');
-            
-            try {
-                // Tìm thư mục QuanLyTruyen
-                const folderResponse = await gapi.client.drive.files.list({
-                    q: "name='QuanLyTruyen' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-                    fields: 'files(id, name)'
-                });
-                
-                if (folderResponse.result.files.length === 0) {
-                    updateStatus('❌ Không tìm thấy thư mục "QuanLyTruyen"');
-                    return;
-                }
-                
-                const folderId = folderResponse.result.files[0].id;
-                
-                // Tìm tất cả các thư mục con (các truyện)
-                const storiesResponse = await gapi.client.drive.files.list({
-                    q: `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-                    fields: 'files(id, name, createdTime, modifiedTime)'
-                });
-                
-                const stories = storiesResponse.result.files;
-                
-                if (stories.length === 0) {
-                    updateStatus('❌ Không tìm thấy truyện nào trong thư mục');
-                    return;
-                }
-                
-                displayStoriesLibrary(stories);
-                updateStatus(`✅ Đã tải ${stories.length} truyện từ thư viện`);
-                
-            } catch (error) {
-                console.error('Error loading stories:', error);
-                updateStatus('❌ Lỗi khi tải danh sách truyện: ' + error.message);
-            }
+           try {
+        const folderId = await findOrCreateFolder('QuanLyTruyen');
+        const response = await gapi.client.drive.files.list({
+            q: `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+            fields: 'files(id, name)',
+            pageSize: 100
+        });
+
+        const stories = response.result.files;
+        const container = document.getElementById('storiesLibrary');
+        if (stories.length === 0) {
+            container.innerHTML = "<p>❌ Chưa có truyện nào.</p>";
+            return;
+        }
+
+        let html = "<ul>";
+        stories.forEach(story => {
+            html += `<li>
+                <button class="btn" onclick="openStory('${story.id}','${story.name}')">📖 ${story.name}</button>
+            </li>`;
+        });
+        html += "</ul>";
+        container.innerHTML = html;
+    } catch (error) {
+        console.error("Error loading stories:", error);
+        alert("❌ Lỗi khi tải thư viện truyện");
+    }
         }
 
         function displayStoriesLibrary(stories) {
@@ -2167,6 +2135,80 @@
                 }
             }, 2000);
         };
+        async function downloadScanCache() {
+    if (!scanCache || !scanCache.files || scanCache.files.length === 0) {
+        alert("Chưa có dữ liệu cache để tải xuống!");
+        return;
+    }
+
+    try {
+        const content = JSON.stringify(scanCache, null, 2);
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'scan_cache_QuanLyTruyen.json';
+        document.body.appendChild(a);
+        a.click();
+
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+
+        updateStatus('✅ Đã tải xuống file cache danh sách quét');
+    } catch (error) {
+        console.error('Error downloading scan cache:', error);
+        updateStatus('❌ Lỗi khi tải cache');
+    }
+}
+// ==================== 📖 Trình đọc truyện từ Google Drive ====================
+let currentChapters = [];
+let currentIndex = 0;
+
+async function openStory(storyId, storyName) {
+    document.getElementById('readerTitle').innerText = "📖 " + storyName;
+    document.getElementById('readerContainer').style.display = "block";
+    
+    const response = await gapi.client.drive.files.list({
+        q: `'${storyId}' in parents and trashed=false and name contains 'Chương'`,
+        fields: 'files(id, name)',
+        orderBy: 'name'
+    });
+
+    currentChapters = response.result.files.sort((a,b) => a.name.localeCompare(b.name));
+    currentIndex = 0;
+    await loadChapter(currentIndex);
+}
+
+async function loadChapter(index) {
+    if (index < 0 || index >= currentChapters.length) return;
+    const fileId = currentChapters[index].id;
+    const response = await gapi.client.drive.files.get({
+        fileId: fileId,
+        alt: 'media'
+    });
+    document.getElementById('readerContent').innerText = response.body;
+}
+
+async function nextChapter() {
+    if (currentIndex < currentChapters.length - 1) {
+        currentIndex++;
+        await loadChapter(currentIndex);
+    } else {
+        alert("✅ Bạn đã đọc hết truyện!");
+    }
+}
+
+async function prevChapter() {
+    if (currentIndex > 0) {
+        currentIndex--;
+        await loadChapter(currentIndex);
+    }
+}
+
     </script>
+
 </body>
 </html>
