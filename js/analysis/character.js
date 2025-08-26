@@ -109,12 +109,20 @@ function analyzeCharactersAdvanced(content) {
             return relationships.slice(0, 5);
         }
 
-        function analyzeCharacterDevelopment(content, characters) {
-            if (characters.length === 0) return 'Không có nhân vật rõ ràng';
-            
-            const mainCharacter = characters[0];
-            const developmentIndicators = ['học được', 'thay đổi', 'trưởng thành', 'nhận ra', 'hiểu được'];
-            
-            const developmentMentions = developmentIndicators.reduce((count, indicator) => {
-                return count + (content.toLowerCase().match(new RegExp(indicator, 'g')) || []).length;
-            }
+       function analyzeCharacterDevelopment(content, characters) {
+    if (characters.length === 0) return 'Không có nhân vật rõ ràng';
+    
+    const mainCharacter = characters[0];
+    const developmentIndicators = ['học được', 'thay đổi', 'trưởng thành', 'nhận ra', 'hiểu được'];
+    
+    const developmentMentions = developmentIndicators.reduce((count, indicator) => {
+        return count + (content.toLowerCase().match(new RegExp(indicator, 'g')) || []).length;
+    }, 0); // <-- Added missing closing parenthesis and brace
+    
+    // Add proper return statement
+    if (developmentMentions > 0) {
+        return `Có ${developmentMentions} chỉ báo phát triển nhân vật`;
+    } else {
+        return 'Không có chỉ báo phát triển nhân vật rõ ràng';
+    }
+} // <-- Added missing closing brace

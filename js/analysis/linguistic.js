@@ -1,21 +1,26 @@
 function analyzeLinguistics(content) {
-            const words = content.toLowerCase().split(/\s+/).filter(w => w.length > 0);
-            
-            // Phân loại từ loại (đơn giản)
-            const wordTypes = classifyWordTypes(words);
-            
-            // Phân tích tần suất từ
-            const wordFrequency = analyzeWordFrequency(words);
-            
-            // Độ phức tạp từ vựng
-            const vocabularyComplexity = analyzeVocabularyComplexity(words);
-            
-            return {
-                wordTypes: wordTypes,
-                topWords: wordFrequency.slice(0, 20),
-                vocabularyComplexity: vocabularyComplexity,
-                uniqueWordRatio: (new Set(words).size / words.length * 100).toFixed(2) + '%'
-            }
+    const words = content.toLowerCase().split(/\s+/).filter(w => w.length > 0);
+    
+    // Phân loại từ loại (đơn giản)
+    const wordTypes = classifyWordTypes(words);
+    
+    // Phân tích tần suất từ
+    const wordFrequency = analyzeWordFrequency(words);
+    
+    // Độ phức tạp từ vựng
+    const vocabularyComplexity = analyzeVocabularyComplexity(words);
+    
+    return {
+        wordTypes: wordTypes,
+        topWords: wordFrequency.slice(0, 20),
+        vocabularyComplexity: vocabularyComplexity,
+        uniqueWordRatio: (new Set(words).size / words.length * 100).toFixed(2) + '%'
+    };
+}
+// Add missing function stubs if needed
+function classifyWordTypes(words) { return []; }
+function analyzeWordFrequency(words) { return []; }
+function analyzeVocabularyComplexity(words) { return {}; }
 // Phân tích ngôn ngữ tiếng Việt
 class LinguisticAnalyzer {
     analyzeText(text) {

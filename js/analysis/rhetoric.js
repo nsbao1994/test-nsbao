@@ -123,12 +123,20 @@ function analyzeRhetoricalDevices(content) {
             };
         }
 
-        function analyzeContrast(content) {
-            const contrastWords = ['nhưng', 'tuy nhiên', 'trái lại', 'ngược lại', 'khác với', 'mặt khác'];
-            const contrasts = [];
-            
-            contrastWords.forEach(word => {
-                const matches = content.toLowerCase().match(new RegExp(word, 'g'));
-                if (matches) {
-                    contrasts.push(...matches);
-                }
+      function analyzeContrast(content) {
+    const contrastWords = ['nhưng', 'tuy nhiên', 'trái lại', 'ngược lại', 'khác với', 'mặt khác'];
+    const contrasts = [];
+    
+    contrastWords.forEach(word => {
+        const matches = content.toLowerCase().match(new RegExp(word, 'g'));
+        if (matches) {
+            contrasts.push(...matches);
+        }
+    }); // <-- Added missing closing parenthesis and brace
+    
+    return {
+        count: contrasts.length,
+        density: ((contrasts.length / content.split(/\s+/).length) * 100).toFixed(2) + '%',
+        examples: contrasts.slice(0, 3)
+    };
+} // <-- Added missing closing brace

@@ -94,14 +94,27 @@ function analyzeNarrativeStructure(content) {
             };
         }
 
-        function identifyClimax(content) {
-            const climaxIndicators = ['đột nhiên', 'bất ngờ', 'lúc này', 'cuối cùng', 'quyết định', 'quan trọng nhất'];
-            const sentences = content.split(/[.!?]+/);
-            
-            let climaxSentence = '';
-            let maxIndicators = 0;
-            
-            sentences.forEach(sentence => {
-                const indicatorCount = climaxIndicators.reduce((count, indicator) => {
-                    return count + (sentence.toLowerCase().includes(indicator) ? 1 : 0);
-                }
+    function identifyClimax(content) {
+    const climaxIndicators = ['đột nhiên', 'bất ngờ', 'lúc này', 'cuối cùng', 'quyết định', 'quan trọng nhất'];
+    const sentences = content.split(/[.!?]+/);
+    
+    let climaxSentence = '';
+    let maxIndicators = 0;
+    
+    sentences.forEach(sentence => {
+        const indicatorCount = climaxIndicators.reduce((count, indicator) => {
+            return count + (sentence.toLowerCase().includes(indicator) ? 1 : 0);
+        }, 0); // <-- Added missing closing parenthesis
+        
+        if (indicatorCount > maxIndicators) {
+            maxIndicators = indicatorCount;
+            climaxSentence = sentence.trim();
+        }
+    });
+    
+    return {
+        identified: maxIndicators > 0,
+        sentence: climaxSentence,
+        indicatorCount: maxIndicators
+    };
+} // <-- Added missing closing brace

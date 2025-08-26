@@ -49,3 +49,24 @@ function handleAuthClick() {
             const buttons = ['scanBtn', 'clearCacheBtn', 'loadAnalysisBtn', 'analyzeBtn', 'saveAnalysisBtn', 'generateBtn', 'saveBtn'];
             buttons.forEach(id => document.getElementById(id).disabled = true);
         }
+// Initialize tokenClient
+let tokenClient;
+
+function initializeGoogleAuth() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (resp) => {
+            if (resp.error !== undefined) {
+                throw (resp);
+            }
+            // Handle successful auth
+        }
+    });
+}
+
+// Call this on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeGoogleAuth();
+    // ... rest of your initialization
+});
