@@ -428,6 +428,9 @@
                 <button class="btn btn-success" id="downloadAnalysisBtn" onclick="downloadAnalysis()" disabled>
                     📥 Tải phân tích xuống
                 </button>
+                <button class="btn btn-success" id="uploadAnalysisBtn" onclick="manualUploadAnalysis()" disabled>
+    ☁️ Upload phân tích lên Drive
+</button>
                 
                 <div class="toggle-container">
                     <span>Bỏ qua file đã phân tích</span>
@@ -855,9 +858,9 @@
                     const analysis = await performAdvancedAnalysis(content, file.name, file.folderPath);
                     analysisData.push(analysis);
                     
-                    if (document.getElementById('autoSaveResults').checked) {
-                        await autoSaveAnalysis();
-                    }
+                    // if (document.getElementById('autoSaveResults').checked) {
+                    //     await autoSaveAnalysis();
+                    // }
                     
                     await new Promise(resolve => setTimeout(resolve, 500));
                     
@@ -2325,6 +2328,53 @@ async function prevChapter() {
         await loadChapter(currentIndex);
     }
 }
+async function manualUploadAnalysis() {
+    try {
+        const analysisContent = {
+            analysisData: analysisData,
+            timestamp: new Date().toISOString()
+        };
+
+        const contentString = JSON.stringify(analysisContent);
+
+        // tìm hoặc tạo thư mục "QuanLyTruyen"
+        const folderId = await findOrCreateFolder('QuanLyTruyen');
+
+        // kiểm tra file đã có chưa
+        const response = await gapi.client.drive.files.list({
+            q: `name='${ANALYSIS_CACHE_NAME}' and trashed=false`,
+            fields: 'files(id)'
+        });
+
+        if (response.result.files.length > 0) {
+            await gapi.client.request({
+                path: `/upload/drive/v3/files/${response.result.files[0].id}`,
+                method: 'PATCH',
+                params: { uploadType: 'media' },
+                body: contentString
+            });
+        } else {
+            await gapi.client.drive.files.create({
+                resource: {
+                    name: ANALYSIS_CACHE_NAME,
+                    mimeType: 'application/json',
+                    parents: [folderId]   // ✅ đảm bảo nằm trong thư mục
+                },
+                media: {
+                    mimeType: 'application/json',
+                    body: contentString
+                },
+                fields: 'id'
+            });
+        }
+
+        alert("✅ Upload phân tích thành công!");
+    } catch (error) {
+        console.error("❌ Lỗi upload thủ công:", error);
+        alert("❌ Lỗi khi upload phân tích, xem console để biết chi tiết.");
+    }
+}
+
 
     </script>
 
