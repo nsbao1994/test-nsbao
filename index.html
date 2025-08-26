@@ -1550,8 +1550,7 @@
         }
 
         // Story generation functions
-        async function generateStories() {
-            if (!analysisData || analysisData.length === 0) {
+        async function generateStories() { if (!analysisData || analysisData.length === 0) {
         alert('⚠️ Vui lòng phân tích dữ liệu trước khi tạo truyện!');
         return;
     }
@@ -1563,6 +1562,8 @@
     const sensitivityLevel = parseInt(document.getElementById('sensitivityLevel').value) || 5;
 
     generatedStories = [];
+    let successCount = 0;
+    let errorCount = 0;
 
     // Tìm hoặc tạo thư mục cha QuanLyTruyen
     let storiesFolderId = await findOrCreateFolder('QuanLyTruyen');
@@ -1575,29 +1576,50 @@
         try {
             // Tạo truyện từ data phân tích
             const story = await generateStoryFromAnalysis(data, minChapters, sensitivityLevel);
-            generatedStories.push(story);
-
-            // Lưu vào Google Drive
-            await saveStoryToDrive(story, storiesFolderId);
-
-            updateWriteDetailedStatus(`✅ Đã tạo: ${story.title} (${story.chapters.length} chương)`);
+            
+            // Lưu vào Google Drive và kiểm tra kết quả
+            const storyFolderId = await saveStoryToDrive(story, storiesFolderId);
+            
+            if (storyFolderId) {
+                generatedStories.push(story);
+                successCount++;
+                updateWriteDetailedStatus(`✅ Đã tạo: ${story.title} (${story.chapters.length} chương)`);
+            } else {
+                errorCount++;
+                updateWriteDetailedStatus(`❌ Lỗi khi lưu truyện từ: ${data.fileName}`);
+            }
+            
         } catch (error) {
             console.error(`Error generating story from ${data.fileName}:`, error);
+            errorCount++;
             updateWriteDetailedStatus(`❌ Lỗi với ${data.fileName}: ${error.message}`);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Tăng delay để tránh rate limit
     }
 
     displayGeneratedStories();
     updateWriteProgress(100);
-    updateWriteStatus(`🎉 Hoàn thành tạo ${generatedStories.length} truyện`);
+    updateWriteStatus(`🎉 Hoàn thành: ${successCount} thành công, ${errorCount} lỗi`);
+    
+    // Xóa các file untitled nếu có
+    if (errorCount > 0) {
+        await cleanupUntitledFiles(storiesFolderId);
+    }
         }
 
         async function generateStoryFromAnalysis(analysis, minChapters, sensitivityLevel) {
-           const title = generateTitle(analysis);       // tên truyện tự sinh
-    const description = generateDescription(analysis);
-
+            let title = generateTitle(analysis);
+    let description = generateDescription(analysis);
+    
+    // VALIDATION: Đảm bảo tên truyện không rỗng
+    if (!title || title.trim() === '') {
+        title = "Truyện Không Có Tên " + new Date().getTime();
+    }
+    
+    // VALIDATION: Giới hạn độ dài tên truyện
+    title = title.substring(0, 50); // Giới hạn 50 ký tự
+    
     const chapters = [];
     const numChapters = Math.max(minChapters, Math.floor(analysis.basicStats.wordCount / 2500));
 
@@ -1623,25 +1645,37 @@
         }
 
         function generateTitle(analysis) {
-            const themes = analysis.thematicAnalysis.slice(0, 3).map(t => t.word);
-            const characters = analysis.characterAnalysis.slice(0, 2).map(c => c.name);
-            
-            const titlePatterns = [
-                `${characters[0]} và ${characters[1]}`,
-                `Cuộc đời ${characters[0]}`,
-                `Hành trình của ${characters[0]}`,
-                `Tình ${themes[0]}`,
-                `Bí mật ${themes[0]}`,
-                `${themes[0]} và ${themes[1]}`,
-                `Mối tình ${themes[0]}`,
-                `Số phận ${characters[0]}`,
-                `Người ${themes[0]}`,
-                `Nỗi đau ${themes[0]}`,
-                `Ánh sáng ${themes[0]}`,
-                `Bóng tối ${themes[0]}`
-            ];
-            
-            return titlePatterns[Math.floor(Math.random() * titlePatterns.length)];
+               // Kiểm tra analysis hợp lệ
+    if (!analysis || !analysis.thematicAnalysis || !analysis.characterAnalysis) {
+        return "Truyện Vô Danh " + new Date().getTime();
+    }
+    
+    const themes = analysis.thematicAnalysis.slice(0, 3).map(t => t.word);
+    const characters = analysis.characterAnalysis.slice(0, 2).map(c => c.name);
+    
+    // Đảm bảo mảng không rỗng
+    if (themes.length === 0) themes.push('bí ẩn');
+    if (characters.length === 0) characters.push('nhân vật');
+    
+    const titlePatterns = [
+        `${characters[0]} và ${characters[1]}`,
+        `Cuộc đời ${characters[0]}`,
+        `Hành trình của ${characters[0]}`,
+        `Tình ${themes[0]}`,
+        `Bí mật ${themes[0]}`,
+        `${themes[0]} và ${themes[1]}`,
+        `Mối tình ${themes[0]}`,
+        `Số phận ${characters[0]}`,
+        `Người ${themes[0]}`,
+        `Nỗi đau ${themes[0]}`,
+        `Ánh sáng ${themes[0]}`,
+        `Bóng tối ${themes[0]}`
+    ];
+    
+    const title = titlePatterns[Math.floor(Math.random() * titlePatterns.length)];
+    
+    // Đảm bảo tiêu đề không rỗng
+    return title || "Câu Chuyện Đặc Biệt " + new Date().getTime();s
         }
 
         function generateDescription(analysis) {
@@ -1802,7 +1836,12 @@
         }
 
         async function saveStoryToDrive(story, parentFolderId) {
-           try {
+            try {
+        // VALIDATION: Kiểm tra story hợp lệ
+        if (!story || !story.title || !story.chapters) {
+            throw new Error('Dữ liệu truyện không hợp lệ');
+        }
+
         // Tạo thư mục riêng cho truyện
         const storyFolderMetadata = {
             name: story.title,
@@ -1819,28 +1858,64 @@
 
         // Tạo file mô tả
         const descriptionContent = `Tựa đề: ${story.title}\nMô tả: ${story.description}\nNguồn: ${story.source}\nNgày tạo: ${story.generatedAt}\nSố chương: ${story.chapters.length}\nTổng số từ: ${story.totalWords}`;
+        
         await gapi.client.drive.files.create({
-            resource: { name: 'Mô tả.txt', mimeType: 'text/plain', parents: [storyFolderId] },
-            media: { mimeType: 'text/plain', body: descriptionContent },
+            resource: { 
+                name: 'Mô tả.txt', 
+                mimeType: 'text/plain', 
+                parents: [storyFolderId] 
+            },
+            media: { 
+                mimeType: 'text/plain', 
+                body: descriptionContent 
+            },
             fields: 'id'
         });
 
-        // Tạo từng chương
+        // Tạo từng chương với xử lý lỗi riêng
         for (let i = 0; i < story.chapters.length; i++) {
             const chapter = story.chapters[i];
+            
+            // VALIDATION: Kiểm tra chapter hợp lệ
+            if (!chapter || !chapter.title || !chapter.content) {
+                console.warn(`Chapter ${i+1} bị lỗi, bỏ qua`);
+                continue;
+            }
+            
             const content = `${chapter.title}\n\n${chapter.content}`;
+            const fileName = `Chương ${i+1}.txt`;
 
-            await gapi.client.drive.files.create({
-                resource: { name: `Chương ${i+1}.txt`, mimeType: 'text/plain', parents: [storyFolderId] },
-                media: { mimeType: 'text/plain', body: content },
-                fields: 'id'
-            });
+            try {
+                await gapi.client.drive.files.create({
+                    resource: { 
+                        name: fileName, 
+                        mimeType: 'text/plain', 
+                        parents: [storyFolderId] 
+                    },
+                    media: { 
+                        mimeType: 'text/plain', 
+                        body: content 
+                    },
+                    fields: 'id'
+                });
+                
+                // Thêm delay để tránh rate limit
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+            } catch (chapterError) {
+                console.error(`Lỗi khi tạo chương ${i+1}:`, chapterError);
+                // Tiếp tục với chương tiếp theo thay vì dừng lại
+            }
         }
 
         return storyFolderId;
+        
     } catch (error) {
-        console.error('❌ Error saving story to drive:', error);
-        throw error;
+        console.error('❌ Lỗi nghiêm trọng khi lưu truyện:', error);
+        
+        // KHÔNG ném lỗi ra ngoài để tránh làm gián đoạn quá trình
+        // Thay vào đó, log và trả về null
+        return null;
     }
         }
 
