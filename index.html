@@ -431,6 +431,7 @@
                 <button class="btn btn-secondary" onclick="loadAnalysisData()">
     🔄 Tải cache phân tích
 </button>
+<button onclick="loadGeneratedStoriesCache()">📥 Tải Stories Cache</button>
                 <button class="btn btn-success" id="uploadAnalysisBtn" onclick="manualUploadAnalysis()" disabled>
     ☁️ Upload phân tích lên Drive
 </button>
@@ -2248,14 +2249,14 @@
             gapiLoaded();
             gisLoaded();
             
-            // Try to load cached data
-            setTimeout(() => {
-                if (gapi_inited && gsi_inited) {
-                    loadScanCache();
-                    loadAnalysisData();
-                    loadGeneratedStoriesCache();
-                }
-            }, 2000);
+            // // Try to load cached data
+            // setTimeout(() => {
+            //     if (gapi_inited && gsi_inited) {
+            //         loadScanCache();
+            //         loadAnalysisData();
+            //         loadGeneratedStoriesCache();
+            //     }
+            // }, 2000);
              showLoggedOutState(); // Khóa hết chức năng khi chưa login
         };
         
