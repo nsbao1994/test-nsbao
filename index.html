@@ -623,7 +623,28 @@
                 'con đĩ', 'con cave', 'chị dâu', 'em dâu', 'anh rể', 'chị gái', 'mẹ chồng', 'cha con', 'mẹ con',
                 'rên la', 'rên rỉ', 'hét lên vì sướng', 'mắt lờ đờ', 'mồ hôi nhễ nhại',
                 'bắn tinh', 'phun tinh', 'tinh dịch', 'tinh tràn', 'nuốt sạch tinh',
-                'mùi tanh', 'vị mặn', 'ướt đẫm', 'nước nhờn', 'dịch nhờn'
+                'mùi tanh', 'vị mặn', 'ướt đẫm', 'nước nhờn', 'dịch nhờn',
+                 // ===== Hành động & tình dục =====
+        'làm tình', 'quan hệ', 'ân ái', 'thủ dâm', 'kích thích',
+        'cởi đồ', 'vuốt ve', 'sờ mó', 'ôm hôn', 'thâm nhập',
+        'rên rỉ', 'xuất tinh', 'cao trào', 'cực khoái', 'ướt át',
+
+        // ===== Lời thoại tình dục chung =====
+        '"muốn anh"', '"muốn em"', '"làm em sướng"', '"cứng quá"',
+        '"em ướt rồi"', '"mạnh lên"', '"ra đi"', '"bắn vào trong"',
+
+        // ===== Quan hệ gia đình nhạy cảm =====
+        'bố chồng', 'con dâu', 'cha chồng', 'nàng dâu',
+        '"bố chồng"', '"con dâu"', '"cha chồng"', '"nàng dâu"',
+        '"bố chồng ơi"', '"con dâu ngoan"', '"bố chồng làm cho con"',
+        '"con dâu của bố"', '"bố muốn con"', '"bố chồng không chịu nổi"',
+        '"con dâu sướng quá"', '"làm dâu bố"', '"bố chồng yêu con dâu"',
+        
+        // ===== Các tình huống thoại đặc thù =====
+        'quan hệ với bố chồng', 'quan hệ cùng con dâu', 
+        'chịch con dâu', 'bố chồng đụ con dâu', 'bố chồng hiếp con dâu',
+        'làm tình với con dâu', 'bố chồng ôm con dâu',
+        'con dâu rên', 'bố chồng thỏa mãn', 'bố chồng cưỡng hiếp'
             ],
             negative: ['ghét', 'hận', 'giận', 'tức', 'tủi', 'buồn', 'đau', 'khổ', 'sầu', 'thảm', 'bi', 'tang', 'tử', 'chết', 'giết', 'hại', 'ác', 'dữ', 'hung'],
             family: ['bố', 'mẹ', 'cha', 'con', 'chồng', 'vợ', 'dâu', 'rể', 'anh', 'chị', 'em', 'ông', 'bà', 'chú', 'bác', 'cô', 'dì', 'cậu', 'mợ'],
@@ -697,25 +718,42 @@
         }
 
         async function showLoggedInState() {
-            updateStatus('🟢 Đã kết nối Google Drive');
-            
-            document.getElementById('scanBtn').disabled = false;
-            
-            try {
-                const response = await gapi.client.request({
-                    path: 'https://openidconnect.googleapis.com/v1/userinfo'
-                });
-                // Cập nhật thông tin người dùng nếu cần
-            } catch (error) {
-                console.error('Error getting user info:', error);
-            }
+             updateStatus('🟢 Đã kết nối Google Drive');
+    
+    const enableButtons = ['scanBtn', 'analyzeBtn', 'generateBtn', 
+                           'downloadAnalysisBtn', 'downloadScanCacheBtn', 
+                           'loadStoriesBtn'];
+    enableButtons.forEach(id => {
+        if (document.getElementById(id)) {
+            document.getElementById(id).disabled = false;
+        }
+    });
+
+    try {
+        const response = await gapi.client.request({
+            path: 'https://openidconnect.googleapis.com/v1/userinfo'
+        });
+        // 👉 Có thể hiển thị tên / email người dùng tại đây
+        console.log("User Info:", response.result);
+    } catch (error) {
+        console.error('Error getting user info:', error);
+    }
         }
 
         function showLoggedOutState() {
-            updateStatus('🔴 Chưa kết nối Google Drive');
-            
-            const buttons = ['scanBtn', 'analyzeBtn', 'generateBtn'];
-            buttons.forEach(id => document.getElementById(id).disabled = true);
+              updateStatus('🔴 Chưa kết nối Google Drive');
+
+    const disableButtons = ['scanBtn', 'analyzeBtn', 'generateBtn', 
+                            'downloadAnalysisBtn', 'downloadScanCacheBtn', 
+                            'loadStoriesBtn'];
+    disableButtons.forEach(id => {
+        if (document.getElementById(id)) {
+            document.getElementById(id).disabled = true;
+        }
+    });
+
+    // Ẩn luôn trình đọc truyện nếu đang mở
+    document.getElementById('readerContainer').style.display = "none";
         }
 
         // Tab switching function
@@ -1557,21 +1595,39 @@
         }
 
         async function generateStoryFromAnalysis(analysis, minChapters, sensitivityLevel) {
-           const title = generateTitle(analysis);       // tên truyện tự sinh
-    const description = generateDescription(analysis);
+             const title = generateTitle(analysis);
+  const description = generateDescription(analysis);
 
-    const chapters = [];
-    const numChapters = Math.max(minChapters, Math.floor(analysis.basicStats.wordCount / 2500));
+  const chapters = [];
+  const numChapters = Math.max(minChapters, Math.floor(analysis.basicStats.wordCount / 2500));
 
-    for (let i = 1; i <= numChapters; i++) {
-        const chapterTitle = `Chương ${i}: ${generateChapterTitle(analysis, i)}`;
-        const chapterContent = generateChapterContent(analysis, sensitivityLevel, 2000, 3000);
+  for (let i = 1; i <= numChapters; i++) {
+    const chapterTitle = `Chương ${i}: ${generateChapterTitle(analysis, i)}`;
+    const chapterContent = await generateChapterContent(analysis, sensitivityLevel, 2000, 3000);
 
-        chapters.push({
-            title: chapterTitle,
-            content: chapterContent,
-            wordCount: chapterContent.split(/\s+/).length
-        });
+    chapters.push({
+      title: chapterTitle,
+      content: chapterContent,
+      wordCount: chapterContent.split(/\s+/).length
+    });
+  }
+
+  return { title, description, chapters };
+    //        const title = generateTitle(analysis);       // tên truyện tự sinh
+    // const description = generateDescription(analysis);
+
+    // const chapters = [];
+    // const numChapters = Math.max(minChapters, Math.floor(analysis.basicStats.wordCount / 2500));
+
+    // for (let i = 1; i <= numChapters; i++) {
+    //     const chapterTitle = `Chương ${i}: ${generateChapterTitle(analysis, i)}`;
+    //     const chapterContent = generateChapterContent(analysis, sensitivityLevel, 2000, 3000);
+
+    //     chapters.push({
+    //         title: chapterTitle,
+    //         content: chapterContent,
+    //         wordCount: chapterContent.split(/\s+/).length
+    //     });
     }
 
     return {
@@ -1631,24 +1687,61 @@
         }
 
         function generateChapterContent(analysis, sensitivityLevel, minWords = 2000, maxWords = 3000) {
-            const targetWords = Math.floor(Math.random() * (maxWords - minWords + 1)) + minWords;
-            let content = '';
-            let wordCount = 0;
+             const wordCountTarget = Math.floor(Math.random() * (maxWords - minWords)) + minWords;
+
+  // Ngẫu nhiên bối cảnh
+  const times = ["một đêm mưa", "một buổi chiều oi ả", "một buổi sáng tinh mơ", "lúc hoàng hôn buông xuống"];
+  const places = ["phòng khách", "phòng ngủ cũ của bố", "căn bếp im lìm", "gác nhỏ phía sau nhà"];
+  const weathers = ["mưa rơi rả rích", "gió thổi rít qua khe cửa", "trời oi bức khó chịu", "không gian tĩnh lặng"];
+  const chosenTime = times[Math.floor(Math.random() * times.length)];
+  const chosenPlace = places[Math.floor(Math.random() * places.length)];
+  const chosenWeather = weathers[Math.floor(Math.random() * weathers.length)];
+
+  // Prompt cho AI
+  const prompt = `
+  Hãy viết một chương truyện dài khoảng ${wordCountTarget} từ theo ngôi thứ nhất.
+  Người kể chuyện là người chồng, phát hiện mối quan hệ giữa vợ (con dâu) và bố (bố chồng).
+  Anh ta chọn im lặng, bất lực, chỉ quan sát và dằn vặt.
+  Trong lời thoại: vợ gọi "bố", bố gọi "con".
+  Bối cảnh: ${chosenTime}, tại ${chosenPlace}, ngoài trời ${chosenWeather}.
+  Miêu tả cảm xúc nội tâm, hội thoại, nguyên nhân, khung cảnh, cao trào và dư âm.
+  `;
+
+  return new Promise((resolve, reject) => {
+    textGenerator.generate(
+      {
+        seed: prompt,        // gợi ý đầu vào
+        length: 2000,        // số ký tự (chỉnh cao hơn nếu muốn dài hơn)
+        temperature: 0.6     // độ sáng tạo (0.5–0.7 ổn)
+      },
+      (err, result) => {
+        if (err) {
+          console.error(err);
+          reject("❌ Lỗi khi sinh văn bản với ml5");
+        } else {
+          resolve(result.sample); // văn bản AI sinh
+        }
+      }
+    );
+  });
+            // const targetWords = Math.floor(Math.random() * (maxWords - minWords + 1)) + minWords;
+            // let content = '';
+            // let wordCount = 0;
             
-            // Lấy các yếu tố từ phân tích để tạo nội dung
-            const themes = analysis.thematicAnalysis.map(t => t.word);
-            const characters = analysis.characterAnalysis.map(c => c.name);
-            const emotionalStyle = analysis.emotionalAnalysis.dominantEmotion;
+            // // Lấy các yếu tố từ phân tích để tạo nội dung
+            // const themes = analysis.thematicAnalysis.map(t => t.word);
+            // const characters = analysis.characterAnalysis.map(c => c.name);
+            // const emotionalStyle = analysis.emotionalAnalysis.dominantEmotion;
             
-            // Tạo nội dung cho đến khi đạt số từ mong muốn
-            while (wordCount < targetWords) {
-                // Tạo đoạn văn ngẫu nhiên dựa trên phân tích
-                const paragraph = generateParagraph(analysis, themes, characters, emotionalStyle, sensitivityLevel);
-                content += paragraph + '\n\n';
-                wordCount += paragraph.split(/\s+/).length;
-            }
+            // // Tạo nội dung cho đến khi đạt số từ mong muốn
+            // while (wordCount < targetWords) {
+            //     // Tạo đoạn văn ngẫu nhiên dựa trên phân tích
+            //     const paragraph = generateParagraph(analysis, themes, characters, emotionalStyle, sensitivityLevel);
+            //     content += paragraph + '\n\n';
+            //     wordCount += paragraph.split(/\s+/).length;
+            // }
             
-            return content;
+            // return content;
         }
 
         function generateParagraph(analysis, themes, characters, emotionalStyle, sensitivityLevel) {
@@ -2134,7 +2227,10 @@
                     loadGeneratedStoriesCache();
                 }
             }, 2000);
+             showLoggedOutState(); // Khóa hết chức năng khi chưa login
+             setupML5();
         };
+        
         async function downloadScanCache() {
     if (!scanCache || !scanCache.files || scanCache.files.length === 0) {
         alert("Chưa có dữ liệu cache để tải xuống!");
@@ -2207,8 +2303,21 @@ async function prevChapter() {
         await loadChapter(currentIndex);
     }
 }
+let textGenerator;
 
+function setupML5() {
+  // Load model charRNN (Shakespeare sample, bạn có thể train riêng sau)
+  textGenerator = ml5.charRNN(
+    "https://storage.googleapis.com/ml5-models/charRNN/shakespeare/",
+    modelReady
+  );
+}
+
+function modelReady() {
+  console.log("✅ ml5.js model sẵn sàng để sinh văn bản!");
+}
     </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ml5/0.12.2/ml5.min.js"></script>
 
 </body>
 </html>
