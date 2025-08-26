@@ -428,6 +428,9 @@
                 <button class="btn btn-success" id="downloadAnalysisBtn" onclick="downloadAnalysis()" disabled>
                     📥 Tải phân tích xuống
                 </button>
+                <button class="btn btn-secondary" onclick="loadAnalysisData()">
+    🔄 Tải cache phân tích
+</button>
                 <button class="btn btn-success" id="uploadAnalysisBtn" onclick="manualUploadAnalysis()" disabled>
     ☁️ Upload phân tích lên Drive
 </button>
@@ -676,7 +679,7 @@
             });
             gapi_inited = true;
             maybeEnableButtons();
-            await loadAnalysisData(); // Tải dữ liệu phân tích khi khởi động
+            //await loadAnalysisData(); // Tải dữ liệu phân tích khi khởi động
         }
 
         function gisLoaded() {
