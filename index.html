@@ -695,17 +695,21 @@
         // Authentication functions
         function handleAuthClick() {
             tokenClient.callback = async (resp) => {
-                if (resp.error !== undefined) {
-                    throw (resp);
-                }
-                await showLoggedInState();
-            };
+        if (resp.error !== undefined) {
+            throw (resp);
+        }
 
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({prompt: 'consent'});
-            } else {
-                tokenClient.requestAccessToken({prompt: ''});
-            }
+        // 👉 Thêm dòng này để gapi sử dụng Access Token thay vì chỉ dùng API_KEY
+        gapi.client.setToken({ access_token: resp.access_token });
+
+        await showLoggedInState();
+    };
+
+    if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({prompt: 'consent'});
+    } else {
+        tokenClient.requestAccessToken({prompt: ''});
+    }
         }
 
         function handleSignoutClick() {
