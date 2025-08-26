@@ -702,8 +702,8 @@
             
             try {
                 const response = await gapi.client.request({
-                    path: 'https://www.googleapis.com/oauth2/v1/userinfo',
-                });
+    path: 'https://openidconnect.googleapis.com/v1/userinfo'
+});
                 // Cập nhật thông tin người dùng nếu cần
             } catch (error) {
                 console.error('Error getting user info:', error);
