@@ -540,7 +540,5 @@
         }
 
         function updateStatus(message) {
-            document.getElementById('statusInfo').innerHTML = `<p>${message}
-function updateStatus(message) {
-    document.getElementById('statusInfo').innerHTML = `<p>${message}</p>`;
+            document.getElementById('statusInfo').innerHTML = `<p>${message}</p>`;
 }
