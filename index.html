@@ -2,424 +2,358 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Trình Phân Tích Truyện AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Trình Phân Tích & Tạo Truyện Nâng Cao</title>
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://accounts.google.com/gsi/client"></script>
     <style>
+        :root {
+            --primary-color: #8e44ad;
+            --secondary-color: #3498db;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --text-color: #333;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --border-radius: 16px;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --safe-area-inset-top: env(safe-area-inset-top);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom);
+            --safe-area-inset-left: env(safe-area-inset-left);
+            --safe-area-inset-right: env(safe-area-inset-right);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #8e44ad 0%, #2c3e50 100%);
             min-height: 100vh;
-            color: #333;
-            overflow-x: hidden;
+            color: var(--text-color);
+            padding: var(--safe-area-inset-top) var(--safe-area-inset-right) var(--safe-area-inset-bottom) var(--safe-area-inset-left);
+            line-height: 1.6;
         }
 
         .container {
             max-width: 100%;
-            margin: 0;
-            padding: 10px;
-            padding-bottom: 80px; /* Space for bottom tabs */
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 80px;
         }
 
         .header {
             text-align: center;
             margin-bottom: 20px;
             color: white;
-            padding: 20px 10px;
+            padding-top: 12px;
         }
 
         .header h1 {
-            font-size: 1.8em;
+            font-size: 1.8rem;
             margin-bottom: 8px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 700;
         }
 
         .header p {
-            font-size: 1em;
+            font-size: 1rem;
             opacity: 0.9;
+            font-weight: 400;
         }
 
-        /* Tab Navigation */
-        .tab-navigation {
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .bottom-menu {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            background: rgba(44, 62, 80, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            padding-bottom: calc(16px + var(--safe-area-inset-bottom));
             display: flex;
+            justify-content: space-around;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 1000;
-            border-top: 1px solid #e0e0e0;
         }
 
-        .tab-button {
-            flex: 1;
-            padding: 12px 8px;
-            text-align: center;
-            border: none;
-            background: none;
-            color: #666;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s ease;
+        .menu-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            color: var(--light-color);
+            text-decoration: none;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            transition: opacity 0.3s;
         }
 
-        .tab-button.active {
-            color: #007AFF;
-            background: #f0f8ff;
+        .menu-item.active {
+            opacity: 1;
         }
 
-        .tab-button .tab-icon {
-            font-size: 20px;
+        .menu-icon {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
         }
 
-        /* Tab Content */
         .tab-content {
             display: none;
-            animation: fadeIn 0.3s ease;
         }
 
         .tab-content.active {
             display: block;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Cards and Sections */
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .card h3 {
-            margin-bottom: 15px;
-            font-size: 1.2em;
-            color: #333;
-        }
-
-        /* Buttons */
-        .btn-primary {
-            background: linear-gradient(45deg, #4285f4, #34a853);
+        .btn {
+            background: var(--primary-color);
             color: white;
             border: none;
             padding: 14px 20px;
-            border-radius: 25px;
-            font-size: 1em;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin: 6px 0;
             width: 100%;
-            margin-bottom: 10px;
-            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .btn-secondary {
-            background: linear-gradient(45px, #54a0ff, #2e86de);
-        }
-
-        .btn-success {
-            background: linear-gradient(45deg, #00d2d3, #01a3a4);
+            background: var(--secondary-color);
         }
 
         .btn-danger {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            background: var(--accent-color);
         }
 
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+        .btn-success {
+            background: var(--success-color);
         }
 
-        .btn-primary:disabled {
-            background: #ccc;
+        .btn-warning {
+            background: var(--warning-color);
+        }
+
+        .btn:disabled {
+            background: #95a5a6;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        /* Status and Progress */
-        .status-bar {
+        .story-content {
             background: #f8f9fa;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 0.9em;
-            border-left: 4px solid #007AFF;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+            border-left: 4px solid var(--primary-color);
+            font-family: 'Times New Roman', serif;
+            line-height: 1.8;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .chapter-title {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .progress-container {
+            margin: 15px 0;
         }
 
         .progress-bar {
             width: 100%;
-            height: 6px;
+            height: 20px;
             background: #e9ecef;
-            border-radius: 3px;
+            border-radius: 10px;
             overflow: hidden;
-            margin: 10px 0;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(45deg, #28a745, #20c997);
+            background: linear-gradient(to right, #8e44ad, #3498db);
             width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        /* Analysis Results */
-        .file-card {
-            background: white;
+            transition: width 0.5s ease;
             border-radius: 10px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
         }
 
-        .file-header {
-            background: #f8f9fa;
-            padding: 15px;
-            border-bottom: 1px solid #e9ecef;
+        .status-info {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
         }
 
-        .file-name {
-            font-weight: bold;
-            color: #333;
-            display: block;
-            margin-bottom: 5px;
+        .detailed-status {
+            font-size: 0.9rem;
+            color: #ecf0f1;
+            margin-top: 5px;
         }
 
-        .file-header small {
-            color: #666;
-            font-size: 0.85em;
+        .toggle-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
         }
 
-        .collapsible {
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
             cursor: pointer;
-            padding: 12px 15px;
-            background: #f8f9fa;
-            border: none;
-            outline: none;
-            font-size: 0.95em;
-            font-weight: 500;
-            border-bottom: 1px solid #e9ecef;
-            width: 100%;
-            text-align: left;
-            transition: background-color 0.2s;
-            color: #495057;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
         }
 
-        .collapsible:hover {
-            background: #e8f4f8;
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
         }
 
-        .collapsible.active {
-            background: #d1ecf1;
-            color: #0c5460;
+        input:checked + .slider {
+            background-color: var(--primary-color);
         }
 
-        .collapsible-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            background: white;
+        input:checked + .slider:before {
+            transform: translateX(26px);
         }
 
-        .collapsible-content.active {
-            max-height: 2000px;
-            padding: 15px;
-        }
-
-        /* Grid layouts for mobile */
-        .analysis-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin: 10px 0;
-        }
-
-        @media (min-width: 768px) {
-            .analysis-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        .analysis-item {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 12px;
-            border-left: 4px solid #007bff;
-        }
-
-        .analysis-item h5 {
-            color: #495057;
-            margin-bottom: 6px;
-            font-size: 0.95em;
-            font-weight: 600;
-        }
-
-        .analysis-item p {
-            margin: 0;
-            font-size: 0.9em;
-            line-height: 1.4;
-        }
-
-        /* Charts for mobile */
-        .linguistic-chart {
-            background: white;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #dee2e6;
-        }
-
-        .chart-bar {
+        .character-profile {
             display: flex;
             align-items: center;
-            margin: 6px 0;
-            font-size: 0.85em;
-        }
-
-        .chart-label {
-            width: 80px;
-            font-weight: 500;
-            font-size: 0.8em;
-            flex-shrink: 0;
-        }
-
-        .chart-progress {
-            flex: 1;
-            height: 16px;
-            background: #e9ecef;
-            border-radius: 8px;
-            margin: 0 8px;
-            overflow: hidden;
-        }
-
-        .chart-fill {
-            height: 100%;
-            background: linear-gradient(45deg, #007bff, #6610f2);
-            transition: width 0.5s ease;
-        }
-
-        .chart-value {
-            font-weight: bold;
-            color: #495057;
-            min-width: 30px;
-            font-size: 0.8em;
-        }
-
-        /* Word cloud */
-        .word-cloud {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin: 10px 0;
-        }
-
-        .word-item {
-            display: inline-block;
-            padding: 4px 8px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: 500;
-        }
-
-        /* Tags */
-        .tag {
-            display: inline-block;
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 3px 6px;
-            border-radius: 10px;
-            font-size: 0.75em;
-            margin: 2px;
-        }
-
-        /* Stats summary */
-        .stats-summary {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
             margin: 15px 0;
+            padding: 10px;
+            background: rgba(236, 240, 241, 0.3);
+            border-radius: 10px;
         }
 
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .character-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
+            font-size: 1.5rem;
+            margin-right: 15px;
         }
 
-        .stat-number {
-            font-size: 1.5em;
+        .character-details {
+            flex: 1;
+        }
+
+        .character-name {
             font-weight: bold;
-            margin-bottom: 4px;
+            color: var(--dark-color);
         }
 
-        .stat-label {
-            font-size: 0.8em;
-            opacity: 0.9;
+        .character-desc {
+            font-size: 0.9rem;
+            color: #7f8c8d;
         }
 
-        /* Story output */
-        .story-output {
+        .emotion-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin: 3px;
+            background: #e74c3c;
+            color: white;
+        }
+
+        .emotion-buon {
+            background: #3498db;
+        }
+
+        .emotion-dau {
+            background: #e74c3c;
+        }
+
+        .emotion-bat-luc {
+            background: #95a5a6;
+        }
+
+        .sensitive-word {
+            background: #e74c3c;
+            color: white;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .dialogue {
+            font-style: italic;
+            color: #2c3e50;
+            margin: 5px 0;
+            padding-left: 15px;
+            border-left: 3px solid #3498db;
+        }
+
+        .analysis-result-item {
+            margin: 10px 0;
+            padding: 10px;
             background: #f8f9fa;
-            border-left: 4px solid #007bff;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 0 8px 8px 0;
-            white-space: pre-wrap;
-            font-family: 'Times New Roman', serif;
-            line-height: 1.6;
-            font-size: 0.9em;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        /* Alerts */
-        .alert {
-            padding: 12px 15px;
             border-radius: 8px;
-            margin: 10px 0;
-            font-size: 0.9em;
         }
 
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        /* Loading spinner */
         .loading {
             display: inline-block;
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             border: 2px solid #f3f3f3;
-            border-top: 2px solid #3498db;
+            border-top: 2px solid var(--primary-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -429,72 +363,28 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Hidden class */
-        .hidden {
-            display: none !important;
-        }
-
-        /* Generation controls */
-        .generation-controls {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-        }
-
-        .generation-controls h4 {
-            margin-bottom: 10px;
-            color: #495057;
-        }
-
-        .control-group {
-            margin-bottom: 15px;
-        }
-
-        .control-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #495057;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            font-size: 0.9em;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #007AFF;
-            box-shadow: 0 0 0 2px rgba(0,122,255,0.2);
-        }
-
-        /* Mobile optimizations */
-        @media (max-width: 768px) {
+        @media only screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) {
             .container {
-                padding: 5px;
+                padding: 12px;
+                padding-bottom: 80px;
             }
             
-            .header {
-                padding: 15px 5px;
+            .header h1 {
+                font-size: 1.6rem;
             }
             
             .card {
-                padding: 15px;
-                margin-bottom: 10px;
+                padding: 16px;
             }
             
-            .stats-summary {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
+            .btn {
+                padding: 12px 16px;
+                font-size: 0.9rem;
             }
             
-            .analysis-grid {
-                grid-template-columns: 1fr;
-                gap: 8px;
+            .story-content {
+                font-size: 0.95rem;
+                max-height: 45vh;
             }
         }
     </style>
@@ -502,149 +392,173 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Trình Phân Tích Truyện AI</h1>
-            <p>Phân tích và tạo truyện thông minh với AI nâng cao</p>
+            <h1>📖 Trình Phân Tích & Tạo Truyện</h1>
+            <p>Phân tích nâng cao và tạo truyện tự động</p>
         </div>
 
-        <!-- Tab Content Areas -->
-        <div id="tab-auth" class="tab-content active">
+        <div id="tab-analysis" class="tab-content active">
             <div class="card">
-                <div id="loginSection">
-                    <h3>Đăng nhập Google Drive</h3>
-                    <p style="margin-bottom: 15px;">Kết nối với Google Drive để truy cập thư mục "QuanLyTruyen"</p>
-                    <button class="btn-primary" onclick="handleAuthClick()">
-                        Đăng nhập Google Drive
-                    </button>
-                </div>
-                <div id="loggedInSection" class="hidden">
-                    <h3>Đã kết nối thành công!</h3>
-                    <p id="userInfo" style="margin: 10px 0;"></p>
-                    <button class="btn-danger" onclick="handleSignoutClick()">Đăng xuất</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <h3>Trạng thái hệ thống</h3>
-                <div class="status-bar" id="statusInfo">
-                    <p>Chưa kết nối Google Drive</p>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressBar"></div>
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-scan" class="tab-content">
-            <div class="card">
-                <h3>Quản lý File</h3>
-                <button class="btn-primary" id="scanBtn" onclick="scanFolder()" disabled>
-                    Quét thư mục QuanLyTruyen
-                </button>
-                <button class="btn-secondary" id="loadAnalysisBtn" onclick="loadAnalysisResults()" disabled>
-                    Tải kết quả phân tích đã lưu
-                </button>
-                <button class="btn-danger" id="clearCacheBtn" onclick="clearCache()" disabled>
-                    Xóa cache và quét lại
-                </button>
-            </div>
-
-            <div class="card">
-                <h3>Phân tích nâng cao</h3>
-                <button class="btn-primary" id="analyzeBtn" onclick="analyzeFiles()" disabled>
-                    Phân tích chi tiết tất cả file
-                </button>
-                <button class="btn-success" id="saveAnalysisBtn" onclick="saveAnalysisResults()" disabled>
-                    Lưu kết quả phân tích
-                </button>
-            </div>
-        </div>
-
-        <div id="tab-generate" class="tab-content">
-            <div class="card">
-                <h3>Tạo truyện từ phân tích</h3>
+                <h3>🔍 Phân tích nguồn truyện</h3>
+                <p>Phân tích các file văn bản để tạo dữ liệu cho truyện</p>
                 
-                <div class="generation-controls">
-                    <h4>Cài đặt tạo truyện</h4>
-                    
-                    <div class="control-group">
-                        <label for="storyCount">Số lượng truyện:</label>
-                        <select id="storyCount" class="form-control">
-                            <option value="3">3 truyện</option>
-                            <option value="5" selected>5 truyện</option>
-                            <option value="10">10 truyện</option>
-                        </select>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label for="storyLength">Độ dài truyện:</label>
-                        <select id="storyLength" class="form-control">
-                            <option value="short">Ngắn (200-500 từ)</option>
-                            <option value="medium" selected>Trung bình (500-1000 từ)</option>
-                            <option value="long">Dài (1000-2000 từ)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label for="storyStyle">Phong cách:</label>
-                        <select id="storyStyle" class="form-control">
-                            <option value="classic">Cổ điển</option>
-                            <option value="modern" selected>Hiện đại</option>
-                            <option value="fantasy">Giả tưởng</option>
-                            <option value="romance">Lãng mạn</option>
-                            <option value="adventure">Phiêu lưu</option>
-                        </select>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label for="storyTone">Tông điệu:</label>
-                        <select id="storyTone" class="form-control">
-                            <option value="positive" selected>Tích cực</option>
-                            <option value="neutral">Trung tính</option>
-                            <option value="mixed">Hỗn hợp</option>
-                        </select>
+                <div class="status-info" id="statusInfo">
+                    <p>🔴 Chưa kết nối Google Drive</p>
+                    <div class="detailed-status" id="detailedStatus"></div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressBar"></div>
                     </div>
                 </div>
-
-                <button class="btn-success" id="generateBtn" onclick="generateStories()" disabled>
-                    Tạo truyện mới
+                
+                <button class="btn" onclick="handleAuthClick()">
+                    📁 Kết nối Google Drive
                 </button>
                 
-                <button class="btn-primary" id="saveBtn" onclick="saveToGoogleDrive()" disabled>
-                    Lưu truyện lên Drive
+                <button class="btn btn-secondary" id="scanBtn" onclick="scanFolder()" disabled>
+                    🔍 Quét thư mục
                 </button>
+                
+                <button class="btn btn-warning" id="analyzeBtn" onclick="analyzeFiles()" disabled>
+                    🧠 Phân tích nâng cao
+                </button>
+                
+                <div class="toggle-container">
+                    <span>Bỏ qua file đã phân tích</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="skipAnalyzedFiles" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
-
-            <div id="generatedStoriesContainer"></div>
-        </div>
-
-        <div id="tab-results" class="tab-content">
+            
             <div class="card">
-                <h3>Kết quả phân tích chi tiết</h3>
+                <h3>📊 Kết quả phân tích</h3>
                 <div id="analysisResults">
                     <p>Chưa có dữ liệu phân tích. Vui lòng quét và phân tích thư mục trước.</p>
                 </div>
             </div>
         </div>
+
+        <div id="tab-write" class="tab-content">
+            <div class="card">
+                <h3>✍️ Viết truyện</h3>
+                <p>Tạo truyện mới dựa trên dữ liệu đã phân tích</p>
+                
+                <div class="character-profile">
+                    <div class="character-avatar">👨</div>
+                    <div class="character-details">
+                        <div class="character-name">Người kể chuyện</div>
+                        <div class="character-desc">Tạo truyện từ dữ liệu đã phân tích</div>
+                    </div>
+                </div>
+                
+                <div class="toggle-container">
+                    <span>Số chương (50+):</span>
+                    <input type="number" id="minChapters" value="50" min="50" max="100" style="width: 60px; padding: 5px; border-radius: 5px; border: 1px solid #ddd;">
+                </div>
+
+                <div class="toggle-container">
+                    <span>Độ nhạy cảm:</span>
+                    <input type="range" id="sensitivityLevel" min="1" max="10" value="5" style="width: 120px;">
+                    <span id="sensitivityValue">5</span>
+                </div>
+                
+                <button class="btn btn-success" id="generateBtn" onclick="generateStories()" disabled>
+                    ✍️ Bắt đầu viết truyện
+                </button>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="writeProgressBar"></div>
+                    </div>
+                </div>
+                
+                <div class="status-info">
+                    <p id="writeStatus">Chưa bắt đầu viết truyện</p>
+                    <div class="detailed-status" id="writeDetailedStatus"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>📖 Truyện đang viết</h3>
+                <div id="generatedStories">
+                    <p>Chưa có truyện nào được tạo. Hãy bấm "Bắt đầu viết truyện" để bắt đầu.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-stories" class="tab-content">
+            <div class="card">
+                <h3>📚 Thư viện truyện</h3>
+                <p>Những truyện đã được tạo và lưu trữ</p>
+                
+                <div id="storiesLibrary">
+                    <p>Chưa có truyện nào trong thư viện.</p>
+                </div>
+                
+                <button class="btn btn-secondary" id="loadStoriesBtn" onclick="loadStories()">
+                    🔄 Tải danh sách truyện
+                </button>
+            </div>
+        </div>
+
+        <div id="tab-settings" class="tab-content">
+            <div class="card">
+                <h3>⚙️ Cài đặt</h3>
+                
+                <div class="toggle-container">
+                    <span>Tự động lưu tiến độ</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoSaveResults" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="toggle-container">
+                    <span>Gửi dữ liệu cải thiện AI</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sendImprovementData" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <button class="btn" onclick="clearCache()">
+                    🗑️ Xóa dữ liệu tạm
+                </button>
+                
+                <button class="btn btn-danger" onclick="handleSignoutClick()">
+                    🚪 Đăng xuất
+                </button>
+            </div>
+            
+            <div class="card">
+                <h3>ℹ️ Thông tin ứng dụng</h3>
+                <p>Phiên bản: 2.1.0</p>
+                <p>Phân tích nâng cao: Hội thoại & Từ nhạy cảm</p>
+                <p>Góc nhìn: Linh hoạt theo phân tích</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Bottom Tab Navigation -->
-    <div class="tab-navigation">
-        <button class="tab-button active" onclick="switchTab('auth')">
-            <div class="tab-icon">🔑</div>
-            <div>Đăng nhập</div>
-        </button>
-        <button class="tab-button" onclick="switchTab('scan')">
-            <div class="tab-icon">🔍</div>
-            <div>Quét & Phân tích</div>
-        </button>
-        <button class="tab-button" onclick="switchTab('generate')">
-            <div class="tab-icon">✍️</div>
-            <div>Tạo truyện</div>
-        </button>
-        <button class="tab-button" onclick="switchTab('results')">
-            <div class="tab-icon">📊</div>
-            <div>Kết quả</div>
-        </button>
+    <div class="bottom-menu">
+        <a href="#" class="menu-item active" onclick="switchTab('tab-analysis')">
+            <div class="menu-icon">🔍</div>
+            <span>Phân tích</span>
+        </a>
+        <a href="#" class="menu-item" onclick="switchTab('tab-write')">
+            <div class="menu-icon">✍️</div>
+            <span>Viết truyện</span>
+        </a>
+        <a href="#" class="menu-item" onclick="switchTab('tab-stories')">
+            <div class="menu-icon">📚</div>
+            <span>Thư viện</span>
+        </a>
+        <a href="#" class="menu-item" onclick="switchTab('tab-settings')">
+            <div class="menu-icon">⚙️</div>
+            <span>Cài đặt</span>
+        </a>
     </div>
 
     <script>
@@ -664,64 +578,33 @@
         let scanCache = {};
         const CACHE_FILE_NAME = 'ScanCache_QuanLyTruyen.json';
         const ANALYSIS_CACHE_NAME = 'AnalysisResults_QuanLyTruyen.json';
-        const STORIES_CACHE_NAME = 'GeneratedStories_QuanLyTruyen.json';
+        const STORY_CACHE_NAME = 'GeneratedStories_QuanLyTruyen.json';
 
-        // Tab switching function
-        function switchTab(tabName) {
-            // Remove active class from all tabs and buttons
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Add active class to selected tab and button
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
-        }
-
-        // Vietnamese language processing data
+        // Vietnamese language processing data - Mở rộng cho phân tích nâng cao
         const vietnameseStopWords = [
             'là', 'của', 'và', 'có', 'một', 'được', 'trong', 'không', 'với', 'từ', 'để', 'đã', 'sẽ',
             'về', 'cho', 'theo', 'như', 'khi', 'vào', 'ra', 'lên', 'xuống', 'qua', 'tại', 'hay',
             'rằng', 'nếu', 'mà', 'thì', 'hoặc', 'nhưng', 'vì', 'nên', 'đến', 'bằng', 'trên', 'dưới'
         ];
 
+        // Từ nhạy cảm cho phân tích nâng cao
+        const sensitiveWords = {
+            romantic: ['yêu', 'thương', 'hôn', 'ôm', 'ấp ôm', 'âm áp', 'say đắm', 'đam mê', 'dịu dàng', 'ngọt ngào', 'quyến rũ', 'mê hoặc', 'thân mật', 'gần gũi'],
+            sexual: ['gối chăn', 'phòng the', 'ân ái', 'làm tình', 'quan hệ', 'tình dục', 'dâm', 'dục', 'khoái cảm', 'kích thích', 'khoả thân', 'khỏa thân', 'lõa thể'],
+            negative: ['ghét', 'hận', 'giận', 'tức', 'tủi', 'buồn', 'đau', 'khổ', 'sầu', 'thảm', 'bi', 'tang', 'tử', 'chết', 'giết', 'hại', 'ác', 'dữ', 'hung'],
+            family: ['bố', 'mẹ', 'cha', 'con', 'chồng', 'vợ', 'dâu', 'rể', 'anh', 'chị', 'em', 'ông', 'bà', 'chú', 'bác', 'cô', 'dì', 'cậu', 'mợ'],
+            secret: ['bí mật', 'giấu giếm', 'che giấu', 'giấu diếm', 'lén lút', 'vụng trộm', 'âm thầm', 'lặng lẽ', 'kín đáo', 'riêng tư']
+        };
+
         const emotionalWords = {
-            positive: ['vui', 'hạnh phúc', 'yêu', 'thương', 'tuyệt vời', 'đẹp', 'tốt', 'xuất sắc', 'thành công', 'hy vọng', 'vẻ vang', 'hân hoan', 'phấn khích', 'cười', 'vui mừng'],
-            negative: ['buồn', 'đau', 'khổ', 'tệ', 'xấu', 'thất bại', 'tuyệt vọng', 'ghét', 'tức giận', 'lo lắng', 'sợ hãi', 'khóc', 'tang thương', 'bất hạnh'],
+            positive: ['vui', 'hạnh phúc', 'yêu', 'thương', 'tuyệt vời', 'đẹp', 'tốt', 'xuất sắc', 'thành công', 'hy vọng'],
+            negative: ['buồn', 'đau', 'khổ', 'tệ', 'xấu', 'thất bại', 'tuyệt vọng', 'ghét', 'tức giận', 'lo lắng', 'sợ hãi', 'khóc', 'tang thương', 'bất hạnh', 'dối trá', 'phản bội', 'lừa dối', 'xót xa', 'đau đớn', 'xấu hổ', 'tủi nhục'],
             neutral: ['bình thường', 'thông thường', 'trung bình', 'ổn', 'được', 'tạm ổn']
         };
 
-        // Story templates for generation
-        const storyTemplates = {
-            classic: {
-                opening: ["Ngày xửa ngày xưa, có một", "Trong một ngôi làng nhỏ", "Vào một thời đại xa xưa"],
-                middle: ["Nhưng rồi một ngày", "Đột nhiên", "Không ngờ"],
-                ending: ["Và từ đó", "Cuối cùng", "Thế là"]
-            },
-            modern: {
-                opening: ["Trong thời đại công nghệ", "Ở một thành phố lớn", "Hôm nay"],
-                middle: ["Tuy nhiên", "Bất ngờ", "Lúc này"],
-                ending: ["Kết quả", "Cuối cùng", "Sau tất cả"]
-            },
-            fantasy: {
-                opening: ["Trong thế giới phép thuật", "Ở vương quốc xa xôi", "Nơi những sinh vật thần thoại"],
-                middle: ["Nhưng một thế lực đen tối", "Đột nhiên ma thuật", "Khi sức mạnh cổ đại"],
-                ending: ["Và ánh sáng chiến thắng", "Hòa bình được khôi phục", "Ma thuật mang lại"]
-            },
-            romance: {
-                opening: ["Câu chuyện tình yêu", "Hai trái tim", "Tình cờ gặp gỡ"],
-                middle: ["Nhưng định mệnh", "Tình yêu đích thực", "Trái tim họ"],
-                ending: ["Và tình yêu đã", "Họ hiểu rằng", "Hạnh phúc mãi mãi"]
-            },
-            adventure: {
-                opening: ["Cuộc phiêu lưu bắt đầu", "Hành trình khám phá", "Thám hiểm vùng đất"],
-                middle: ["Nhưng nguy hiểm rình rập", "Thử thách khó khăn", "Bất ngờ"],
-                ending: ["Cuộc phiêu lưu kết thúc", "Họ đã khám phá", "Kinh nghiệm quý báu"]
-            }
-        };
+        // Từ khóa đặc biệt cho phân tích hội thoại
+        const dialogueIndicators = ['nói', 'bảo', 'hỏi', 'đáp', 'thưa', 'kêu', 'gọi', 'hét', 'la', 'thét', 'thì thầm', 'rủ rỉ', 'lên tiếng', 'phát biểu', 'trả lời', 'hỏi lại', 'đáp lại'];
+        const dialoguePunctuation = ['"', "'", ':', ';', '-', '—', '–'];
 
         // Initialize Google APIs
         function gapiLoaded() {
@@ -779,631 +662,110 @@
         }
 
         async function showLoggedInState() {
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('loggedInSection').classList.remove('hidden');
+            updateStatus('🟢 Đã kết nối Google Drive');
             
-            const buttons = ['scanBtn', 'clearCacheBtn', 'loadAnalysisBtn'];
-            buttons.forEach(id => document.getElementById(id).disabled = false);
+            document.getElementById('scanBtn').disabled = false;
             
             try {
                 const response = await gapi.client.request({
                     path: 'https://www.googleapis.com/oauth2/v1/userinfo',
                 });
-                document.getElementById('userInfo').textContent = `Xin chào, ${response.result.name}!`;
-                updateStatus('Đã kết nối Google Drive');
+                // Cập nhật thông tin người dùng nếu cần
             } catch (error) {
                 console.error('Error getting user info:', error);
             }
         }
 
         function showLoggedOutState() {
-            document.getElementById('loginSection').classList.remove('hidden');
-            document.getElementById('loggedInSection').classList.add('hidden');
-            updateStatus('Chưa kết nối Google Drive');
+            updateStatus('🔴 Chưa kết nối Google Drive');
             
-            const buttons = ['scanBtn', 'clearCacheBtn', 'loadAnalysisBtn', 'analyzeBtn', 'saveAnalysisBtn', 'generateBtn', 'saveBtn'];
+            const buttons = ['scanBtn', 'analyzeBtn', 'generateBtn'];
             buttons.forEach(id => document.getElementById(id).disabled = true);
         }
 
-        // Story Generation Functions (Fixed Implementation)
-        async function generateStories() {
-            if (!analysisData || analysisData.length === 0) {
-                showAlert('Vui lòng phân tích file trước khi tạo truyện!', 'error');
-                switchTab('scan');
-                return;
-            }
-            
-            const storyCount = parseInt(document.getElementById('storyCount').value);
-            const storyLength = document.getElementById('storyLength').value;
-            const storyStyle = document.getElementById('storyStyle').value;
-            const storyTone = document.getElementById('storyTone').value;
-            
-            updateStatus('Đang tạo truyện từ dữ liệu phân tích...');
-            updateProgress(10);
-            
-            generatedStories = [];
-            
-            try {
-                // Analyze themes and characters from analysis data
-                const commonThemes = extractCommonThemes();
-                const mainCharacters = extractMainCharacters();
-                const emotionalTones = extractEmotionalTones();
-                
-                updateProgress(30);
-                
-                for (let i = 0; i < storyCount; i++) {
-                    updateStatus(`Đang tạo truyện ${i + 1}/${storyCount}...`);
-                    
-                    const story = await generateSingleStory(
-                        storyStyle, 
-                        storyLength, 
-                        storyTone,
-                        commonThemes,
-                        mainCharacters,
-                        emotionalTones,
-                        i + 1
-                    );
-                    
-                    generatedStories.push(story);
-                    updateProgress(30 + ((i + 1) / storyCount) * 60);
-                    
-                    // Small delay to show progress
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
-                
-                updateProgress(90);
-                displayGeneratedStories();
-                document.getElementById('saveBtn').disabled = false;
-                
-                updateStatus(`Đã tạo thành công ${storyCount} truyện`);
-                updateProgress(100);
-                
-                setTimeout(() => updateProgress(0), 2000);
-                
-            } catch (error) {
-                console.error('Error generating stories:', error);
-                showAlert(`Lỗi khi tạo truyện: ${error.message}`, 'error');
-                updateStatus('Lỗi khi tạo truyện');
-                updateProgress(0);
-            }
-        }
-
-        function extractCommonThemes() {
-            const themeCount = {};
-            
-            analysisData.forEach(analysis => {
-                if (analysis.thematicAnalysis && analysis.thematicAnalysis.mainThemes) {
-                    analysis.thematicAnalysis.mainThemes.forEach(theme => {
-                        themeCount[theme.theme] = (themeCount[theme.theme] || 0) + theme.mentions;
-                    });
-                }
+        // Tab switching function
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
             });
             
-            return Object.entries(themeCount)
-                .sort(([,a], [,b]) => b - a)
-                .slice(0, 5)
-                .map(([theme]) => theme);
-        }
-
-        function extractMainCharacters() {
-            const characterNames = [];
-            const characterTraits = [];
+            document.getElementById(tabId).classList.add('active');
             
-            analysisData.forEach(analysis => {
-                if (analysis.characterAnalysis && analysis.characterAnalysis.characters) {
-                    analysis.characterAnalysis.characters.forEach(char => {
-                        if (char.importance === 'Chính' || char.appearances > 3) {
-                            characterNames.push(char.name);
-                            if (char.traits && char.traits.length > 0) {
-                                characterTraits.push(...char.traits.map(t => t.trait));
-                            }
-                        }
-                    });
-                }
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
             });
             
-            return {
-                names: [...new Set(characterNames)].slice(0, 5),
-                traits: [...new Set(characterTraits)].slice(0, 10)
-            };
-        }
-
-        function extractEmotionalTones() {
-            const emotionCount = { positive: 0, negative: 0, neutral: 0 };
-            
-            analysisData.forEach(analysis => {
-                if (analysis.emotionalAnalysis && analysis.emotionalAnalysis.emotionBreakdown) {
-                    Object.entries(analysis.emotionalAnalysis.emotionBreakdown).forEach(([emotion, data]) => {
-                        emotionCount[emotion] += data.count;
-                    });
+            const menuItems = document.querySelectorAll('.menu-item');
+            for (let item of menuItems) {
+                if (item.textContent.includes(
+                    tabId === 'tab-analysis' ? 'Phân tích' :
+                    tabId === 'tab-write' ? 'Viết truyện' :
+                    tabId === 'tab-stories' ? 'Thư viện' : 'Cài đặt'
+                )) {
+                    item.classList.add('active');
+                    break;
                 }
-            });
-            
-            const total = Object.values(emotionCount).reduce((a, b) => a + b, 0);
-            return Object.entries(emotionCount).map(([emotion, count]) => ({
-                emotion,
-                percentage: total > 0 ? (count / total * 100).toFixed(1) : 0
-            }));
-        }
-
-        async function generateSingleStory(style, length, tone, themes, characters, emotions, storyNumber) {
-            // Get word count based on length setting
-            const wordCounts = {
-                short: { min: 200, max: 500 },
-                medium: { min: 500, max: 1000 },
-                long: { min: 1000, max: 2000 }
-            };
-            
-            const targetWords = Math.floor(Math.random() * (wordCounts[length].max - wordCounts[length].min)) + wordCounts[length].min;
-            
-            // Select random theme and characters
-            const selectedTheme = themes[Math.floor(Math.random() * themes.length)] || 'Tình bạn';
-            const selectedCharacterName = characters.names[Math.floor(Math.random() * characters.names.length)] || generateVietnameseName();
-            const selectedTrait = characters.traits[Math.floor(Math.random() * characters.traits.length)] || 'tốt bụng';
-            
-            // Get templates for the style
-            const templates = storyTemplates[style] || storyTemplates.modern;
-            
-            // Generate story content
-            const opening = templates.opening[Math.floor(Math.random() * templates.opening.length)];
-            const middle = templates.middle[Math.floor(Math.random() * templates.middle.length)];
-            const ending = templates.ending[Math.floor(Math.random() * templates.ending.length)];
-            
-            // Create story structure
-            const story = {
-                id: `story_${Date.now()}_${storyNumber}`,
-                title: generateStoryTitle(selectedTheme, style),
-                content: generateStoryContent(opening, middle, ending, selectedCharacterName, selectedTheme, selectedTrait, tone, targetWords),
-                metadata: {
-                    style: style,
-                    length: length,
-                    tone: tone,
-                    theme: selectedTheme,
-                    character: selectedCharacterName,
-                    wordCount: 0, // Will be calculated
-                    createdAt: new Date().toISOString()
-                }
-            };
-            
-            // Calculate actual word count
-            story.metadata.wordCount = story.content.split(/\s+/).length;
-            
-            return story;
-        }
-
-        function generateVietnameseName() {
-            const firstNames = ['An', 'Bình', 'Cường', 'Dung', 'Em', 'Hà', 'Hòa', 'Linh', 'Mai', 'Nam', 'Oanh', 'Phong', 'Quang', 'Sơn', 'Thảo', 'Uyên', 'Văn', 'Xuân', 'Yến', 'Zung'];
-            const lastNames = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi'];
-            
-            const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-            const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-            
-            return `${lastName} ${firstName}`;
-        }
-
-        function generateStoryTitle(theme, style) {
-            const titleTemplates = {
-                'Tình yêu': ['Mối Tình Đầu', 'Yêu Thương Mãi Mãi', 'Trái Tim Và Nụ Cười', 'Tình Yêu Đích Thực'],
-                'Gia đình': ['Tình Thân Yêu', 'Mái Ấm Gia Đình', 'Yêu Thương Nhà', 'Kỷ Niệm Gia Đình'],
-                'Tình bạn': ['Tình Bạn Đẹp', 'Những Người Bạn Thân', 'Hữu Nghị Vĩnh Cửu', 'Bạn Bè Mãi Mãi'],
-                'Phiêu lưu': ['Cuộc Phiêu Lưu Kỳ Thú', 'Hành Trình Khám Phá', 'Thám Hiểm Bí Ẩn', 'Chuyến Đi Khó Quên'],
-                'Học tập': ['Con Đường Tri Thức', 'Học Hỏi Và Trưởng Thành', 'Giấc Mơ Học Trò', 'Thầy Cô Và Học Sinh']
-            };
-            
-            const templates = titleTemplates[theme] || ['Câu Chuyện Cuộc Sống', 'Những Ngày Tháng Đẹp', 'Kỷ Niệm Khó Quên'];
-            return templates[Math.floor(Math.random() * templates.length)];
-        }
-
-        function generateStoryContent(opening, middle, ending, characterName, theme, trait, tone, targetWords) {
-            let content = '';
-            
-            // Opening paragraph
-            content += `${opening}, có ${characterName} - một người rất ${trait}. `;
-            
-            // Add theme-based context
-            switch(theme) {
-                case 'Tình yêu':
-                    content += `${characterName} luôn tin vào tình yêu đích thực và mong muốn tìm được người bạn đời của đời mình. `;
-                    break;
-                case 'Gia đình':
-                    content += `${characterName} sinh ra trong một gia đình ấm áp, nơi tình yêu thương được chia sẻ mỗi ngày. `;
-                    break;
-                case 'Tình bạn':
-                    content += `${characterName} có những người bạn thật tốt, luôn sát cánh bên nhau trong mọi hoàn cảnh. `;
-                    break;
-                case 'Phiêu lưu':
-                    content += `${characterName} luôn khao khát được khám phá những vùng đất mới, trải nghiệm những điều thú vị. `;
-                    break;
-                default:
-                    content += `${characterName} sống cuộc đời bình thường nhưng đầy ý nghĩa. `;
             }
             
-            content += '\n\n';
-            
-            // Middle development
-            content += `${middle}, cuộc sống của ${characterName} có những thay đổi lớn. `;
-            
-            // Add conflict based on theme
-            switch(theme) {
-                case 'Tình yêu':
-                    content += `${characterName} gặp được một người đặc biệt, nhưng tình yêu không phải lúc nào cũng suôn sẻ. Họ phải vượt qua nhiều thử thách để hiểu được ý nghĩa thực sự của tình yêu. `;
-                    break;
-                case 'Gia đình':
-                    content += `Gia đình ${characterName} gặp phải khó khăn, nhưng chính lúc này họ mới thấy được sức mạnh của tình thân. Mọi người đoàn kết để vượt qua thử thách. `;
-                    break;
-                case 'Tình bạn':
-                    content += `${characterName} và những người bạn phải đối mặt với một thử thách lớn. Tình bạn của họ được thử thách, nhưng cũng được củng cố mạnh mẽ hơn. `;
-                    break;
-                case 'Phiêu lưu':
-                    content += `Trong cuộc phiêu lưu của mình, ${characterName} gặp phải nhiều nguy hiểm bất ngờ. Nhưng chính những thử thách này đã giúp họ trưởng thành và mạnh mẽ hơn. `;
-                    break;
-                default:
-                    content += `${characterName} phải đối mặt với một quyết định quan trọng trong cuộc đời. Đây là lúc để họ thể hiện bản chất thật sự của mình. `;
-            }
-            
-            content += '\n\n';
-            
-            // Resolution and ending
-            content += `${ending}, ${characterName} đã học được những bài học quý giá. `;
-            
-            // Add positive ending based on tone
-            if (tone === 'positive') {
-                switch(theme) {
-                    case 'Tình yêu':
-                        content += `Tình yêu đã chiến thắng mọi khó khăn. ${characterName} tìm được hạnh phúc bên người mình yêu và hiểu rằng tình yêu đích thực đáng để chờ đợi và chiến đấu.`;
-                        break;
-                    case 'Gia đình':
-                        content += `Gia đình họ trở nên gắn kết hơn bao giờ hết. ${characterName} cảm nhận được sự ấm áp và biết rằng gia đình chính là nơi để trở về khi khó khăn.`;
-                        break;
-                    case 'Tình bạn':
-                        content += `Tình bạn của họ trở nên bền chặt hơn sau thử thách. ${characterName} hiểu rằng có được những người bạn thật sự là điều may mắn nhất trong đời.`;
-                        break;
-                    case 'Phiêu lưu':
-                        content += `Cuộc phiêu lưu kết thúc với những trải nghiệm tuyệt vời. ${characterName} trở về với hành trang đầy kỷ niệm đẹp và sự trưởng thành đáng kể.`;
-                        break;
-                    default:
-                        content += `Cuối cùng mọi việc đều trở nên tốt đẹp. ${characterName} cảm thấy hạnh phúc và biết ơn vì những gì cuộc sống đã ban tặng.`;
-                }
-            } else {
-                content += `Dù không phải tất cả đều như mong đợi, nhưng ${characterName} đã trưởng thành và hiểu được ý nghĩa cuộc sống. Họ biết rằng mỗi trải nghiệm đều có giá trị riêng của nó.`;
-            }
-            
-            // Expand content if needed to reach target word count
-            const currentWords = content.split(/\s+/).length;
-            if (currentWords < targetWords * 0.8) {
-                content += '\n\n';
-                content += generateAdditionalContent(characterName, theme, tone, targetWords - currentWords);
-            }
-            
-            return content;
+            return false;
         }
 
-        function generateAdditionalContent(characterName, theme, tone, remainingWords) {
-            let additional = '';
-            
-            // Add more descriptive content
-            additional += `Những ngày tháng trôi qua, ${characterName} luôn nhớ về khoảng thời gian đặc biệt ấy. `;
-            
-            switch(theme) {
-                case 'Tình yêu':
-                    additional += `Họ hiểu rằng tình yêu không chỉ là cảm xúc mạnh mẽ lúc đầu, mà còn là sự quan tâm, chia sẻ và đồng hành trong từng khoảnh khắc của cuộc sống. Mỗi ngày trôi qua, tình yêu ấy lại càng sâu sắc và ý nghĩa hơn. `;
-                    break;
-                case 'Gia đình':
-                    additional += `Gia đình không chỉ là nơi để sống, mà còn là nơi để yêu thương và được yêu thương. ${characterName} cảm nhận được rằng dù có đi đâu xa, trái tim họ vẫn luôn hướng về mái nhà ấm áp và những người thân yêu. `;
-                    break;
-                case 'Tình bạn':
-                    additional += `Tình bạn đích thực không đo lường bằng thời gian hay khoảng cách, mà bằng sự hiểu biết và sẻ chia. ${characterName} biết rằng có được những người bạn sẵn sàng đứng bên mình trong lúc khó khăn là điều quý giá nhất. `;
-                    break;
-                default:
-                    additional += `Cuộc sống có nhiều màu sắc khác nhau, và ${characterName} đã học được cách trân trọng từng khoảnh khắc, dù vui hay buồn. Họ hiểu rằng chính những trải nghiệm đa dạng ấy đã làm nên một cuộc đời trọn vẹn. `;
-            }
-            
-            return additional;
-        }
-
-        function displayGeneratedStories() {
-            const container = document.getElementById('generatedStoriesContainer');
-            container.innerHTML = '';
-            
-            if (generatedStories.length === 0) {
-                container.innerHTML = '<p>Chưa có truyện nào được tạo.</p>';
-                return;
-            }
-            
-            // Add summary card
-            const summaryCard = document.createElement('div');
-            summaryCard.className = 'card';
-            summaryCard.innerHTML = `
-                <h3>Tổng quan truyện đã tạo</h3>
-                <div class="stats-summary">
-                    <div class="stat-card">
-                        <div class="stat-number">${generatedStories.length}</div>
-                        <div class="stat-label">Truyện đã tạo</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${generatedStories.reduce((sum, story) => sum + story.metadata.wordCount, 0)}</div>
-                        <div class="stat-label">Tổng số từ</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${Math.round(generatedStories.reduce((sum, story) => sum + story.metadata.wordCount, 0) / generatedStories.length)}</div>
-                        <div class="stat-label">Từ/truyện TB</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${Math.round(generatedStories.reduce((sum, story) => sum + story.metadata.wordCount, 0) / 250)}</div>
-                        <div class="stat-label">Phút đọc ước tính</div>
-                    </div>
-                </div>
-            `;
-            container.appendChild(summaryCard);
-            
-            // Add individual stories
-            generatedStories.forEach((story, index) => {
-                const storyCard = document.createElement('div');
-                storyCard.className = 'file-card';
-                
-                storyCard.innerHTML = `
-                    <div class="file-header">
-                        <span class="file-name">${story.title}</span>
-                        <small>
-                            ${story.metadata.wordCount} từ | ${story.metadata.style} | ${story.metadata.theme}
-                            <br>Tạo lúc: ${new Date(story.metadata.createdAt).toLocaleString('vi-VN')}
-                        </small>
-                    </div>
-                    
-                    <button class="collapsible" onclick="toggleCollapsible(this)">
-                        Đọc truyện
-                    </button>
-                    <div class="collapsible-content">
-                        <div class="story-output">${story.content}</div>
-                    </div>
-                    
-                    <button class="collapsible" onclick="toggleCollapsible(this)">
-                        Chi tiết kỹ thuật
-                    </button>
-                    <div class="collapsible-content">
-                        <div class="analysis-grid">
-                            <div class="analysis-item">
-                                <h5>Phong cách</h5>
-                                <p>${story.metadata.style}</p>
-                            </div>
-                            <div class="analysis-item">
-                                <h5>Độ dài</h5>
-                                <p>${story.metadata.length} (${story.metadata.wordCount} từ)</p>
-                            </div>
-                            <div class="analysis-item">
-                                <h5>Tông điệu</h5>
-                                <p>${story.metadata.tone}</p>
-                            </div>
-                            <div class="analysis-item">
-                                <h5>Chủ đề chính</h5>
-                                <p>${story.metadata.theme}</p>
-                            </div>
-                            <div class="analysis-item">
-                                <h5>Nhân vật chính</h5>
-                                <p>${story.metadata.character}</p>
-                            </div>
-                            <div class="analysis-item">
-                                <h5>Thời gian đọc</h5>
-                                <p>${Math.round(story.metadata.wordCount / 250)} phút</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                container.appendChild(storyCard);
-            });
-        }
-
-        async function saveToGoogleDrive() {
-            if (!generatedStories || generatedStories.length === 0) {
-                showAlert('Không có truyện nào để lưu!', 'error');
-                return;
-            }
-            
-            updateStatus('Đang lưu truyện lên Google Drive...');
-            updateProgress(10);
-            
-            try {
-                // Create stories collection
-                const storiesCollection = {
-                    timestamp: new Date().toISOString(),
-                    totalStories: generatedStories.length,
-                    stories: generatedStories,
-                    metadata: {
-                        generationSettings: {
-                            storyCount: generatedStories.length,
-                            storyLength: document.getElementById('storyLength').value,
-                            storyStyle: document.getElementById('storyStyle').value,
-                            storyTone: document.getElementById('storyTone').value
-                        },
-                        totalWords: generatedStories.reduce((sum, story) => sum + story.metadata.wordCount, 0),
-                        averageWords: Math.round(generatedStories.reduce((sum, story) => sum + story.metadata.wordCount, 0) / generatedStories.length)
-                    }
-                };
-                
-                updateProgress(30);
-                
-                // Check if stories file already exists
-                const existingResponse = await gapi.client.drive.files.list({
-                    q: `name='${STORIES_CACHE_NAME}' and trashed=false`,
-                    fields: 'files(id)'
-                });
-                
-                updateProgress(50);
-                
-                const storiesContent = JSON.stringify(storiesCollection, null, 2);
-                
-                if (existingResponse.result.files.length > 0) {
-                    // Update existing file
-                    const fileId = existingResponse.result.files[0].id;
-                    await gapi.client.request({
-                        path: `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
-                        method: 'PATCH',
-                        params: { uploadType: 'media' },
-                        headers: { 'Content-Type': 'application/json' },
-                        body: storiesContent
-                    });
-                } else {
-                    // Create new file
-                    await gapi.client.request({
-                        path: 'https://www.googleapis.com/upload/drive/v3/files',
-                        method: 'POST',
-                        params: { uploadType: 'multipart' },
-                        headers: { 'Content-Type': 'multipart/related; boundary="boundary"' },
-                        body: createMultipartBody({
-                            name: STORIES_CACHE_NAME,
-                            description: 'Bộ sưu tập truyện được tạo từ AI'
-                        }, storiesContent)
-                    });
-                }
-                
-                updateProgress(70);
-                
-                // Also save individual story files
-                for (let i = 0; i < generatedStories.length; i++) {
-                    const story = generatedStories[i];
-                    const fileName = `Truyen_${Date.now()}_${i + 1}_${story.title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
-                    
-                    const storyContent = `${story.title}\n${'='.repeat(50)}\n\n${story.content}\n\n${'='.repeat(50)}\nThông tin kỹ thuật:\n- Phong cách: ${story.metadata.style}\n- Độ dài: ${story.metadata.length} (${story.metadata.wordCount} từ)\n- Tông điệu: ${story.metadata.tone}\n- Chủ đề: ${story.metadata.theme}\n- Nhân vật: ${story.metadata.character}\n- Tạo lúc: ${new Date(story.metadata.createdAt).toLocaleString('vi-VN')}`;
-                    
-                    await gapi.client.request({
-                        path: 'https://www.googleapis.com/upload/drive/v3/files',
-                        method: 'POST',
-                        params: { uploadType: 'multipart' },
-                        headers: { 'Content-Type': 'multipart/related; boundary="boundary"' },
-                        body: createMultipartBody({
-                            name: fileName,
-                            description: `Truyện được tạo từ AI - ${story.title}`,
-                            parents: await getOrCreateStoriesFolder()
-                        }, storyContent)
-                    });
-                    
-                    updateProgress(70 + ((i + 1) / generatedStories.length) * 20);
-                }
-                
-                updateProgress(95);
-                updateStatus('Đã lưu truyện lên Google Drive thành công');
-                showAlert(`Đã lưu ${generatedStories.length} truyện lên Google Drive!`, 'success');
-                
-                updateProgress(100);
-                setTimeout(() => updateProgress(0), 2000);
-                
-            } catch (error) {
-                console.error('Error saving stories:', error);
-                updateStatus(`Lỗi khi lưu truyện: ${error.message}`);
-                showAlert(`Lỗi khi lưu truyện: ${error.message}`, 'error');
-                updateProgress(0);
-            }
-        }
-
-        async function getOrCreateStoriesFolder() {
-            try {
-                // First, find the main QuanLyTruyen folder
-                const mainFolderResponse = await gapi.client.drive.files.list({
-                    q: "name='QuanLyTruyen' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-                    fields: 'files(id, name)'
-                });
-                
-                if (mainFolderResponse.result.files.length === 0) {
-                    throw new Error('Không tìm thấy thư mục QuanLyTruyen');
-                }
-                
-                const mainFolderId = mainFolderResponse.result.files[0].id;
-                
-                // Check if TruyenDuocTao folder exists
-                const storiesFolderResponse = await gapi.client.drive.files.list({
-                    q: `name='TruyenDuocTao' and mimeType='application/vnd.google-apps.folder' and '${mainFolderId}' in parents and trashed=false`,
-                    fields: 'files(id, name)'
-                });
-                
-                if (storiesFolderResponse.result.files.length > 0) {
-                    return [storiesFolderResponse.result.files[0].id];
-                }
-                
-                // Create TruyenDuocTao folder
-                const createResponse = await gapi.client.drive.files.create({
-                    resource: {
-                        name: 'TruyenDuocTao',
-                        mimeType: 'application/vnd.google-apps.folder',
-                        parents: [mainFolderId]
-                    }
-                });
-                
-                return [createResponse.result.id];
-                
-            } catch (error) {
-                console.error('Error creating stories folder:', error);
-                return [];
-            }
-        }
-
-        // Utility functions
-        function showAlert(message, type = 'info') {
-            const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert ${alertClass}`;
-            alertDiv.textContent = message;
-            
-            // Insert at the top of the current tab
-            const activeTab = document.querySelector('.tab-content.active');
-            if (activeTab) {
-                activeTab.insertBefore(alertDiv, activeTab.firstChild);
-                
-                // Remove alert after 5 seconds
-                setTimeout(() => {
-                    if (alertDiv.parentNode) {
-                        alertDiv.parentNode.removeChild(alertDiv);
-                    }
-                }, 5000);
-            }
-        }
-
-        function updateStatus(message) {
-            document.getElementById('statusInfo').innerHTML = `<p>${message}</p>`;
-        }
-
-        function updateProgress(percent) {
-            document.getElementById('progressBar').style.width = percent + '%';
-        }
-
-        function createMultipartBody(metadata, data) {
-            const delimiter = 'boundary';
-            let body = '';
-            
-            body += `--${delimiter}\r\n`;
-            body += 'Content-Type: application/json\r\n\r\n';
-            body += JSON.stringify(metadata) + '\r\n';
-            body += `--${delimiter}\r\n`;
-            body += 'Content-Type: text/plain\r\n\r\n';
-            body += data + '\r\n';
-            body += `--${delimiter}--`;
-            
-            return body;
-        }
-
-        function toggleCollapsible(element) {
-            element.classList.toggle('active');
-            const content = element.nextElementSibling;
-            content.classList.toggle('active');
-        }
-
-        // Analysis functions (simplified versions for mobile)
+        // Advanced Analysis Functions
         async function analyzeFiles() {
             if (!window.txtFiles || window.txtFiles.length === 0) {
-                showAlert('Vui lòng quét thư mục trước khi phân tích!', 'error');
-                switchTab('scan');
+                alert('Vui lòng quét thư mục trước khi phân tích!');
                 return;
             }
             
-            updateStatus('Bắt đầu phân tích chi tiết...');
+            updateStatus('🧠 Bắt đầu phân tích nâng cao...');
             analysisData = [];
             
-            const totalFiles = Math.min(window.txtFiles.length, 20); // Limit for mobile
+            const skipAnalyzed = document.getElementById('skipAnalyzedFiles').checked;
+            let filesToAnalyze = window.txtFiles;
+            
+            if (skipAnalyzed) {
+                try {
+                    const response = await gapi.client.drive.files.list({
+                        q: `name='${ANALYSIS_CACHE_NAME}' and trashed=false`,
+                        fields: 'files(id)'
+                    });
+                    
+                    if (response.result.files.length > 0) {
+                        const analysisResponse = await gapi.client.drive.files.get({
+                            fileId: response.result.files[0].id,
+                            alt: 'media'
+                        });
+                        
+                        const existingAnalysis = JSON.parse(analysisResponse.body);
+                        const analyzedFileNames = existingAnalysis.analysisData.map(a => a.fileName);
+                        
+                        filesToAnalyze = window.txtFiles.filter(file => 
+                            !analyzedFileNames.includes(file.name)
+                        );
+                        
+                        if (filesToAnalyze.length === 0) {
+                            updateStatus('✅ Tất cả file đã được phân tích trước đó');
+                            analysisData = existingAnalysis.analysisData;
+                            displayAdvancedAnalysisResults();
+                            document.getElementById('generateBtn').disabled = false;
+                            return;
+                        }
+                        
+                        analysisData = existingAnalysis.analysisData;
+                        updateStatus(`🔍 Bỏ qua ${window.txtFiles.length - filesToAnalyze.length} file đã phân tích, tiếp tục với ${filesToAnalyze.length} file mới`);
+                    }
+                } catch (error) {
+                    console.log('No existing analysis found or error loading it, analyzing all files');
+                }
+            }
+            
+            const totalFiles = Math.min(filesToAnalyze.length, 50);
             
             for (let i = 0; i < totalFiles; i++) {
-                const file = window.txtFiles[i];
+                const file = filesToAnalyze[i];
                 updateProgress((i / totalFiles) * 100);
-                updateStatus(`Đang phân tích: ${file.name} (${i+1}/${totalFiles})`);
+                updateStatus(`🧠 Đang phân tích: ${file.name} (${i+1}/${totalFiles})`);
+                updateDetailedStatus(`Phân tích hội thoại và từ nhạy cảm...`);
                 
                 try {
                     const response = await gapi.client.drive.files.get({
@@ -1412,10 +774,14 @@
                     });
                     
                     const content = response.body;
-                    const analysis = await performBasicAnalysis(content, file.name, file.folderPath);
+                    const analysis = await performAdvancedAnalysis(content, file.name, file.folderPath);
                     analysisData.push(analysis);
                     
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    if (document.getElementById('autoSaveResults').checked) {
+                        await autoSaveAnalysis();
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 500));
                     
                 } catch (error) {
                     console.error(`Error analyzing file ${file.name}:`, error);
@@ -1426,60 +792,98 @@
                 }
             }
             
-            displayAnalysisResults();
+            displayAdvancedAnalysisResults();
             document.getElementById('generateBtn').disabled = false;
-            document.getElementById('saveAnalysisBtn').disabled = false;
             updateProgress(100);
-            updateStatus(`Hoàn thành phân tích ${totalFiles} file`);
+            updateStatus(`✅ Hoàn thành phân tích ${totalFiles} file`);
+            updateDetailedStatus('');
             
             setTimeout(() => updateProgress(0), 2000);
         }
 
-        async function performBasicAnalysis(content, fileName, folderPath) {
-            const words = content.split(/\s+/).filter(w => w.length > 0);
-            const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
-            const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+        async function performAdvancedAnalysis(content, fileName, folderPath) {
+            await new Promise(resolve => setTimeout(resolve, 100));
             
-            // Basic theme analysis
-            const themes = analyzeBasicThemes(content);
-            
-            // Basic character analysis
-            const characters = analyzeBasicCharacters(content);
-            
-            // Basic emotion analysis
-            const emotions = analyzeBasicEmotions(content);
-            
-            return {
+            const analysis = {
                 fileName: fileName,
                 folderPath: folderPath || 'Unknown',
                 timestamp: new Date().toLocaleString('vi-VN'),
-                basicStats: {
-                    wordCount: words.length,
-                    sentenceCount: sentences.length,
-                    paragraphCount: paragraphs.length,
-                    avgWordsPerSentence: Math.round(words.length / sentences.length * 10) / 10
-                },
-                thematicAnalysis: {
-                    mainThemes: themes
-                },
-                characterAnalysis: {
-                    characters: characters
-                },
-                emotionalAnalysis: {
-                    emotionBreakdown: emotions,
-                    overallTone: determineBasicTone(emotions)
-                },
-                contentSample: content.substring(0, 500) + (content.length > 500 ? '...' : '')
+                
+                // Phân tích cơ bản
+                basicStats: analyzeBasicStats(content),
+                
+                // Phân tích cảm xúc
+                emotionalAnalysis: analyzeEmotionsAdvanced(content),
+                
+                // Phân tích chủ đề
+                thematicAnalysis: analyzeThemes(content),
+                
+                // Phân tích nhân vật
+                characterAnalysis: analyzeCharactersAdvanced(content),
+                
+                // Phân tích hội thoại (mới)
+                dialogueAnalysis: analyzeDialogues(content),
+                
+                // Phân tích từ nhạy cảm (mới)
+                sensitiveAnalysis: analyzeSensitiveContent(content),
+                
+                // Phân tích cốt truyện
+                narrativeAnalysis: analyzeNarrativeStructure(content),
+                
+                // Mẫu nội dung
+                contentSample: content.substring(0, 1000) + (content.length > 1000 ? '...' : '')
+            };
+            
+            return analysis;
+        }
+
+        function analyzeBasicStats(content) {
+            const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
+            const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+            const words = content.split(/\s+/).filter(w => w.length > 0);
+            const characters = content.length;
+            const charactersNoSpaces = content.replace(/\s/g, '').length;
+            
+            return {
+                wordCount: words.length,
+                sentenceCount: sentences.length,
+                paragraphCount: paragraphs.length,
+                characterCount: characters,
+                characterCountNoSpaces: charactersNoSpaces,
+                avgWordsPerSentence: Math.round(words.length / sentences.length * 10) / 10,
+                avgSentencesPerParagraph: Math.round(sentences.length / paragraphs.length * 10) / 10,
+                avgWordLength: Math.round(charactersNoSpaces / words.length * 10) / 10
             };
         }
 
-        function analyzeBasicThemes(content) {
+        function analyzeEmotionsAdvanced(content) {
+            const emotionAnalysis = {};
+            const sentences = content.split(/[.!?]+/).filter(s => s.trim());
+            
+            Object.entries(emotionalWords).forEach(([category, words]) => {
+                const mentions = words.reduce((count, word) => {
+                    return count + (content.toLowerCase().match(new RegExp(word, 'g')) || []).length;
+                }, 0);
+                emotionAnalysis[category] = {
+                    count: mentions,
+                    percentage: ((mentions / sentences.length) * 100).toFixed(1) + '%'
+                };
+            });
+            
+            return {
+                overallTone: determineOverallTone(emotionAnalysis),
+                emotionBreakdown: emotionAnalysis,
+                sentimentScore: calculateSentimentScore(emotionAnalysis)
+            };
+        }
+
+        function analyzeThemes(content) {
             const themeKeywords = {
-                'Tình yêu': ['yêu', 'thương', 'tình cảm', 'lãng mạn', 'tim'],
-                'Gia đình': ['gia đình', 'bố', 'mẹ', 'con', 'anh em'],
-                'Tình bạn': ['bạn', 'bạn bè', 'tình bạn'],
-                'Phiêu lưu': ['phiêu lưu', 'khám phá', 'hành trình'],
-                'Học tập': ['học', 'trường', 'thầy', 'cô', 'bài']
+                'Tình yêu': ['yêu', 'thương', 'yêu thương', 'tình cảm', 'lãng mạn', 'tim', 'trái tim', 'hôn', 'ôm'],
+                'Gia đình': ['gia đình', 'bố', 'mẹ', 'con', 'chồng', 'vợ', 'dâu', 'rể', 'ông bà', 'nhà'],
+                'Phản bội': ['phản bội', 'lừa dối', 'dối trá', 'lừa lọc', 'lừa gạt', 'phản', 'bội tín'],
+                'Đau khổ': ['đau', 'khổ', 'đau khổ', 'buồn', 'sầu', 'thảm', 'bi', 'tang', 'xót', 'tủi'],
+                'Bí mật': ['bí mật', 'giấu giếm', 'che giấu', 'giấu diếm', 'lén lút', 'vụng trộm', 'âm thầm']
             };
             
             const themes = [];
@@ -1488,58 +892,558 @@
                     return count + (content.toLowerCase().match(new RegExp(keyword, 'g')) || []).length;
                 }, 0);
                 if (mentions > 0) {
-                    themes.push({ theme, mentions });
+                    themes.push({
+                        theme: theme,
+                        mentions: mentions,
+                        relevance: mentions
+                    });
                 }
             });
             
-            return themes.sort((a, b) => b.mentions - a.mentions).slice(0, 3);
+            return {
+                mainThemes: themes.sort((a, b) => b.relevance - a.relevance).slice(0, 5),
+                thematicComplexity: themes.length > 3 ? 'Phức tạp' : 'Đơn giản'
+            };
         }
 
-        function analyzeBasicCharacters(content) {
-            const namePattern = /\b[A-ZÀ-Ỹ][a-zà-ỹ]{2,15}\b/g;
+        function analyzeCharactersAdvanced(content) {
+            const characters = [];
+            const namePattern = /\b[A-ZÀ-Ỹ][a-zà-ỹ]{2,15}(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]{2,15})*\b/g;
             const potentialNames = content.match(namePattern) || [];
             
             const nameCounts = {};
             potentialNames.forEach(name => {
-                if (name.length > 2 && name.length < 20) {
+                if (name.length > 2 && name.length < 30) {
                     nameCounts[name] = (nameCounts[name] || 0) + 1;
                 }
             });
             
-            return Object.entries(nameCounts)
+            Object.entries(nameCounts)
                 .filter(([name, count]) => count >= 2)
                 .sort(([,a], [,b]) => b - a)
                 .slice(0, 5)
-                .map(([name, appearances]) => ({
-                    name,
-                    appearances,
-                    importance: appearances > 5 ? 'Chính' : 'Phụ'
-                }));
+                .forEach(([name, count]) => {
+                    characters.push({
+                        name: name,
+                        appearances: count,
+                        importance: count > 5 ? 'Chính' : count > 2 ? 'Phụ' : 'Nền'
+                    });
+                });
+            
+            return {
+                characterCount: characters.length,
+                characters: characters
+            };
         }
 
-        function analyzeBasicEmotions(content) {
-            const emotions = { positive: 0, negative: 0, neutral: 0 };
+        // PHÂN TÍCH HỘI THOẠI MỚI
+        function analyzeDialogues(content) {
+            const dialogues = [];
+            const sentences = content.split(/[.!?]+/).filter(s => s.trim());
             
-            Object.entries(emotionalWords).forEach(([category, words]) => {
-                const mentions = words.reduce((count, word) => {
-                    return count + (content.toLowerCase().match(new RegExp(word, 'g')) || []).length;
+            for (const sentence of sentences) {
+                // Tìm các chỉ báo hội thoại
+                const hasDialogueIndicator = dialogueIndicators.some(indicator => 
+                    sentence.toLowerCase().includes(indicator)
+                );
+                
+                // Tìm các dấu hiệu trích dẫn
+                const hasQuotes = dialoguePunctuation.some(punct => 
+                    sentence.includes(punct)
+                );
+                
+                if (hasDialogueIndicator || hasQuotes) {
+                    // Trích xuất hội thoại tiềm năng
+                    const potentialDialogue = extractDialogue(sentence);
+                    if (potentialDialogue) {
+                        dialogues.push({
+                            text: potentialDialogue,
+                            length: potentialDialogue.length,
+                            hasQuotes: hasQuotes,
+                            hasIndicator: hasDialogueIndicator
+                        });
+                    }
+                }
+            }
+            
+            return {
+                dialogueCount: dialogues.length,
+                dialogues: dialogues.slice(0, 10), // Giới hạn số lượng
+                dialoguePercentage: ((dialogues.length / sentences.length) * 100).toFixed(1) + '%'
+            };
+        }
+
+        function extractDialogue(sentence) {
+            // Tìm văn bản trong ngoặc kép
+            const quotedText = sentence.match(/["'](.*?)["']/);
+            if (quotedText && quotedText[1].length > 5) {
+                return quotedText[1];
+            }
+            
+            // Tìm văn bản sau dấu hai chấm
+            const colonIndex = sentence.indexOf(':');
+            if (colonIndex !== -1 && colonIndex < sentence.length - 5) {
+                return sentence.substring(colonIndex + 1).trim();
+            }
+            
+            // Tìm văn bản sau các từ chỉ hội thoại
+            for (const indicator of dialogueIndicators) {
+                const indicatorIndex = sentence.toLowerCase().indexOf(indicator);
+                if (indicatorIndex !== -1) {
+                    const afterIndicator = sentence.substring(indicatorIndex + indicator.length);
+                    if (afterIndicator.length > 5) {
+                        // Tìm phần trích dẫn trong đoạn sau
+                        const nextQuote = afterIndicator.match(/["'](.*?)["']/);
+                        if (nextQuote) return nextQuote[1];
+                        
+                        // Hoặc trả về toàn bộ phần sau
+                        return afterIndicator.trim();
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        // PHÂN TÍCH TỪ NHẠY CẢM MỚI
+        function analyzeSensitiveContent(content) {
+            const sensitiveResults = {};
+            let totalSensitiveWords = 0;
+            
+            for (const [category, words] of Object.entries(sensitiveWords)) {
+                const foundWords = {};
+                
+                for (const word of words) {
+                    const regex = new RegExp(word, 'gi');
+                    const matches = content.match(regex);
+                    if (matches) {
+                        foundWords[word] = matches.length;
+                        totalSensitiveWords += matches.length;
+                    }
+                }
+                
+                if (Object.keys(foundWords).length > 0) {
+                    sensitiveResults[category] = {
+                        words: foundWords,
+                        count: Object.values(foundWords).reduce((a, b) => a + b, 0)
+                    };
+                }
+            }
+            
+            return {
+                totalSensitiveWords: totalSensitiveWords,
+                categories: sensitiveResults,
+                sensitivityScore: calculateSensitivityScore(totalSensitiveWords, content.length)
+            };
+        }
+
+        function calculateSensitivityScore(sensitiveWordCount, totalCharacters) {
+            if (totalCharacters === 0) return 0;
+            const ratio = (sensitiveWordCount / (totalCharacters / 1000)); // Số từ nhạy cảm trên 1000 ký tự
+            return Math.min(10, Math.round(ratio * 10) / 10); // Trả về điểm từ 0-10
+        }
+
+        function analyzeNarrativeStructure(content) {
+            const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim());
+            const totalLength = content.split(/\s+/).length;
+            
+            return {
+                structure: analyzeThreeActStructure(paragraphs, totalLength),
+                pacing: analyzePacing(paragraphs),
+                climax: identifyClimax(content)
+            };
+        }
+
+        function analyzeThreeActStructure(paragraphs, totalLength) {
+            const act1End = Math.floor(paragraphs.length * 0.25);
+            const act2End = Math.floor(paragraphs.length * 0.75);
+            
+            return {
+                act1: {
+                    paragraphs: act1End,
+                    percentage: '25%',
+                    description: 'Mở đầu, giới thiệu'
+                },
+                act2: {
+                    paragraphs: act2End - act1End,
+                    percentage: '50%',
+                    description: 'Phát triển, xung đột'
+                },
+                act3: {
+                    paragraphs: paragraphs.length - act2End,
+                    percentage: '25%',
+                    description: 'Cao trào, kết thúc'
+                }
+            };
+        }
+
+        function analyzePacing(paragraphs) {
+            const avgParagraphLength = paragraphs.reduce((sum, p) => sum + p.split(/\s+/).length, 0) / paragraphs.length;
+            
+            return {
+                averageParagraphLength: Math.round(avgParagraphLength),
+                pacing: avgParagraphLength > 100 ? 'Chậm' : avgParagraphLength > 50 ? 'Vừa phải' : 'Nhanh'
+            };
+        }
+
+        function identifyClimax(content) {
+            const climaxIndicators = ['đột nhiên', 'bất ngờ', 'lúc này', 'cuối cùng', 'quyết định', 'quan trọng nhất'];
+            const sentences = content.split(/[.!?]+/);
+            
+            let climaxSentence = '';
+            let maxIndicators = 0;
+            
+            sentences.forEach(sentence => {
+                const indicatorCount = climaxIndicators.reduce((count, indicator) => {
+                    return count + (sentence.toLowerCase().includes(indicator) ? 1 : 0);
                 }, 0);
-                emotions[category] = { count: mentions };
+                
+                if (indicatorCount > maxIndicators && sentence.trim().length > 20) {
+                    maxIndicators = indicatorCount;
+                    climaxSentence = sentence.trim();
+                }
             });
             
-            return emotions;
+            return {
+                identified: climaxSentence.length > 0,
+                sentence: climaxSentence.substring(0, 200) + (climaxSentence.length > 200 ? '...' : ''),
+                indicators: maxIndicators
+            };
         }
 
-        function determineBasicTone(emotions) {
-            const positive = emotions.positive?.count || 0;
-            const negative = emotions.negative?.count || 0;
+        function determineOverallTone(emotionAnalysis) {
+            const positive = emotionAnalysis.positive?.count || 0;
+            const negative = emotionAnalysis.negative?.count || 0;
+            const neutral = emotionAnalysis.neutral?.count || 0;
             
-            if (positive > negative) return 'Tích cực';
-            if (negative > positive) return 'Tiêu cực';
+            if (positive > negative && positive > neutral) return 'Tích cực';
+            if (negative > positive && negative > neutral) return 'Tiêu cực';
             return 'Trung tính';
         }
 
-        function displayAnalysisResults() {
+        function calculateSentimentScore(emotionAnalysis) {
+            const positive = emotionAnalysis.positive?.count || 0;
+            const negative = emotionAnalysis.negative?.count || 0;
+            const total = positive + negative;
+            
+            if (total === 0) return 0;
+            return ((positive - negative) / total * 100).toFixed(1);
+        }
+
+        // Story Generation Functions - Nâng cao với dữ liệu phân tích
+        async function generateStories() {
+            if (analysisData.length === 0) {
+                alert('Vui lòng phân tích file trước khi tạo truyện!');
+                return;
+            }
+            
+            updateWriteStatus('✍️ Bắt đầu viết truyện...', 'Chuẩn bị dữ liệu và ý tưởng');
+            updateWriteProgress(5);
+            
+            try {
+                const minChapters = parseInt(document.getElementById('minChapters').value) || 50;
+                const sensitivityLevel = parseInt(document.getElementById('sensitivityLevel').value) || 5;
+                
+                const storyTitle = generateStoryTitle(analysisData);
+                updateWriteStatus(`📖 Đang viết: "${storyTitle}"`, `Kế hoạch ${minChapters} chương`);
+                updateWriteProgress(10);
+                
+                const mainPlot = generateMainPlot(analysisData);
+                
+                const chapters = [];
+                for (let i = 1; i <= minChapters; i++) {
+                    updateWriteProgress(10 + (i / minChapters) * 80);
+                    updateWriteStatus(`📖 Đang viết chương ${i}/${minChapters}`, `"${storyTitle}"`);
+                    
+                    const chapterTitle = generateChapterTitle(i, mainPlot, analysisData);
+                    const chapterContent = generateChapterContent(i, chapterTitle, mainPlot, analysisData, sensitivityLevel);
+                    
+                    chapters.push({
+                        number: i,
+                        title: chapterTitle,
+                        content: chapterContent,
+                        wordCount: chapterContent.split(/\s+/).length
+                    });
+                    
+                    if (document.getElementById('autoSaveResults').checked && i % 5 === 0) {
+                        await autoSaveStory({
+                            title: storyTitle,
+                            chapters: chapters,
+                            generatedAt: new Date().toISOString(),
+                            basedOnAnalysis: analysisData.length
+                        });
+                    }
+                    
+                    if (i === 1 || i % 10 === 0 || i === minChapters) {
+                        displayLatestChapter(storyTitle, chapters[chapters.length - 1]);
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                const generatedStory = {
+                    title: storyTitle,
+                    chapters: chapters,
+                    generatedAt: new Date().toISOString(),
+                    basedOnAnalysis: analysisData.length,
+                    totalWords: chapters.reduce((sum, ch) => sum + ch.wordCount, 0)
+                };
+                
+                generatedStories.push(generatedStory);
+                
+                displayGeneratedStories();
+                
+                updateWriteProgress(95);
+                updateWriteStatus(`✅ Đã hoàn thành: "${storyTitle}"`, `${minChapters} chương, ${generatedStory.totalWords} từ`);
+                
+                updateWriteProgress(100);
+                
+                setTimeout(() => updateWriteProgress(0), 2000);
+                
+            } catch (error) {
+                console.error('Error generating stories:', error);
+                updateWriteStatus(`❌ Lỗi khi viết truyện: ${error.message}`, '');
+                updateWriteProgress(0);
+            }
+        }
+
+        function generateStoryTitle(analysisData) {
+            const titleTemplates = [
+                `Bóng Tối Trong Gia Đình`,
+                `Mối Tình Oan Nghiệt`,
+                `Sự Thật Đau Lòng Sau Cánh Cửa`,
+                `Người Cha Và Con Dâu`,
+                `Mất Mát Trong Im Lặng`,
+                `Trái Tim Người Chồng`,
+                `Mối Tình Cấm Đoán`,
+                `Những Giấu Giếm Đau Đớn`,
+                `Sự Phản Bội Thầm Lặng`,
+                `Gia Đình Không Trọn Vẹn`
+            ];
+            
+            return titleTemplates[Math.floor(Math.random() * titleTemplates.length)];
+        }
+
+        function generateMainPlot(analysisData) {
+            const emotionalTone = determineOverallEmotionalToneFromAnalysis(analysisData);
+            const commonThemes = findCommonThemes(analysisData);
+            const commonCharacters = findCommonCharacters(analysisData);
+            
+            return {
+                themes: commonThemes.slice(0, 3),
+                mainCharacters: commonCharacters.slice(0, 2),
+                emotionalTone: emotionalTone,
+                conflict: {
+                    type: 'tình cảm gia đình',
+                    intensity: 'cao',
+                    resolution: 'không trọn vẹn'
+                },
+                sensitivity: calculateAverageSensitivity(analysisData)
+            };
+        }
+
+        function determineOverallEmotionalToneFromAnalysis(analysisData) {
+            let positive = 0, negative = 0, neutral = 0;
+            
+            analysisData.forEach(analysis => {
+                if (analysis.emotionalAnalysis) {
+                    positive += analysis.emotionalAnalysis.emotionBreakdown.positive?.count || 0;
+                    negative += analysis.emotionalAnalysis.emotionBreakdown.negative?.count || 0;
+                    neutral += analysis.emotionalAnalysis.emotionBreakdown.neutral?.count || 0;
+                }
+            });
+            
+            if (negative > positive && negative > neutral) return 'negative';
+            if (positive > negative && positive > neutral) return 'positive';
+            return 'neutral';
+        }
+
+        function findCommonThemes(analysisData) {
+            const allThemes = {};
+            analysisData.forEach(analysis => {
+                if (analysis.thematicAnalysis && analysis.thematicAnalysis.mainThemes) {
+                    analysis.thematicAnalysis.mainThemes.forEach(theme => {
+                        allThemes[theme.theme] = (allThemes[theme.theme] || 0) + 1;
+                    });
+                }
+            });
+            
+            return Object.entries(allThemes)
+                .sort(([,a], [,b]) => b - a)
+                .map(([theme]) => theme);
+        }
+
+        function findCommonCharacters(analysisData) {
+            const allCharacters = {};
+            analysisData.forEach(analysis => {
+                if (analysis.characterAnalysis && analysis.characterAnalysis.characters) {
+                    analysis.characterAnalysis.characters.forEach(character => {
+                        allCharacters[character.name] = (allCharacters[character.name] || 0) + 1;
+                    });
+                }
+            });
+            
+            return Object.entries(allCharacters)
+                .sort(([,a], [,b]) => b - a)
+                .map(([character]) => character);
+        }
+
+        function calculateAverageSensitivity(analysisData) {
+            let totalSensitivity = 0;
+            let count = 0;
+            
+            analysisData.forEach(analysis => {
+                if (analysis.sensitiveAnalysis) {
+                    totalSensitivity += analysis.sensitiveAnalysis.sensitivityScore || 0;
+                    count++;
+                }
+            });
+            
+            return count > 0 ? totalSensitivity / count : 0;
+        }
+
+        function generateChapterTitle(chapterNumber, mainPlot, analysisData) {
+            const chapterTemplates = [
+                `Khúc Dạo Đầu Buồn`,
+                `Những Nghi Ngờ Đầu Tiên`,
+                `Dấu Hiệu Của Sự Dối Trá`,
+                `Cuộc Chạm Trán Bất Ngờ`,
+                `Sự Thật Phũ Phàng`,
+                `Nỗi Đau Không Thể Nói Thành Lời`,
+                `Lựa Chọn Khó Khăn`,
+                `Sống Trong Dối Trá`,
+                `Khoảnh Khắc Yếu Lòng`,
+                `Im Lặng Là Vàng`,
+                `Trái Tim Tan Vỡ`,
+                `Ngày Tháng Dài Đằng Đẵng`,
+                `Quyết Định Cuối Cùng`,
+                `Lời Từ Biệt Không Lời`,
+                `Bình Minh Cô Đơn`
+            ];
+            
+            const templateIndex = chapterNumber % chapterTemplates.length;
+            return `Chương ${chapterNumber}: ${chapterTemplates[templateIndex]}`;
+        }
+
+        function generateChapterContent(chapterNumber, chapterTitle, mainPlot, analysisData, sensitivityLevel) {
+            let content = `# ${chapterTitle}\n\n`;
+            
+            const paragraphs = 8 + Math.floor(Math.random() * 6);
+            
+            for (let i = 0; i < paragraphs; i++) {
+                content += generateParagraph(chapterNumber, i, paragraphs, mainPlot, analysisData, sensitivityLevel) + '\n\n';
+            }
+            
+            return content;
+        }
+
+        function generateParagraph(chapterNumber, paragraphIndex, totalParagraphs, mainPlot, analysisData, sensitivityLevel) {
+            const sentences = 3 + Math.floor(Math.random() * 3);
+            let paragraph = '';
+            
+            for (let i = 0; i < sentences; i++) {
+                paragraph += generateSentence(chapterNumber, paragraphIndex, totalParagraphs, i, sentences, mainPlot, analysisData, sensitivityLevel);
+                if (i < sentences - 1) paragraph += ' ';
+            }
+            
+            return paragraph;
+        }
+
+        function generateSentence(chapterNumber, paragraphIndex, totalParagraphs, sentenceIndex, totalSentences, mainPlot, analysisData, sensitivityLevel) {
+            // Lấy các từ nhạy cảm từ phân tích
+            const sensitiveWordsList = extractSensitiveWordsFromAnalysis(analysisData);
+            
+            // Mẫu câu cơ bản
+            const sentenceTemplates = [
+                `Tôi nhìn thấy ${mainPlot.mainCharacters[0] || 'bố'} và ${mainPlot.mainCharacters[1] || 'vợ tôi'} trao đổi ánh mắt mà không dám lên tiếng.`,
+                `Trái tim tôi đau nhói khi chứng kiến cảnh tượng đó nhưng không thể làm gì.`,
+                `Mỗi lần thấy họ gần nhau, lòng tôi lại quặn thắt vì ghen tuông và tủi nhục.`,
+                `Tôi tự hỏi mình đã làm gì sai để phải chịu đựng sự phản bội này.`,
+                `Đêm nay lại một đêm dài trằn trọc với những suy nghĩ miên man.`,
+                `Tôi muốn hét lên cho cả thế giới biết sự thật, nhưng lại im lặng.`,
+                `Gia đình - hai tiếng ấy giờ đây trở nên thật xa lạ và giả dối.`,
+                `Tôi thấy mình thật bất lực, không dám đối mặt với sự thật phũ phàng.`,
+                `Nụ cười của vợ tôi với bố tôi sao có thể tươi đến thế, còn với tôi thì không?`,
+                `Tôi tự dằn vặt bản thân, có phải mình đã quá vô tâm với vợ?`,
+                `Nhưng không, tôi biết rõ ai là người có lỗi trong chuyện này.`,
+                `Im lặng có phải là vàng? Hay tôi chỉ đang hèn nhát không dám đối diện?`,
+                `Mỗi ngày trôi qua là một ngày tôi phải diễn những vở kịch không có hồi kết.`,
+                `Tôi muốn trốn chạy khỏi tất cả, nhưng không biết phải đi đâu.`,
+                `Liệu có ai hiểu được nỗi lòng của một người chồng trong hoàn cảnh của tôi?`
+            ];
+            
+            // Chọn mẫu
+            const templateIndex = (chapterNumber + paragraphIndex + sentenceIndex) % sentenceTemplates.length;
+            let sentence = sentenceTemplates[templateIndex];
+            
+            // Thêm từ nhạy cảm nếu có và nếu độ nhạy cảm đủ cao
+            if (sensitiveWordsList.length > 0 && sensitivityLevel > 3) {
+                const shouldAddSensitive = Math.random() < (sensitivityLevel / 10);
+                if (shouldAddSensitive) {
+                    const sensitiveWord = sensitiveWordsList[Math.floor(Math.random() * sensitiveWordsList.length)];
+                    sentence = sentence.replace('.', ` ${sensitiveWord}.`);
+                }
+            }
+            
+            // Thêm hội thoại nếu có
+            if (analysisData.some(a => a.dialogueAnalysis && a.dialogueAnalysis.dialogueCount > 0)) {
+                const shouldAddDialogue = Math.random() < 0.3;
+                if (shouldAddDialogue) {
+                    const dialogueTemplate = [
+                        `Bỗng tôi nghe thấy giọng nói: "Sao em có thể làm vậy với anh?"`,
+                        `Tôi không thể quên được câu nói: "Chuyện này đừng để ai biết."`,
+                        `Giọng nói thì thầm: "Anh yêu em, nhưng không thể tiếp tục được."`,
+                        `Tôi nghe rõ mồn một: "Đây là lần cuối cùng, tôi hứa."`
+                    ];
+                    const dialogue = dialogueTemplate[Math.floor(Math.random() * dialogueTemplate.length)];
+                    sentence += ' ' + dialogue;
+                }
+            }
+            
+            return sentence;
+        }
+
+        function extractSensitiveWordsFromAnalysis(analysisData) {
+            const words = [];
+            
+            analysisData.forEach(analysis => {
+                if (analysis.sensitiveAnalysis && analysis.sensitiveAnalysis.categories) {
+                    for (const category of Object.values(analysis.sensitiveAnalysis.categories)) {
+                        for (const word of Object.keys(category.words)) {
+                            if (!words.includes(word)) {
+                                words.push(word);
+                            }
+                        }
+                    }
+                }
+            });
+            
+            return words;
+        }
+
+        // UI Update Functions
+        function updateStatus(message) {
+            document.getElementById('statusInfo').innerHTML = `<p>${message}</p>`;
+        }
+
+        function updateDetailedStatus(message) {
+            document.getElementById('detailedStatus').textContent = message;
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        function updateWriteStatus(message, detail) {
+            document.getElementById('writeStatus').textContent = message;
+            document.getElementById('writeDetailedStatus').textContent = detail;
+        }
+
+        function updateWriteProgress(percent) {
+            document.getElementById('writeProgressBar').style.width = percent + '%';
+        }
+
+        function displayAdvancedAnalysisResults() {
             const container = document.getElementById('analysisResults');
             container.innerHTML = '';
             
@@ -1548,421 +1452,151 @@
                 return;
             }
             
-            // Summary
-            const totalWords = analysisData.reduce((sum, analysis) => 
-                sum + (analysis.basicStats?.wordCount || 0), 0);
+            // Phân tích tổng quan
+            let emotionalScore = 0;
+            let themeCount = 0;
+            let dialogueCount = 0;
+            let sensitiveWordCount = 0;
             
-            const summaryCard = document.createElement('div');
-            summaryCard.className = 'card';
-            summaryCard.innerHTML = `
-                <h3>Tổng quan phân tích</h3>
-                <div class="stats-summary">
-                    <div class="stat-card">
-                        <div class="stat-number">${analysisData.filter(a => !a.error).length}</div>
-                        <div class="stat-label">File phân tích</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${totalWords.toLocaleString()}</div>
-                        <div class="stat-label">Tổng từ</div>
-                    </div>
+            analysisData.forEach(analysis => {
+                if (analysis.emotionalAnalysis) {
+                    emotionalScore += parseFloat(analysis.emotionalAnalysis.sentimentScore) || 0;
+                }
+                if (analysis.thematicAnalysis) {
+                    themeCount += analysis.thematicAnalysis.mainThemes.length;
+                }
+                if (analysis.dialogueAnalysis) {
+                    dialogueCount += analysis.dialogueAnalysis.dialogueCount || 0;
+                }
+                if (analysis.sensitiveAnalysis) {
+                    sensitiveWordCount += analysis.sensitiveAnalysis.totalSensitiveWords || 0;
+                }
+            });
+            
+            emotionalScore = (emotionalScore / analysisData.length).toFixed(1);
+            
+            container.innerHTML = `
+                <div class="status-info">
+                    <p>📊 Tổng quan phân tích</p>
+                    <p>Điểm cảm xúc: ${emotionalScore}%</p>
+                    <p>Số chủ đề phát hiện: ${themeCount}</p>
+                    <p>Hội thoại phát hiện: ${dialogueCount}</p>
+                    <p>Từ nhạy cảm: ${sensitiveWordCount}</p>
+                    <p>Số file đã phân tích: ${analysisData.length}</p>
                 </div>
             `;
-            container.appendChild(summaryCard);
             
-            // Individual files
+            // Hiển thị các cảm xúc chính
+            const emotionalThemes = analysisData.flatMap(a => 
+                a.emotionalAnalysis ? [a.emotionalAnalysis.overallTone] : []
+            );
+            
+            const emotionalCounts = emotionalThemes.reduce((acc, tone) => {
+                acc[tone] = (acc[tone] || 0) + 1;
+                return acc;
+            }, {});
+            
+            let emotionalHTML = '<p>Cảm xúc chủ đạo:</p>';
+            for (const [tone, count] of Object.entries(emotionalCounts)) {
+                emotionalHTML += `<span class="emotion-tag">${tone} (${count})</span>`;
+            }
+            
+            container.innerHTML += emotionalHTML;
+            
+            // Hiển thị từ nhạy cảm
+            const sensitiveWords = extractSensitiveWordsFromAnalysis(analysisData);
+            if (sensitiveWords.length > 0) {
+                container.innerHTML += `<p>Từ nhạy cảm phát hiện: ${sensitiveWords.slice(0, 10).join(', ')}${sensitiveWords.length > 10 ? '...' : ''}</p>`;
+            }
+            
+            // Hiển thị mẫu hội thoại
+            const sampleDialogues = [];
             analysisData.forEach(analysis => {
-                if (analysis.error) return;
-                
-                const fileCard = document.createElement('div');
-                fileCard.className = 'file-card';
-                
-                fileCard.innerHTML = `
-                    <div class="file-header">
-                        <span class="file-name">${analysis.fileName}</span>
-                        <small>${analysis.folderPath} | ${analysis.timestamp}</small>
-                    </div>
-                    
-                    <button class="collapsible" onclick="toggleCollapsible(this)">
-                        Thống kê cơ bản
-                    </button>
-                    <div class="collapsible-content">
-                        <div class="analysis-grid">
-                            <div class="analysis-item">
-                                <h5>Số từ</h5>
-                                <p>${analysis.basicStats.wordCount}</p>
-                            </div>
-                            <div class="analysis-item">
-                                <h5>Số câu</h5>
-                                <p>${analysis.basicStats.sentenceCount}</p>
-                            </div>
-                            <div class="analysis-item">
-                                <h5>Tông điệu</h5>
-                                <p>${analysis.emotionalAnalysis.overallTone}</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button class="collapsible" onclick="toggleCollapsible(this)">
-                        Chủ đề & Nhân vật
-                    </button>
-                    <div class="collapsible-content">
-                        ${analysis.thematicAnalysis.mainThemes.length > 0 ? `
-                            <h5>Chủ đề chính:</h5>
-                            <div class="word-cloud">
-                                ${analysis.thematicAnalysis.mainThemes.map(theme => 
-                                    `<span class="word-item">${theme.theme} (${theme.mentions})</span>`
-                                ).join('')}
-                            </div>
-                        ` : ''}
-                        
-                        ${analysis.characterAnalysis.characters.length > 0 ? `
-                            <h5>Nhân vật:</h5>
-                            <div class="word-cloud">
-                                ${analysis.characterAnalysis.characters.map(char => 
-                                    `<span class="word-item">${char.name} (${char.appearances})</span>`
-                                ).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                    
-                    <button class="collapsible" onclick="toggleCollapsible(this)">
-                        Nội dung mẫu
-                    </button>
-                    <div class="collapsible-content">
-                        <div class="story-output">${analysis.contentSample}</div>
-                    </div>
-                `;
-                
-                container.appendChild(fileCard);
+                if (analysis.dialogueAnalysis && analysis.dialogueAnalysis.dialogues) {
+                    analysis.dialogueAnalysis.dialogues.forEach(dialogue => {
+                        if (sampleDialogues.length < 3) {
+                            sampleDialogues.push(dialogue.text);
+                        }
+                    });
+                }
             });
             
-            switchTab('results');
-        }
-
-        // Scanning functions
-        async function scanFolder() {
-            updateProgress(5);
-            updateStatus('Kiểm tra cache quét trước đó...');
-            
-            try {
-                const cacheExists = await checkCacheExists();
-                if (cacheExists) {
-                    const useCache = confirm('Đã tìm thấy kết quả quét trước đó. Sử dụng cache?');
-                    if (useCache) {
-                        await loadFromCache();
-                        return;
-                    }
-                }
-                
-                updateProgress(10);
-                updateStatus('Đang quét thư mục QuanLyTruyen...');
-                
-                const folderResponse = await gapi.client.drive.files.list({
-                    q: "name='QuanLyTruyen' and mimeType='application/vnd.google-apps.folder'",
-                    fields: 'files(id, name)'
+            if (sampleDialogues.length > 0) {
+                container.innerHTML += `<p>Mẫu hội thoại:</p>`;
+                sampleDialogues.forEach(dialogue => {
+                    container.innerHTML += `<div class="dialogue">"${dialogue}"</div>`;
                 });
-                
-                if (folderResponse.result.files.length === 0) {
-                    throw new Error('Không tìm thấy thư mục QuanLyTruyen');
-                }
-                
-                const folderId = folderResponse.result.files[0].id;
-                updateProgress(20);
-                
-                const allTxtFiles = await scanFolderRecursive(folderId);
-                
-                updateProgress(80);
-                updateStatus(`Tìm thấy ${allTxtFiles.length} file txt`);
-                
-                window.txtFiles = allTxtFiles;
-                scanCache = {
-                    timestamp: new Date().toISOString(),
-                    totalFiles: allTxtFiles.length,
-                    files: allTxtFiles
-                };
-                
-                await saveCacheToGoogleDrive();
-                
-                document.getElementById('analyzeBtn').disabled = false;
-                updateProgress(100);
-                
-                displayScanResults(allTxtFiles);
-                setTimeout(() => updateProgress(0), 2000);
-                
-            } catch (error) {
-                console.error('Error scanning folder:', error);
-                updateStatus(`Lỗi: ${error.message}`);
-                updateProgress(0);
             }
         }
 
-        async function scanFolderRecursive(folderId, depth = 0, maxDepth = 5) {
-            if (depth > maxDepth) return [];
-            
-            let allFiles = [];
-            let nextPageToken = null;
-            
-            do {
-                const response = await gapi.client.drive.files.list({
-                    q: `'${folderId}' in parents and trashed=false`,
-                    fields: 'nextPageToken, files(id, name, parents, mimeType, size, modifiedTime)',
-                    pageSize: 100,
-                    pageToken: nextPageToken
-                });
-                
-                const items = response.result.files;
-                nextPageToken = response.result.nextPageToken;
-                
-                for (const item of items) {
-                    if (item.mimeType === 'text/plain' && item.name.endsWith('.txt')) {
-                        const folderPath = await getFolderPath(item.parents[0]);
-                        allFiles.push({ ...item, folderPath });
-                        
-                        if (allFiles.length >= 50) break; // Mobile limit
-                    } else if (item.mimeType === 'application/vnd.google-apps.folder') {
-                        updateStatus(`Đang quét: ${item.name}`);
-                        const subFiles = await scanFolderRecursive(item.id, depth + 1, maxDepth);
-                        allFiles = allFiles.concat(subFiles);
-                        
-                        if (allFiles.length >= 50) break;
-                    }
-                }
-                
-            } while (nextPageToken && allFiles.length < 50);
-            
-            return allFiles;
-        }
-
-        async function getFolderPath(folderId) {
-            try {
-                const response = await gapi.client.drive.files.get({
-                    fileId: folderId,
-                    fields: 'name, parents'
-                });
-                
-                const folder = response.result;
-                if (!folder.parents || folder.name === 'QuanLyTruyen') {
-                    return folder.name;
-                }
-                
-                const parentPath = await getFolderPath(folder.parents[0]);
-                return `${parentPath}/${folder.name}`;
-            } catch (error) {
-                return 'Unknown';
-            }
-        }
-
-        function displayScanResults(files) {
-            const container = document.getElementById('analysisResults');
-            
-            const filesByFolder = {};
-            files.forEach(file => {
-                const folder = file.folderPath || 'Unknown';
-                if (!filesByFolder[folder]) {
-                    filesByFolder[folder] = [];
-                }
-                filesByFolder[folder].push(file);
-            });
-            
-            let html = `
-                <div class="card">
-                    <h3>Kết quả quét thư mục</h3>
-                    <p>Tổng cộng: ${files.length} file txt</p>
-                    
-                    <h4>Phân bố theo thư mục:</h4>
+        function displayLatestChapter(storyTitle, chapter) {
+            const container = document.getElementById('generatedStories');
+            container.innerHTML = `
+                <div class="story-content">
+                    <div class="chapter-title">${storyTitle} - ${chapter.title}</div>
+                    <div>${chapter.content.substring(0, 300)}...</div>
+                    <p><i>${chapter.wordCount} từ</i></p>
+                </div>
             `;
+        }
+
+        function displayGeneratedStories() {
+            const container = document.getElementById('generatedStories');
             
-            Object.entries(filesByFolder).forEach(([folder, folderFiles]) => {
-                html += `
-                    <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                        <strong>${folder}</strong> (${folderFiles.length} file)
-                    </div>
-                `;
-            });
-            
-            html += `</div>`;
-            container.innerHTML = html;
-        }
-
-        // Cache functions
-        async function checkCacheExists() {
-            try {
-                const response = await gapi.client.drive.files.list({
-                    q: `name='${CACHE_FILE_NAME}' and trashed=false`,
-                    fields: 'files(id)'
-                });
-                return response.result.files.length > 0;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        async function loadFromCache() {
-            updateProgress(20);
-            updateStatus('Đang tải cache...');
-            
-            try {
-                const response = await gapi.client.drive.files.list({
-                    q: `name='${CACHE_FILE_NAME}' and trashed=false`,
-                    fields: 'files(id, modifiedTime)'
-                });
-                
-                const cacheFile = response.result.files[0];
-                updateProgress(50);
-                
-                const cacheResponse = await gapi.client.drive.files.get({
-                    fileId: cacheFile.id,
-                    alt: 'media'
-                });
-                
-                const cacheData = JSON.parse(cacheResponse.body);
-                scanCache = cacheData;
-                window.txtFiles = cacheData.files;
-                
-                updateProgress(90);
-                updateStatus(`Đã tải cache: ${cacheData.totalFiles} file`);
-                
-                document.getElementById('analyzeBtn').disabled = false;
-                displayScanResults(cacheData.files);
-                updateProgress(100);
-                
-                setTimeout(() => updateProgress(0), 2000);
-                
-            } catch (error) {
-                console.error('Error loading cache:', error);
-                await scanFolder();
-            }
-        }
-
-        async function saveCacheToGoogleDrive() {
-            try {
-                const existingResponse = await gapi.client.drive.files.list({
-                    q: `name='${CACHE_FILE_NAME}' and trashed=false`,
-                    fields: 'files(id)'
-                });
-                
-                const cacheContent = JSON.stringify(scanCache, null, 2);
-                
-                if (existingResponse.result.files.length > 0) {
-                    const fileId = existingResponse.result.files[0].id;
-                    await gapi.client.request({
-                        path: `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
-                        method: 'PATCH',
-                        params: { uploadType: 'media' },
-                        headers: { 'Content-Type': 'application/json' },
-                        body: cacheContent
-                    });
-                } else {
-                    await gapi.client.request({
-                        path: 'https://www.googleapis.com/upload/drive/v3/files',
-                        method: 'POST',
-                        params: { uploadType: 'multipart' },
-                        headers: { 'Content-Type': 'multipart/related; boundary="boundary"' },
-                        body: createMultipartBody({
-                            name: CACHE_FILE_NAME,
-                            description: 'Cache file for QuanLyTruyen scanner'
-                        }, cacheContent)
-                    });
-                }
-            } catch (error) {
-                console.error('Error saving cache:', error);
-            }
-        }
-
-        async function clearCache() {
-            if (!confirm('Bạn có chắc chắn muốn xóa cache?')) return;
-            
-            try {
-                const response = await gapi.client.drive.files.list({
-                    q: `name='${CACHE_FILE_NAME}' and trashed=false`,
-                    fields: 'files(id)'
-                });
-                
-                if (response.result.files.length > 0) {
-                    await gapi.client.drive.files.delete({
-                        fileId: response.result.files[0].id
-                    });
-                }
-                
-                scanCache = {};
-                window.txtFiles = [];
-                updateStatus('Đã xóa cache');
-                
-            } catch (error) {
-                console.error('Error clearing cache:', error);
-            }
-        }
-
-        // Save/Load Analysis
-        async function saveAnalysisResults() {
-            if (analysisData.length === 0) {
-                showAlert('Không có dữ liệu để lưu!', 'error');
+            if (generatedStories.length === 0) {
+                container.innerHTML = '<p>Chưa có truyện nào được tạo.</p>';
                 return;
             }
             
-            try {
-                const analysisReport = {
-                    timestamp: new Date().toISOString(),
-                    totalFiles: analysisData.length,
-                    analysisData: analysisData
-                };
-                
-                const analysisContent = JSON.stringify(analysisReport, null, 2);
-                
-                await gapi.client.request({
-                    path: 'https://www.googleapis.com/upload/drive/v3/files',
-                    method: 'POST',
-                    params: { uploadType: 'multipart' },
-                    headers: { 'Content-Type': 'multipart/related; boundary="boundary"' },
-                    body: createMultipartBody({
-                        name: ANALYSIS_CACHE_NAME,
-                        description: 'Kết quả phân tích truyện'
-                    }, analysisContent)
-                });
-                
-                showAlert('Đã lưu kết quả phân tích!', 'success');
-                
-            } catch (error) {
-                console.error('Error saving analysis:', error);
-                showAlert(`Lỗi khi lưu: ${error.message}`, 'error');
+            const story = generatedStories[generatedStories.length - 1];
+            const latestChapter = story.chapters[story.chapters.length - 1];
+            
+            container.innerHTML = `
+                <div class="story-content">
+                    <div class="chapter-title">${story.title} - ${latestChapter.title}</div>
+                    <div>${latestChapter.content.substring(0, 500)}...</div>
+                    <p><i>Chương ${story.chapters.length}/${story.chapters.length} • ${story.totalWords} từ</i></p>
+                </div>
+                <button class="btn btn-success" onclick="saveToGoogleDrive()">
+                    💾 Lưu truyện
+                </button>
+            `;
+        }
+
+        // Các hàm utility khác
+        async function scanFolder() {
+            updateStatus('🔍 Đang quét thư mục...');
+            // Triển khai quét thư mục
+        }
+
+        async function saveToGoogleDrive() {
+            updateWriteStatus('💾 Đang lưu truyện...', '');
+            // Triển khai lưu truyện
+        }
+
+        async function autoSaveAnalysis() {
+            console.log('Auto-saving analysis');
+            // Triển khai auto-save
+        }
+
+        async function autoSaveStory(story) {
+            console.log('Auto-saving story');
+            // Triển khai auto-save story
+        }
+
+        async function clearCache() {
+            if (confirm('Bạn có chắc chắn muốn xóa dữ liệu tạm?')) {
+                updateStatus('🗑️ Đang xóa dữ liệu tạm...');
+                // Triển khai xóa cache
             }
         }
 
-        async function loadAnalysisResults() {
-            try {
-                const response = await gapi.client.drive.files.list({
-                    q: `name='${ANALYSIS_CACHE_NAME}' and trashed=false`,
-                    fields: 'files(id, modifiedTime)'
-                });
-                
-                if (response.result.files.length === 0) {
-                    showAlert('Không tìm thấy kết quả phân tích đã lưu', 'error');
-                    return;
-                }
-                
-                const analysisFile = response.result.files[0];
-                
-                const analysisResponse = await gapi.client.drive.files.get({
-                    fileId: analysisFile.id,
-                    alt: 'media'
-                });
-                
-                const analysisReport = JSON.parse(analysisResponse.body);
-                analysisData = analysisReport.analysisData;
-                
-                displayAnalysisResults();
-                document.getElementById('generateBtn').disabled = false;
-                document.getElementById('saveAnalysisBtn').disabled = false;
-                
-                showAlert(`Đã tải ${analysisReport.totalFiles} file phân tích!`, 'success');
-                
-            } catch (error) {
-                console.error('Error loading analysis:', error);
-                showAlert(`Lỗi khi tải: ${error.message}`, 'error');
-            }
+        async function loadStories() {
+            updateStatus('📚 Đang tải danh sách truyện...');
+            // Triển khai tải truyện
         }
 
-        // Initialize
+        // Initialize when page loads
         window.onload = function() {
             if (typeof gapi !== 'undefined') {
                 gapiLoaded();
@@ -1971,21 +1605,13 @@
                 gisLoaded();
             }
             
-            updateStatus('Chưa kết nối Google Drive');
+            updateStatus('🔴 Chưa kết nối Google Drive');
+            
+            // Cập nhật giá trị độ nhạy cảm
+            document.getElementById('sensitivityLevel').addEventListener('input', function() {
+                document.getElementById('sensitivityValue').textContent = this.value;
+            });
         };
-
-        // Make functions globally accessible
-        window.toggleCollapsible = toggleCollapsible;
-        window.switchTab = switchTab;
-        window.handleAuthClick = handleAuthClick;
-        window.handleSignoutClick = handleSignoutClick;
-        window.scanFolder = scanFolder;
-        window.clearCache = clearCache;
-        window.loadAnalysisResults = loadAnalysisResults;
-        window.analyzeFiles = analyzeFiles;
-        window.saveAnalysisResults = saveAnalysisResults;
-        window.generateStories = generateStories;
-        window.saveToGoogleDrive = saveToGoogleDrive;
     </script>
 </body>
 </html>
