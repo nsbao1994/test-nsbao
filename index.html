@@ -1630,15 +1630,15 @@
     //     });
     }
 
-    return {
-        title: title,
-        description: description,
-        chapters: chapters,
-        source: analysis.fileName,
-        generatedAt: new Date().toLocaleString('vi-VN'),
-        totalWords: chapters.reduce((sum, ch) => sum + ch.wordCount, 0)
-    };
-        }
+    // return {
+    //     title: title,
+    //     description: description,
+    //     chapters: chapters,
+    //     source: analysis.fileName,
+    //     generatedAt: new Date().toLocaleString('vi-VN'),
+    //     totalWords: chapters.reduce((sum, ch) => sum + ch.wordCount, 0)
+    // };
+        // }
 
         function generateTitle(analysis) {
             const themes = analysis.thematicAnalysis.slice(0, 3).map(t => t.word);
