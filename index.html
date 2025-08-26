@@ -1452,11 +1452,7 @@
         };
 
         const contentString = JSON.stringify(analysisContent);
-        const media = {
-            mimeType: 'application/json',
-            body: contentString
-        };
-
+        
         // Kiểm tra xem file đã tồn tại chưa
         const response = await gapi.client.drive.files.list({
             q: `name='${ANALYSIS_CACHE_NAME}' and trashed=false`,
@@ -1464,7 +1460,7 @@
         });
 
         if (response.result.files.length > 0) {
-            // 🔄 Update file duy nhất
+            // Cập nhật file đã tồn tại - SỬA LỖI Ở ĐÂY
             await gapi.client.request({
                 path: `/upload/drive/v3/files/${response.result.files[0].id}`,
                 method: 'PATCH',
@@ -1472,7 +1468,7 @@
                 body: contentString
             });
         } else {
-            // ➕ Create file mới
+            // Tạo file mới - SỬA LỖI Ở ĐÂY
             const metadata = {
                 name: ANALYSIS_CACHE_NAME,
                 mimeType: 'application/json'
@@ -1480,7 +1476,10 @@
 
             await gapi.client.drive.files.create({
                 resource: metadata,
-                media: media,
+                media: {
+                    mimeType: 'application/json',
+                    body: contentString
+                },
                 fields: 'id'
             });
         }
