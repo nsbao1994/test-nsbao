@@ -1628,17 +1628,17 @@
     //         content: chapterContent,
     //         wordCount: chapterContent.split(/\s+/).length
     //     });
-    }
+   // }
 
-    // return {
-    //     title: title,
-    //     description: description,
-    //     chapters: chapters,
-    //     source: analysis.fileName,
-    //     generatedAt: new Date().toLocaleString('vi-VN'),
-    //     totalWords: chapters.reduce((sum, ch) => sum + ch.wordCount, 0)
-    // };
-        // }
+    return {
+        title: title,
+        description: description,
+        chapters: chapters,
+        source: analysis.fileName,
+        generatedAt: new Date().toLocaleString('vi-VN'),
+        totalWords: chapters.reduce((sum, ch) => sum + ch.wordCount, 0)
+    };
+        }
 
         function generateTitle(analysis) {
             const themes = analysis.thematicAnalysis.slice(0, 3).map(t => t.word);
@@ -1724,24 +1724,7 @@
       }
     );
   });
-            // const targetWords = Math.floor(Math.random() * (maxWords - minWords + 1)) + minWords;
-            // let content = '';
-            // let wordCount = 0;
-            
-            // // Lấy các yếu tố từ phân tích để tạo nội dung
-            // const themes = analysis.thematicAnalysis.map(t => t.word);
-            // const characters = analysis.characterAnalysis.map(c => c.name);
-            // const emotionalStyle = analysis.emotionalAnalysis.dominantEmotion;
-            
-            // // Tạo nội dung cho đến khi đạt số từ mong muốn
-            // while (wordCount < targetWords) {
-            //     // Tạo đoạn văn ngẫu nhiên dựa trên phân tích
-            //     const paragraph = generateParagraph(analysis, themes, characters, emotionalStyle, sensitivityLevel);
-            //     content += paragraph + '\n\n';
-            //     wordCount += paragraph.split(/\s+/).length;
-            // }
-            
-            // return content;
+           
         }
 
         function generateParagraph(analysis, themes, characters, emotionalStyle, sensitivityLevel) {
