@@ -187,7 +187,14 @@ async function performAdvancedAnalysis(content, fileName, folderPath) {
     }
 }
 
-function displayAdvancedAnalysisResults(){const c=document.getElementById('analysisResults');if(!analysisData||analysisData.length===0){c.innerHTML='<p>Chưa có dữ liệu</p>';return;}let html=`<h4>📊 Có ${analysisData.length} file</h4>`;analysisData.forEach(d=>{if(d.error){html+=`<div>❌ ${d.fileName}: ${d.error}</div>`;}else{html+=`<div>📄 ${d.fileName} - ${d.basicStats.wordCount} từ</div>`;}});c.innerHTML=html;
+function displayAdvancedAnalysisResults(){const c=document.getElementById('analysisResults');
+if(!analysisData||analysisData.length===0){c.innerHTML='<p>Chưa có dữ liệu</p>';return;}
+let html=`<h4>📊 Có ${analysisData.length} file</h4>`;
+analysisData.forEach(d=>{
+    if(d.error){html+=`<div>❌ ${d.fileName}: ${d.error}</div>`;}
+    else
+
+    {html+=`<div>📄 ${d.fileName} - ${d.basicStats.wordCount} từ</div>`;}
 if (d.storyStructure) {
    html += `<div style="margin-left:15px;">
        <p><strong>Ngôi kể:</strong> ${d.storyStructure.ngoike}</p>
@@ -209,6 +216,10 @@ if (d.storyStructure) {
       <p><strong>Hội thoại:</strong><br> ${d.storyStructure.hoiThoai.join('<br>')}</p>
    </div>`;
 }
+}
+
+);c.innerHTML=html;
+
 }
 
 function switchTab(id){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active');}
