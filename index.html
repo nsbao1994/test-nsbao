@@ -183,7 +183,12 @@ async function performAdvancedAnalysis(content, fileName, folderPath) {
         timestamp: new Date().toLocaleString('vi-VN'),
         basicStats: { wordCount: content.split(/\s+/).length },
         contentSample: content.substring(0, 200),
-        storyStructure: structure   // 👉 thêm phân tích cấu trúc
+        storyStructure: structure ,  // 👉 thêm phân tích cấu trúc
+         nhanVat: uniqueChars || [],
+   thoiGian: times || [],
+   diaDiem: places || [],
+   tinhHuong: events || [],
+   tuNgu18: adults || []
     }
 }
 
