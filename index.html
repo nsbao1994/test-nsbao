@@ -6,8 +6,6 @@
   <title>Quản Lý Truyện — Phân tích + Viết + Đọc</title>
   <script src="https://apis.google.com/js/api.js"></script>
   <script src="https://accounts.google.com/gsi/client"></script>
- 
-
   <style>
     :root {
       --primary-color: #9b59b6;
@@ -167,48 +165,18 @@ async function fetchFilesRecursive(folderId, path){
   }while(pageToken);
 }
 
-
-// ===== ANALYZE FILES =====
-async function analyzeFiles() {
-  if (!txtFiles.length) {
-    alert("⚠️ Vui lòng quét thư mục trước!");
-    return;
+// ===== ANALYZE FILES (SIMPLE) =====
+async function analyzeFiles(){
+  if(!txtFiles.length){ alert("Chưa có file"); return; }
+  analysisData=[];
+  for(let i=0;i<txtFiles.length;i++){
+    updateProgress((i/txtFiles.length)*100);
+    let c = await readFileFromDrive(txtFiles[i].id);
+    analysisData.push({file:txtFiles[i].name, words:c.split(/\s+/).length, sample:c.substring(0,200)});
   }
-
-  analysisData = [];
-  updateStatus(`🧠 Bắt đầu phân tích ${txtFiles.length} file...`);
-
-  for (let i = 0; i < txtFiles.length; i++) {
-    updateProgress((i / txtFiles.length) * 100);
-    document.getElementById("detailedStatus").innerText =
-      `Đang phân tích: ${txtFiles[i].name} (${i + 1}/${txtFiles.length})`;
-
-    try {
-      const content = await readFileFromDrive(txtFiles[i].id);
-      const wordCount = content.split(/\s+/).length;
-      analysisData.push({
-        file: txtFiles[i].name,
-        path: txtFiles[i].path,
-        words: wordCount,
-        sample: content.substring(0, 200) + (content.length > 200 ? "..." : "")
-      });
-    } catch (err) {
-      console.error("Lỗi phân tích:", err);
-      analysisData.push({
-        file: txtFiles[i].name,
-        error: err.message
-      });
-    }
-  }
-
   updateProgress(100);
-  setTimeout(() => updateProgress(0), 2000);
-
   displayAnalysis();
-  updateStatus("✅ Hoàn thành phân tích!");
 }
-
-
 async function readFileFromDrive(fileId){
   const accessToken = gapi.client.getToken().access_token;
   const r = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,{headers:{Authorization:`Bearer ${accessToken}`}});
