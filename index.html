@@ -199,11 +199,12 @@ analysisData.forEach(d=>{
         if (d.storyStructure) {
    html += `<div style="margin-left:15px;">
        <p><strong>Ngôi kể:</strong> ${d.storyStructure.ngoike}</p>
-       <p><strong>Nhân vật:</strong> ${d.storyStructure.nhanVat.join(', ')}</p>
-       <p><strong>Thời gian:</strong> ${d.storyStructure.thoiGian.join(', ')}</p>
-       <p><strong>Địa điểm:</strong> ${d.storyStructure.diaDiem.join(', ')}</p>
-       <p><strong>Tình huống:</strong> ${d.storyStructure.tinhHuong.join(', ')}</p>
-       <p><strong>Từ ngữ 18+:</strong> ${d.storyStructure.tuNgu18.join(', ')}</p>
+      <p><strong>Nhân vật:</strong> ${(d.storyStructure.nhanVat || []).join(', ')}</p>
+<p><strong>Thời gian:</strong> ${(d.storyStructure.thoiGian || []).join(', ')}</p>
+<p><strong>Địa điểm:</strong> ${(d.storyStructure.diaDiem || []).join(', ')}</p>
+<p><strong>Tình huống:</strong> ${(d.storyStructure.tinhHuong || []).join(', ')}</p>
+<p><strong>Từ ngữ 18+:</strong> ${(d.storyStructure.tuNgu18 || []).join(', ')}</p>
+
        <details><summary>📖 Mở bài</summary><div class="story-content">${d.storyStructure.moBai}</div></details>
        <details><summary>📖 Thân bài</summary><div class="story-content">${d.storyStructure.thanBai}</div></details>
        <details><summary>📖 Kết bài</summary><div class="story-content">${d.storyStructure.ketBai}</div></details>
