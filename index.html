@@ -163,7 +163,15 @@ async function fetchFilesRecursive(folderId, folderPath) {
         pageToken = res.result.nextPageToken;
     } while (pageToken);
 }
-
+function safeJoin(value, separator = ', ') {
+    if (Array.isArray(value)) {
+        return value.join(separator);
+    }
+    if (typeof value === "string") {
+        return value;
+    }
+    return ""; // Nếu null/undefined/không hợp lệ → trả chuỗi rỗng
+}
 
 async function analyzeFiles(){if(!window.txtFiles||window.txtFiles.length===0){alert('⚠️ Vui lòng quét thư mục trước!');return;}
 let existingAnalysis=[];const localData=localStorage.getItem('analysisResults');if(localData){try{existingAnalysis=JSON.parse(localData).analysisData||[];}catch(e){}}
@@ -187,11 +195,7 @@ async function performAdvancedAnalysis(content, fileName, folderPath) {
        
     }
 }
-function safeJoin(value, separator = ', ') {
-    if (Array.isArray(value)) return value.join(separator);
-    if (typeof value === "string") return value; // nếu là string thì trả lại string
-    return ""; // mặc định rỗng
-}
+
 function displayAdvancedAnalysisResults()
 
 {
