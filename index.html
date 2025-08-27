@@ -184,15 +184,15 @@ async function performAdvancedAnalysis(content, fileName, folderPath) {
         basicStats: { wordCount: content.split(/\s+/).length },
         contentSample: content.substring(0, 200),
         storyStructure: structure ,  // 👉 thêm phân tích cấu trúc
-         nhanVat: uniqueChars || [],
-   thoiGian: times || [],
-   diaDiem: places || [],
-   tinhHuong: events || [],
-   tuNgu18: adults || []
+       
     }
 }
 
-function displayAdvancedAnalysisResults(){const c=document.getElementById('analysisResults');
+function displayAdvancedAnalysisResults()
+
+{
+    const safeArray = v => Array.isArray(v) ? v : [];
+    const c=document.getElementById('analysisResults');
 if(!analysisData||analysisData.length===0){c.innerHTML='<p>Chưa có dữ liệu</p>';return;}
 let html=`<h4>📊 Có ${analysisData.length} file</h4>`;
 analysisData.forEach(d=>{
@@ -204,11 +204,11 @@ analysisData.forEach(d=>{
         if (d.storyStructure) {
    html += `<div style="margin-left:15px;">
        <p><strong>Ngôi kể:</strong> ${d.storyStructure.ngoike}</p>
-      <p><strong>Nhân vật:</strong> ${(d.storyStructure.nhanVat || []).join(', ')}</p>
-<p><strong>Thời gian:</strong> ${(d.storyStructure.thoiGian || []).join(', ')}</p>
-<p><strong>Địa điểm:</strong> ${(d.storyStructure.diaDiem || []).join(', ')}</p>
-<p><strong>Tình huống:</strong> ${(d.storyStructure.tinhHuong || []).join(', ')}</p>
-<p><strong>Từ ngữ 18+:</strong> ${(d.storyStructure.tuNgu18 || []).join(', ')}</p>
+      <p><strong>Nhân vật:</strong> ${safeArray(d.storyStructure.nhanVat).join(', ')}</p>
+<p><strong>Thời gian:</strong> ${safeArray(d.storyStructure.thoiGian).join(', ')}</p>
+<p><strong>Địa điểm:</strong> ${safeArray(d.storyStructure.diaDiem).join(', ')}</p>
+<p><strong>Tình huống:</strong> ${safeArray(d.storyStructure.tinhHuong).join(', ')}</p>
+<p><strong>Từ ngữ 18+:</strong> ${safeArray(d.storyStructure.tuNgu18).join(', ')}</p>
 
        <details><summary>📖 Mở bài</summary><div class="story-content">${d.storyStructure.moBai}</div></details>
        <details><summary>📖 Thân bài</summary><div class="story-content">${d.storyStructure.thanBai}</div></details>
