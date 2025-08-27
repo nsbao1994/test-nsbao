@@ -514,10 +514,25 @@ async function readFileFromDrive(fileId) {
         throw new Error(`Error reading file: ${error.message}`);
     }
 }
-   // ===== STORY ANALYSIS FUNCTIONS =====
+  // ===== STORY ANALYSIS FUNCTIONS =====
 async function performAdvancedAnalysis(content, fileName, folderPath) {
     const structure = analyzeStoryStructure(content);
     const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+
+    // Thêm thống kê chi tiết
+    const sensitiveStats = {
+        romanticCount: structure.romantic ? structure.romantic.length : 0,
+        sexualCount: structure.sexual ? structure.sexual.length : 0,
+        negativeCount: structure.negative ? structure.negative.length : 0,
+        familyCount: structure.family ? structure.family.length : 0,
+        secretCount: structure.secret ? structure.secret.length : 0
+    };
+
+    const emotionStats = {
+        positiveCount: structure.emotion?.positive ? structure.emotion.positive.length : 0,
+        negativeCount: structure.emotion?.negative ? structure.emotion.negative.length : 0,
+        neutralCount: structure.emotion?.neutral ? structure.emotion.neutral.length : 0
+    };
 
     return {
         fileName: fileName,
@@ -529,7 +544,9 @@ async function performAdvancedAnalysis(content, fileName, folderPath) {
             lineCount: content.split('\n').length
         },
         contentSample: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
-        storyStructure: structure
+        storyStructure: structure,
+        sensitiveStats: sensitiveStats,
+        emotionStats: emotionStats
     };
 }
 
