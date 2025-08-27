@@ -203,24 +203,24 @@ analysisData.forEach(d=>{
 
         if (d.storyStructure) {
    html += `<div style="margin-left:15px;">
-       <p><strong>Ngôi kể:</strong> ${d.storyStructure.ngoike}</p>
-      <p><strong>Nhân vật:</strong> ${safeArray(d.storyStructure.nhanVat).join(', ')}</p>
-<p><strong>Thời gian:</strong> ${safeArray(d.storyStructure.thoiGian).join(', ')}</p>
-<p><strong>Địa điểm:</strong> ${safeArray(d.storyStructure.diaDiem).join(', ')}</p>
-<p><strong>Tình huống:</strong> ${safeArray(d.storyStructure.tinhHuong).join(', ')}</p>
-<p><strong>Từ ngữ 18+:</strong> ${safeArray(d.storyStructure.tuNgu18).join(', ')}</p>
+    <p><strong>Ngôi kể:</strong> ${d.storyStructure.ngoike || ''}</p>
+                    <p><strong>Nhân vật:</strong> ${safeJoin(d.storyStructure.nhanVat)}</p>
+                    <p><strong>Thời gian:</strong> ${safeJoin(d.storyStructure.thoiGian)}</p>
+                    <p><strong>Địa điểm:</strong> ${safeJoin(d.storyStructure.diaDiem)}</p>
+                    <p><strong>Tình huống:</strong> ${safeJoin(d.storyStructure.tinhHuong)}</p>
+                    <p><strong>Từ ngữ 18+:</strong> ${safeJoin(d.storyStructure.tuNgu18)}</p>
 
        <details><summary>📖 Mở bài</summary><div class="story-content">${d.storyStructure.moBai}</div></details>
        <details><summary>📖 Thân bài</summary><div class="story-content">${d.storyStructure.thanBai}</div></details>
        <details><summary>📖 Kết bài</summary><div class="story-content">${d.storyStructure.ketBai}</div></details>
-       <p><strong>Ngôn ngữ tình cảm:</strong> ${d.storyStructure.romantic.join(', ')}</p>
-      <p><strong>Ngôn ngữ 18+:</strong> ${d.storyStructure.sexual.join(', ')}</p>
-      <p><strong>Tiêu cực:</strong> ${d.storyStructure.negative.join(', ')}</p>
-      <p><strong>Gia đình:</strong> ${d.storyStructure.family.join(', ')}</p>
-      <p><strong>Bí mật:</strong> ${d.storyStructure.secret.join(', ')}</p>
-      <p><strong>Cảm xúc tích cực:</strong> ${d.storyStructure.emotion.positive.join(', ')}</p>
-      <p><strong>Cảm xúc tiêu cực:</strong> ${d.storyStructure.emotion.negative.join(', ')}</p>
-      <p><strong>Hội thoại:</strong><br> ${d.storyStructure.hoiThoai.join('<br>')}</p>
+      <p><strong>Ngôn ngữ tình cảm:</strong> ${safeJoin(d.storyStructure.romantic)}</p>
+                    <p><strong>Ngôn ngữ 18+:</strong> ${safeJoin(d.storyStructure.sexual)}</p>
+                    <p><strong>Tiêu cực:</strong> ${safeJoin(d.storyStructure.negative)}</p>
+                    <p><strong>Gia đình:</strong> ${safeJoin(d.storyStructure.family)}</p>
+                    <p><strong>Bí mật:</strong> ${safeJoin(d.storyStructure.secret)}</p>
+                    <p><strong>Cảm xúc tích cực:</strong> ${safeJoin(d.storyStructure.emotion?.positive)}</p>
+                    <p><strong>Cảm xúc tiêu cực:</strong> ${safeJoin(d.storyStructure.emotion?.negative)}</p>
+                    <p><strong>Hội thoại:</strong><br> ${safeJoin(d.storyStructure.hoiThoai, '<br>')}</p>
    </div>`;
 }
     }
