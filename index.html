@@ -187,7 +187,11 @@ async function performAdvancedAnalysis(content, fileName, folderPath) {
        
     }
 }
-
+function safeJoin(value, separator = ', ') {
+    if (Array.isArray(value)) return value.join(separator);
+    if (typeof value === "string") return value; // nếu là string thì trả lại string
+    return ""; // mặc định rỗng
+}
 function displayAdvancedAnalysisResults()
 
 {
