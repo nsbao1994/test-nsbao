@@ -86,6 +86,12 @@
     .tab-content.active {
       display: block;
     }
+    .empty-state {
+    text-align: center;
+    color: #7f8c8d;
+    font-style: italic;
+    padding: 20px;
+}
 
     .btn {
       background: var(--primary-color);
@@ -139,6 +145,7 @@
           local</button>
         <button class="btn" onclick="uploadAnalysisToDrive()">☁️ Upload phân
           tích</button>
+          <button class="btn" onclick="clearLocalCache()" style="background: #e74c3c;">🗑️ Xóa cache</button>
       </div>
       <div class="card">
         <h3>📊 Kết quả phân tích</h3>
@@ -159,6 +166,7 @@
     let tokenClient, gapi_inited = false, gsi_inited = false;
     let analysisData = [];
     const ANALYSIS_CACHE_NAME = 'AnalysisResults_QuanLyTruyen.json';
+    let txtFiles = [];
  // Từ nhạy cảm cho phân tích nâng cao
     const sensitiveWords = {
       romantic: ['yêu', 'thương', 'hôn', 'ôm', 'ấp ôm', 'âm áp', 'say đắm', 'đam mê', 'dịu dàng', 'ngọt ngào', 'quyến rũ', 'mê hoặc', 'thân mật', 'gần gũi'],
@@ -297,9 +305,34 @@ function loadAnalysisLocal() {
             return true;
         } catch (e) {
             console.error('Error loading local cache:', e);
+            updateStatus('❌ Lỗi khi tải cache local');
         }
+    } else {
+        updateStatus('⚠️ Không có cache local');
+        displayEmptyState();
     }
     return false;
+}
+// ===== NEW FUNCTION: CLEAR CACHE & EMPTY STATE =====
+function clearLocalCache() {
+    if (confirm('Bạn có chắc muốn xóa toàn bộ cache local?')) {
+        localStorage.removeItem('analysisResults');
+        analysisData = [];
+        displayEmptyState();
+        updateStatus('🗑️ Đã xóa cache local');
+    }
+}
+
+function displayEmptyState() {
+    const container = document.getElementById('analysisResults');
+    container.innerHTML = `
+        <div class="empty-state">
+            <p>📭 Chưa có dữ liệu phân tích.</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">
+                Hãy kết nối Google Drive, quét thư mục và phân tích để xem kết quả.
+            </p>
+        </div>
+    `;
 }
    // ===== GOOGLE DRIVE FUNCTIONS =====
 function uploadAnalysisToDrive() {
@@ -746,10 +779,10 @@ function switchTab(id) {
 }
 
 // ===== INITIALIZATION =====
-// document.addEventListener('DOMContentLoaded', function() {
-//     // Try to load cached analysis on page load
-//     loadAnalysisLocal();
-// });
+document.addEventListener('DOMContentLoaded', function() {
+    // Try to load cached analysis on page load
+    displayEmptyState();
+});
     // ----------------- HÀM PHÂN TÍCH (giữ hoặc thay mới) -----------------
 function analyzeStoryStructure(content) {
   const lower = (content || '').toLowerCase();
