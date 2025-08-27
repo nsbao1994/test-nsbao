@@ -6,6 +6,8 @@
   <title>Quản Lý Truyện — Phân tích + Viết + Đọc</title>
   <script src="https://apis.google.com/js/api.js"></script>
   <script src="https://accounts.google.com/gsi/client"></script>
+ 
+
   <style>
     :root {
       --primary-color: #9b59b6;
@@ -165,7 +167,7 @@ async function fetchFilesRecursive(folderId, path){
   }while(pageToken);
 }
 
-// ===== ANALYZE FILES (SIMPLE) =====
+
 // ===== ANALYZE FILES =====
 async function analyzeFiles() {
   if (!txtFiles.length) {
@@ -205,6 +207,7 @@ async function analyzeFiles() {
   displayAnalysis();
   updateStatus("✅ Hoàn thành phân tích!");
 }
+
 
 async function readFileFromDrive(fileId){
   const accessToken = gapi.client.getToken().access_token;
