@@ -37,6 +37,8 @@
         .btn{background:var(--primary-color);color:#fff;border:none;padding:10px 16px;border-radius:8px;margin:4px;cursor:pointer;}
         .btn:disabled{background:#777;cursor:not-allowed;}
         .story-content{background:#1e1e1e;padding:12px;border-radius:8px;margin:8px 0;max-height:50vh;overflow-y:auto;}
+        .progress-bar {background:#333;border-radius:5px;margin:10px 0;}
+        .progress-fill {height:10px;background:var(--primary-color);border-radius:5px;transition:width 0.3s;}
     </style>
 </head>
 <body>
@@ -50,7 +52,7 @@
       <h3>🔍 Phân tích nguồn truyện</h3>
       <div class="status-info" id="statusInfo">🔴 Chưa kết nối Google Drive</div>
       <div class="detailed-status" id="detailedStatus"></div>
-      <div class="progress-bar"><div class="progress-fill" id="progressBar" style="height:10px;background:#9b59b6;width:0%"></div></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
       <button class="btn" onclick="handleAuthClick()">📁 Kết nối Google Drive</button>
       <button class="btn" id="scanBtn" onclick="scanFolder()" disabled>🔍 Quét thư mục</button>
       <button class="btn" id="analyzeBtn" onclick="analyzeFiles()" disabled>🧠 Phân tích nâng cao</button>
@@ -67,32 +69,152 @@
 <div class="bottom-menu">
   <a href="#" class="menu-item active" onclick="switchTab('tab-analysis')">🔍 Phân tích</a>
 </div>
+
 <script>
-    const CLIENT_ID = '398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com';
-        const API_KEY = 'AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o';
+// ===== CONSTANTS & GLOBALS =====
+const CLIENT_ID = '398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive';
-let tokenClient, gapi_inited=false, gsi_inited=false;
+const ROOT_FOLDER_NAME = "QuanLyTruyen";
+
+let tokenClient, gapi_inited = false, gsi_inited = false;
 let analysisData = [];
-const ANALYSIS_CACHE_NAME = 'AnalysisResults_QuanLyTruyen.json';
+let txtFiles = [];
 
-function gapiLoaded(){gapi.load('client',initializeGapiClient);}
-async function initializeGapiClient(){await gapi.client.init({discoveryDocs:[DISCOVERY_DOC]});gapi_inited=true;maybeEnableButtons();}
-function gisLoaded(){tokenClient=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPES,callback:''});gsi_inited=true;maybeEnableButtons();}
-function maybeEnableButtons(){if(gapi_inited&&gsi_inited){document.getElementById('scanBtn').disabled=false;}}
+// ===== WORD DICTIONARIES (Moved to top) =====
+const sensitiveWords = {
+    romantic: ['yêu', 'thương', 'hôn', 'ôm', 'ấp ôm', 'âm áp', 'say đắm', 'đam mê', 'dịu dàng', 'ngọt ngào', 'quyến rũ', 'mê hoặc', 'thân mật', 'gần gũi'],
+    sexual: [
+        'gối chăn', 'phòng the', 'ân ái', 'làm tình', 'quan hệ', 'tình dục',
+        'dâm', 'dục', 'khoái cảm', 'kích thích', 'khoả thân', 'lõa thể',
+        'sướng', 'rên rỉ', 'nứng', 'ướt át', 'cao trào', 'cực khoái', 'xuất tinh',
+        'dương vật', 'cặc', 'buồi', 'chim', 'cái ấy',
+        'âm đạo', 'lồn', 'bướm', 'âm hộ', 'hột le', 'mu', 'lỗ', 'xoạc',
+        'bú vú', 'vú to', 'vú căng', 'bú mút', 'ngực trần', 'ngực khủng', 'đầu ti',
+        'bú lồn', 'bú cặc', 'liếm lồn', 'liếm bi', 'nuốt tinh', 'bú hột le', 'bú đầu cặc',
+        'tử cung', 'bắn vào tử cung', 'cặc dài 20cm', 'ngậm tinh', 'chịch', 'địt', 'nắc',
+        'thổi kèn', 'bj', 'hj', 'anal', 'doggy', '69', 'threesome', 'thủ dâm',
+        'chơi gái', 'đĩ', 'gái mại dâm', 'mông to', 'thụt ra thụt vào', 'cắm sâu',
+        'sờ soạng', 'mút', 'cắn', 'xoa', 'vuốt ve', 'húp sò', 'phê', 'nghiện sex',
+        'xoạc lồn', 'xoạc cặc', 'tra tấn tình dục', 'hành xác', 'chịu trận',
+        'nhét', 'đút', 'làm nhục', 'bóp vú', 'tét đít', 'vỗ mông', 'túm tóc',
+        'bạo dâm', 'cưỡng hiếp', 'hiếp dâm', 'loạn luân', 'thằng cha', 'ông già dâm đãng',
+        'con đĩ', 'con cave', 'chị dâu', 'em dâu', 'anh rể', 'chị gái', 'mẹ chồng', 'cha con', 'mẹ con',
+        'rên la', 'rên rỉ', 'hét lên vì sướng', 'mắt lờ đờ', 'mồ hôi nhễ nhại',
+        'bắn tinh', 'phun tinh', 'tinh dịch', 'tinh tràn', 'nuốt sạch tinh',
+        'mùi tanh', 'vị mặn', 'ướt đẫm', 'nước nhờn', 'dịch nhờn',
+        'bố chồng', 'con dâu', 'cha chồng', 'nàng dâu',
+        '"bố chồng"', '"con dâu"', '"cha chồng"', '"nàng dâu"',
+        '"bố chồng ơi"', '"con dâu ngoan"', '"bố chồng làm cho con"',
+        '"con dâu của bố"', '"bố muốn con"', '"bố chồng không chịu nổi"',
+        '"con dâu sướng quá"', '"làm dâu bố"', '"bố chồng yêu con dâu"',
+        'quan hệ với bố chồng', 'quan hệ cùng con dâu', 
+        'chịch con dâu', 'bố chồng đụ con dâu', 'bố chồng hiếp con dâu',
+        'làm tình với con dâu', 'bố chồng ôm con dâu',
+        'con dâu rên', 'bố chồng thỏa mãn', 'bố chồng cưỡng hiếp'
+    ],
+    negative: ['ghét', 'hận', 'giận', 'tức', 'tủi', 'buồn', 'đau', 'khổ', 'sầu', 'thảm', 'bi', 'tang', 'tử', 'chết', 'giết', 'hại', 'ác', 'dữ', 'hung'],
+    family: ['bố', 'mẹ', 'cha', 'con', 'chồng', 'vợ', 'dâu', 'rể', 'anh', 'chị', 'em', 'ông', 'bà', 'chú', 'bác', 'cô', 'dì', 'cậu', 'mợ'],
+    secret: ['bí mật', 'giấu giếm', 'che giấu', 'giấu diếm', 'lén lút', 'vụng trộm', 'âm thầm', 'lặng lẽ', 'kín đáo', 'riêng tư']
+};
 
-function handleAuthClick(){tokenClient.callback=async(resp)=>{if(resp.error)throw(resp);gapi.client.setToken({access_token:resp.access_token});updateStatus('🟢 Đã kết nối Google Drive');document.getElementById('scanBtn').disabled=false;};
- if(gapi.client.getToken()===null){tokenClient.requestAccessToken({prompt:'consent'});} else{tokenClient.requestAccessToken({prompt:''});}}
+const emotionalWords = {
+    positive: ['vui', 'hạnh phúc', 'yêu', 'thương', 'tuyệt vời', 'đẹp', 'tốt', 'xuất sắc', 'thành công', 'hy vọng'],
+    negative: ['buồn', 'đau', 'khổ', 'tệ', 'xấu', 'thất bại', 'tuyệt vọng', 'ghét', 'tức giận', 'lo lắng', 'sợ hãi', 'khóc', 'tang thương', 'bất hạnh', 'dối trá', 'phản bội', 'lừa dối', 'xót xa', 'đau đớn', 'xấu hổ', 'tủi nhục'],
+    neutral: ['bình thường', 'thông thường', 'trung bình', 'ổn', 'được', 'tạm ổn']
+};
 
-function updateStatus(msg){document.getElementById('statusInfo').innerText=msg;}
-function updateProgress(p){document.getElementById('progressBar').style.width=p+'%';}
-function updateDetailedStatus(msg){document.getElementById('detailedStatus').innerText=msg;}
+const dialogueIndicators = ['nói', 'bảo', 'hỏi', 'đáp', 'thưa', 'kêu', 'gọi', 'hét', 'la', 'thét', 'thì thầm', 'rủ rỉ', 'lên tiếng', 'phát biểu', 'trả lời', 'hỏi lại', 'đáp lại'];
+const dialoguePunctuation = ['"', "'", ':', ';', '-', '—', '–'];
 
-// ====== Save/Load Local ======
-function saveAnalysisLocal(){const analysisContent={analysisData:analysisData,timestamp:new Date().toISOString()};localStorage.setItem('analysisResults',JSON.stringify(analysisContent));}
-function loadAnalysisLocal(){const data=localStorage.getItem('analysisResults');if(data){analysisData=JSON.parse(data).analysisData;displayAdvancedAnalysisResults();updateStatus('✅ Đã tải cache local');return true;}return false;}
+// ===== GOOGLE API INITIALIZATION =====
+function gapiLoaded() {
+    gapi.load('client', initializeGapiClient);
+}
 
-// ====== Upload/Download Google Drive ======
+async function initializeGapiClient() {
+    await gapi.client.init({
+        apiKey: API_KEY,
+        discoveryDocs: [DISCOVERY_DOC]
+    });
+    gapi_inited = true;
+    maybeEnableButtons();
+}
+
+function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: ''
+    });
+    gsi_inited = true;
+    maybeEnableButtons();
+}
+
+function maybeEnableButtons() {
+    if (gapi_inited && gsi_inited) {
+        document.getElementById('scanBtn').disabled = false;
+    }
+}
+
+function handleAuthClick() {
+    tokenClient.callback = async (resp) => {
+        if (resp.error !== undefined) {
+            throw (resp);
+        }
+        gapi.client.setToken({access_token: resp.access_token});
+        updateStatus('🟢 Đã kết nối Google Drive');
+        document.getElementById('scanBtn').disabled = false;
+        document.getElementById('downloadAnalysisBtn').disabled = false;
+    };
+
+    if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({prompt: 'consent'});
+    } else {
+        tokenClient.requestAccessToken({prompt: ''});
+    }
+}
+
+// ===== UI UPDATE FUNCTIONS =====
+function updateStatus(msg) {
+    document.getElementById('statusInfo').innerText = msg;
+}
+
+function updateProgress(p) {
+    document.getElementById('progressBar').style.width = p + '%';
+}
+
+function updateDetailedStatus(msg) {
+    document.getElementById('detailedStatus').innerText = msg;
+}
+
+// ===== LOCAL STORAGE FUNCTIONS =====
+function saveAnalysisLocal() {
+    const analysisContent = {
+        analysisData: analysisData,
+        timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('analysisResults', JSON.stringify(analysisContent));
+}
+
+function loadAnalysisLocal() {
+    const data = localStorage.getItem('analysisResults');
+    if (data) {
+        try {
+            const parsed = JSON.parse(data);
+            analysisData = parsed.analysisData || [];
+            displayAdvancedAnalysisResults();
+            updateStatus('✅ Đã tải cache local');
+            return true;
+        } catch (e) {
+            console.error('Error loading local cache:', e);
+        }
+    }
+    return false;
+}
+
+// ===== GOOGLE DRIVE FUNCTIONS =====
 function uploadAnalysisToDrive() {
     if (!analysisData || analysisData.length === 0) {
         alert("⚠️ Không có dữ liệu phân tích để upload!");
@@ -103,14 +225,12 @@ function uploadAnalysisToDrive() {
     const file = new Blob([fileContent], { type: 'application/json' });
 
     const metadata = {
-        name: "analysisData.json",   // 👈 đặt tên cố định
+        name: "analysisData.json",
         mimeType: "application/json"
-        // nếu bạn có folderId của thư mục "QuanLyTruyen" thì thêm:
-        // parents: [folderId]
     };
 
-    var accessToken = gapi.auth.getToken().access_token;
-    var form = new FormData();
+    const accessToken = gapi.client.getToken().access_token;
+    const form = new FormData();
     form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
     form.append("file", file);
 
@@ -122,14 +242,14 @@ function uploadAnalysisToDrive() {
         alert("✅ Đã upload phân tích lên Google Drive: " + val.id);
     }).catch(err => {
         console.error("Upload lỗi:", err);
+        alert("❌ Lỗi khi upload: " + err.message);
     });
 }
 
 async function downloadAnalysisFromDrive() {
     try {
-        const accessToken = gapi.auth.getToken().access_token;
+        const accessToken = gapi.client.getToken().access_token;
 
-        // 🔎 tìm file analysisData.json
         let res = await fetch(
             "https://www.googleapis.com/drive/v3/files?q=name='analysisData.json'&fields=files(id,name)",
             { headers: new Headers({ "Authorization": "Bearer " + accessToken }) }
@@ -143,36 +263,30 @@ async function downloadAnalysisFromDrive() {
 
         const fileId = data.files[0].id;
 
-        // 📥 tải nội dung file về
         let fileRes = await fetch(
             `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
             { headers: new Headers({ "Authorization": "Bearer " + accessToken }) }
         );
         let content = await fileRes.json();
 
-        // gán lại vào biến phân tích local
         analysisData = content;
-        localStorage.setItem("analysisData", JSON.stringify(analysisData));
+        saveAnalysisLocal();
 
         alert("✅ Đã tải phân tích về từ Google Drive!");
         displayAdvancedAnalysisResults();
 
     } catch (err) {
         console.error("Download lỗi:", err);
-        alert("❌ Lỗi khi tải phân tích từ Google Drive");
+        alert("❌ Lỗi khi tải phân tích từ Google Drive: " + err.message);
     }
 }
 
-
-// ====== Scan + Analyze ======
-const ROOT_FOLDER_NAME = "QuanLyTruyen";
-
+// ===== SCAN FOLDER FUNCTION =====
 async function scanFolder() {
     updateStatus("🔍 Đang quét thư mục QuanLyTruyen...");
     updateProgress(5);
 
     try {
-        // 1. Tìm folder gốc "QuanLyTruyen"
         const folderRes = await gapi.client.drive.files.list({
             q: `mimeType='application/vnd.google-apps.folder' and name='${ROOT_FOLDER_NAME}' and trashed=false`,
             fields: "files(id, name)"
@@ -184,29 +298,25 @@ async function scanFolder() {
         }
 
         const rootFolderId = folderRes.result.files[0].id;
-
-        // 2. Đệ quy lấy tất cả file txt trong thư mục + con
-        window.txtFiles = [];
+        txtFiles = [];
         await fetchFilesRecursive(rootFolderId, ROOT_FOLDER_NAME);
 
-        if (window.txtFiles.length === 0) {
+        if (txtFiles.length === 0) {
             updateStatus("⚠️ Không có file .txt nào trong QuanLyTruyen.");
             return;
         }
 
-        updateStatus(`✅ Đã quét được ${window.txtFiles.length} file .txt`);
+        updateStatus(`✅ Đã quét được ${txtFiles.length} file .txt`);
         updateProgress(100);
         document.getElementById("analyzeBtn").disabled = false;
 
     } catch (err) {
         console.error("❌ Lỗi khi quét thư mục:", err);
-        updateStatus("❌ Lỗi khi quét thư mục!");
+        updateStatus("❌ Lỗi khi quét thư mục: " + err.message);
     }
 }
 
-// Hàm đệ quy lấy file txt
 async function fetchFilesRecursive(folderId, folderPath) {
-    // 1. Lấy tất cả file con trong folder hiện tại
     let pageToken = null;
     do {
         const res = await gapi.client.drive.files.list({
@@ -217,11 +327,9 @@ async function fetchFilesRecursive(folderId, folderPath) {
 
         for (const file of res.result.files) {
             if (file.mimeType === "application/vnd.google-apps.folder") {
-                // Nếu là folder → đệ quy
                 await fetchFilesRecursive(file.id, `${folderPath}/${file.name}`);
             } else if (file.mimeType === "text/plain" || file.name.endsWith(".txt")) {
-                // Nếu là file txt
-                window.txtFiles.push({
+                txtFiles.push({
                     id: file.id,
                     name: file.name,
                     folderPath: folderPath
@@ -231,218 +339,317 @@ async function fetchFilesRecursive(folderId, folderPath) {
         pageToken = res.result.nextPageToken;
     } while (pageToken);
 }
-function safeJoin(value, separator = ', ') {
-    if (Array.isArray(value)) {
-        return value.join(separator);
+
+// ===== ANALYZE FILES FUNCTION (FIXED) =====
+async function analyzeFiles() {
+    if (!txtFiles || txtFiles.length === 0) {
+        alert('⚠️ Vui lòng quét thư mục trước!');
+        return;
     }
-    if (typeof value === "string") {
-        return value;
+
+    // Load existing analysis from local cache
+    let existingAnalysis = [];
+    const localData = localStorage.getItem('analysisResults');
+    if (localData) {
+        try {
+            existingAnalysis = JSON.parse(localData).analysisData || [];
+        } catch (e) {
+            console.error('Error loading existing analysis:', e);
+        }
     }
-    return ""; // Nếu null/undefined/không hợp lệ → trả chuỗi rỗng
+
+    const analyzedFileNames = existingAnalysis.map(a => a.fileName);
+    let filesToAnalyze = txtFiles.filter(f => !analyzedFileNames.includes(f.name));
+
+    if (filesToAnalyze.length === 0) {
+        updateStatus('✅ Tất cả file đã được phân tích');
+        analysisData = existingAnalysis;
+        displayAdvancedAnalysisResults();
+        return;
+    }
+
+    const totalFiles = Math.min(filesToAnalyze.length, 50); // Limit to prevent timeout
+    analysisData = [...existingAnalysis];
+    
+    updateStatus(`🧠 Bắt đầu phân tích ${totalFiles} file...`);
+
+    for (let i = 0; i < totalFiles; i++) {
+        const file = filesToAnalyze[i];
+        updateProgress((i / totalFiles) * 100);
+        updateDetailedStatus(`Đang phân tích: ${file.name} (${i + 1}/${totalFiles})`);
+
+        try {
+            // *** FIX: Actually read file content from Google Drive ***
+            const content = await readFileFromDrive(file.id);
+            const analysis = await performAdvancedAnalysis(content, file.name, file.folderPath);
+            analysisData.push(analysis);
+            saveAnalysisLocal();
+            
+            // Small delay to prevent rate limiting
+            await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (err) {
+            console.error(`Error analyzing ${file.name}:`, err);
+            analysisData.push({
+                fileName: file.name,
+                folderPath: file.folderPath,
+                timestamp: new Date().toLocaleString('vi-VN'),
+                error: err.message
+            });
+        }
+    }
+
+    displayAdvancedAnalysisResults();
+    updateProgress(100);
+    updateStatus(`✅ Hoàn thành phân tích ${totalFiles} file`);
+    setTimeout(() => updateProgress(0), 2000);
 }
 
-async function analyzeFiles(){if(!window.txtFiles||window.txtFiles.length===0){alert('⚠️ Vui lòng quét thư mục trước!');return;}
-let existingAnalysis=[];const localData=localStorage.getItem('analysisResults');if(localData){try{existingAnalysis=JSON.parse(localData).analysisData||[];}catch(e){}}
-const analyzedFileNames=existingAnalysis.map(a=>a.fileName);
-let filesToAnalyze=window.txtFiles.filter(f=>!analyzedFileNames.includes(f.name));if(filesToAnalyze.length===0){updateStatus('✅ Tất cả file đã phân tích');analysisData=existingAnalysis;displayAdvancedAnalysisResults();return;}
-const totalFiles=Math.min(filesToAnalyze.length,100);analysisData=[...existingAnalysis];
-for(let i=0;i<totalFiles;i++){const file=filesToAnalyze[i];updateProgress((i/totalFiles)*100);updateDetailedStatus(`Đang phân tích: ${file.name}`);
-try{const content="Nội dung giả lập cho "+file.name;const analysis=await performAdvancedAnalysis(content,file.name,file.folderPath);analysisData.push(analysis);saveAnalysisLocal();}catch(err){analysisData.push({fileName:file.name,error:err.message});}}
-displayAdvancedAnalysisResults();updateProgress(100);updateStatus(`✅ Hoàn thành ${totalFiles} file`);setTimeout(()=>updateProgress(0),2000);}
+// ===== NEW FUNCTION: READ FILE FROM DRIVE =====
+async function readFileFromDrive(fileId) {
+    try {
+        const accessToken = gapi.client.getToken().access_token;
+        const response = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            }
+        );
+        
+        if (!response.ok) {
+            throw new Error(`Failed to read file: ${response.status}`);
+        }
+        
+        return await response.text();
+    } catch (error) {
+        throw new Error(`Error reading file: ${error.message}`);
+    }
+}
 
+// ===== STORY ANALYSIS FUNCTIONS =====
 async function performAdvancedAnalysis(content, fileName, folderPath) {
     const structure = analyzeStoryStructure(content);
+    const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
 
     return {
         fileName: fileName,
         folderPath: folderPath,
         timestamp: new Date().toLocaleString('vi-VN'),
-        basicStats: { wordCount: content.split(/\s+/).length },
-        contentSample: content.substring(0, 200),
-        storyStructure: structure ,  // 👉 thêm phân tích cấu trúc
-       
-    }
+        basicStats: { 
+            wordCount: wordCount,
+            charCount: content.length,
+            lineCount: content.split('\n').length
+        },
+        contentSample: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
+        storyStructure: structure
+    };
 }
 
-function displayAdvancedAnalysisResults()
-
-{
-    const safeArray = v => Array.isArray(v) ? v : [];
-    const c=document.getElementById('analysisResults');
-if(!analysisData||analysisData.length===0){c.innerHTML='<p>Chưa có dữ liệu</p>';return;}
-let html=`<h4>📊 Có ${analysisData.length} file</h4>`;
-analysisData.forEach(d=>{
-    if(d.error){html+=`<div>❌ ${d.fileName}: ${d.error}</div>`;}
-    else
-
-    {html+=`<div>📄 ${d.fileName} - ${d.basicStats.wordCount} từ</div>`;
-
-        if (d.storyStructure) {
-   html += `<div style="margin-left:15px;">
-    <p><strong>Ngôi kể:</strong> ${d.storyStructure.ngoike || ''}</p>
-                    <p><strong>Nhân vật:</strong> ${safeJoin(d.storyStructure.nhanVat)}</p>
-                    <p><strong>Thời gian:</strong> ${safeJoin(d.storyStructure.thoiGian)}</p>
-                    <p><strong>Địa điểm:</strong> ${safeJoin(d.storyStructure.diaDiem)}</p>
-                    <p><strong>Tình huống:</strong> ${safeJoin(d.storyStructure.tinhHuong)}</p>
-                    <p><strong>Từ ngữ 18+:</strong> ${safeJoin(d.storyStructure.tuNgu18)}</p>
-
-       <details><summary>📖 Mở bài</summary><div class="story-content">${d.storyStructure.moBai}</div></details>
-       <details><summary>📖 Thân bài</summary><div class="story-content">${d.storyStructure.thanBai}</div></details>
-       <details><summary>📖 Kết bài</summary><div class="story-content">${d.storyStructure.ketBai}</div></details>
-      <p><strong>Ngôn ngữ tình cảm:</strong> ${safeJoin(d.storyStructure.romantic)}</p>
-                    <p><strong>Ngôn ngữ 18+:</strong> ${safeJoin(d.storyStructure.sexual)}</p>
-                    <p><strong>Tiêu cực:</strong> ${safeJoin(d.storyStructure.negative)}</p>
-                    <p><strong>Gia đình:</strong> ${safeJoin(d.storyStructure.family)}</p>
-                    <p><strong>Bí mật:</strong> ${safeJoin(d.storyStructure.secret)}</p>
-                    <p><strong>Cảm xúc tích cực:</strong> ${safeJoin(d.storyStructure.emotion?.positive)}</p>
-                    <p><strong>Cảm xúc tiêu cực:</strong> ${safeJoin(d.storyStructure.emotion?.negative)}</p>
-                    <p><strong>Hội thoại:</strong><br> ${safeJoin(d.storyStructure.hoiThoai, '<br>')}</p>
-   </div>`;
-}
-    }
-
-}
-
-);c.innerHTML=html;
-
-}
-
-function switchTab(id){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active');}
-// ====== PHÂN TÍCH TRUYỆN NÂNG CAO ======
 function analyzeStoryStructure(content) {
     const lower = content.toLowerCase();
+    
+    // Helper function to find matches
+    function findMatches(words) {
+        return words.filter(w => lower.includes(w.toLowerCase()));
+    }
 
-    // 1. Mở bài, thân bài, kết bài
-    let moBai = content.substring(0, 300);
-    let ketBai = content.substring(content.length - 300);
-    let thanBai = content.substring(300, content.length - 300);
+    // 1. Structural analysis
+    const contentLength = content.length;
+    const moBai = content.substring(0, Math.min(300, contentLength));
+    const ketBai = contentLength > 300 ? content.substring(Math.max(0, contentLength - 300)) : '';
+    const thanBai = contentLength > 600 ? content.substring(300, contentLength - 300) : content.substring(300);
 
-    // 2. Ngôi kể (dựa vào từ xưng hô)
+    // 2. Narrative perspective
     let ngoike = "Ngôi thứ ba";
-    if (/\btôi\b|\bta\b|\bchúng tôi\b/.test(lower)) ngoike = "Ngôi thứ nhất";
-    if (/\bbạn\b|\bcậu\b|\bmày\b/.test(lower)) ngoike = "Ngôi thứ hai";
+    if (/\btôi\b|\bta\b|\bchúng tôi\b/i.test(content)) ngoike = "Ngôi thứ nhất";
+    if (/\bbạn\b|\bcậu\b|\bmày\b/i.test(content)) ngoike = "Ngôi thứ hai";
 
-    // 3. Nhân vật (tên viết hoa)
+    // 3. Character detection (proper nouns)
     let characterMatches = content.match(/\b[A-ZÀÁẢÃẠÂĂĐÊÔƠƯ][a-zàáảãạâăđêôơư]+\b/g) || [];
     let uniqueChars = [...new Set(characterMatches)].slice(0, 10);
 
-    // 4. Hội thoại (câu trong ngoặc kép hoặc có “nói, hỏi…”)
+    // 4. Dialogue detection
     let dialogues = [];
-    content.split("\n").forEach(line => {
-        if (/\".*\"/.test(line) || /(nói|hỏi|đáp|thưa|la|hét)/i.test(line)) {
+    const lines = content.split('\n');
+    for (const line of lines) {
+        if (/["'].*["']/.test(line) || dialogueIndicators.some(ind => line.toLowerCase().includes(ind))) {
             dialogues.push(line.trim());
+            if (dialogues.length >= 5) break;
         }
-    });
-    dialogues = dialogues.slice(0, 5);
-
-    // 5. Thời gian
-    const timeKeywords = ["sáng", "trưa", "chiều", "tối", "đêm", "hôm qua", "ngày mai", "năm", "tháng"];
-    let times = timeKeywords.filter(t => lower.includes(t));
-
-    // 6. Địa điểm / không gian
-    const placeKeywords = ["nhà", "làng", "thành phố", "rừng", "biển", "núi", "trường", "chợ", "sông"];
-    let places = placeKeywords.filter(p => lower.includes(p));
-
-    // 7. Tình huống (sự kiện)
-    const eventKeywords = ["gặp gỡ", "chia ly", "thử thách", "xung đột", "chiến đấu", "giải cứu", "bí mật"];
-    let events = eventKeywords.filter(e => lower.includes(e));
-
-    // 8. Từ ngữ 18+ (nhạy cảm)
-    const adultKeywords = ["làm tình", "quan hệ", "dâm", "dục", "hôn", "ôm", "sướng"];
-    let adults = adultKeywords.filter(w => lower.includes(w));
- // Quét theo bộ từ khóa mới
-    function findMatches(words) {
-        return words.filter(w => lower.includes(w));
     }
 
+    // 5. Time and place keywords
+    const timeKeywords = ["sáng", "trưa", "chiều", "tối", "đêm", "hôm qua", "ngày mai", "năm", "tháng", "tuần", "giờ"];
+    const placeKeywords = ["nhà", "làng", "thành phố", "rừng", "biển", "núi", "trường", "chợ", "sông", "phố", "quê"];
+    const eventKeywords = ["gặp gỡ", "chia ly", "thử thách", "xung đột", "chiến đấu", "giải cứu", "bí mật", "cưới", "chết"];
+
+    let times = findMatches(timeKeywords);
+    let places = findMatches(placeKeywords);
+    let events = findMatches(eventKeywords);
+
+    // 6. Sensitive content analysis
     let romantic = findMatches(sensitiveWords.romantic);
     let sexual = findMatches(sensitiveWords.sexual);
     let negative = findMatches(sensitiveWords.negative);
     let family = findMatches(sensitiveWords.family);
     let secret = findMatches(sensitiveWords.secret);
 
+    // 7. Emotional analysis
     let emotionPos = findMatches(emotionalWords.positive);
     let emotionNeg = findMatches(emotionalWords.negative);
     let emotionNeu = findMatches(emotionalWords.neutral);
 
-    // Hội thoại nâng cao
-    let dialogueLines = content.split(/\\n+/).filter(line => {
-        return dialogueIndicators.some(ind => line.toLowerCase().includes(ind)) ||
-               dialoguePunctuation.some(p => line.includes(p));
-    }).slice(0, 5);
     return {
-        moBai: content.substring(0, 300),
-        thanBai: content.substring(300, content.length - 300),
-        ketBai: content.substring(content.length - 300),
-        ngoike: /\btôi\b|\bchúng tôi\b/.test(lower) ? "Ngôi thứ nhất" : "Ngôi thứ ba",
+        moBai: moBai,
+        thanBai: thanBai.substring(0, 500) + (thanBai.length > 500 ? '...' : ''),
+        ketBai: ketBai,
+        ngoike: ngoike,
         nhanVat: uniqueChars,
         hoiThoai: dialogues,
         thoiGian: times,
         diaDiem: places,
         tinhHuong: events,
-        tuNgu18: adults
-        
+        tuNgu18: sexual, // Renamed for consistency
+        romantic: romantic,
+        sexual: sexual,
+        negative: negative,
+        family: family,
+        secret: secret,
+        emotion: {
+            positive: emotionPos,
+            negative: emotionNeg,
+            neutral: emotionNeu
+        }
     };
 }
-  // Từ nhạy cảm cho phân tích nâng cao
-        const sensitiveWords = {
-            romantic: ['yêu', 'thương', 'hôn', 'ôm', 'ấp ôm', 'âm áp', 'say đắm', 'đam mê', 'dịu dàng', 'ngọt ngào', 'quyến rũ', 'mê hoặc', 'thân mật', 'gần gũi'],
-            sexual: [
-                'gối chăn', 'phòng the', 'ân ái', 'làm tình', 'quan hệ', 'tình dục',
-                'dâm', 'dục', 'khoái cảm', 'kích thích', 'khoả thân', 'lõa thể',
-                'sướng', 'rên rỉ', 'nứng', 'ướt át', 'cao trào', 'cực khoái', 'xuất tinh',
-                'dương vật', 'cặc', 'buồi', 'chim', 'cái ấy',
-                'âm đạo', 'lồn', 'bướm', 'âm hộ', 'hột le', 'mu', 'lỗ', 'xoạc',
-                'bú vú', 'vú to', 'vú căng', 'bú mút', 'ngực trần', 'ngực khủng', 'đầu ti',
-                'bú lồn', 'bú cặc', 'liếm lồn', 'liếm bi', 'nuốt tinh', 'bú hột le', 'bú đầu cặc',
-                'tử cung', 'bắn vào tử cung', 'cặc dài 20cm', 'ngậm tinh', 'chịch', 'địt', 'nắc',
-                'thổi kèn', 'bj', 'hj', 'anal', 'doggy', '69', 'threesome', 'thủ dâm',
-                'chơi gái', 'đĩ', 'gái mại dâm', 'mông to', 'thụt ra thụt vào', 'cắm sâu',
-                'sờ soạng', 'mút', 'cắn', 'xoa', 'vuốt ve', 'húp sò', 'phê', 'nghiện sex',
-                'xoạc lồn', 'xoạc cặc', 'tra tấn tình dục', 'hành xác', 'chịu trận',
-                'nhét', 'đút', 'làm nhục', 'bóp vú', 'tét đít', 'vỗ mông', 'túm tóc',
-                'bạo dâm', 'cưỡng hiếp', 'hiếp dâm', 'loạn luân', 'thằng cha', 'ông già dâm đãng',
-                'con đĩ', 'con cave', 'chị dâu', 'em dâu', 'anh rể', 'chị gái', 'mẹ chồng', 'cha con', 'mẹ con',
-                'rên la', 'rên rỉ', 'hét lên vì sướng', 'mắt lờ đờ', 'mồ hôi nhễ nhại',
-                'bắn tinh', 'phun tinh', 'tinh dịch', 'tinh tràn', 'nuốt sạch tinh',
-                'mùi tanh', 'vị mặn', 'ướt đẫm', 'nước nhờn', 'dịch nhờn',
-                 // ===== Hành động & tình dục =====
-        'làm tình', 'quan hệ', 'ân ái', 'thủ dâm', 'kích thích',
-        'cởi đồ', 'vuốt ve', 'sờ mó', 'ôm hôn', 'thâm nhập',
-        'rên rỉ', 'xuất tinh', 'cao trào', 'cực khoái', 'ướt át',
 
-        // ===== Lời thoại tình dục chung =====
-        '"muốn anh"', '"muốn em"', '"làm em sướng"', '"cứng quá"',
-        '"em ướt rồi"', '"mạnh lên"', '"ra đi"', '"bắn vào trong"',
+// ===== DISPLAY RESULTS FUNCTION =====
+function displayAdvancedAnalysisResults() {
+    const safeArray = v => Array.isArray(v) ? v : [];
+    const safeJoin = (value, separator = ', ') => {
+        if (Array.isArray(value)) {
+            return value.join(separator);
+        }
+        if (typeof value === "string") {
+            return value;
+        }
+        return "";
+    };
 
-        // ===== Quan hệ gia đình nhạy cảm =====
-        'bố chồng', 'con dâu', 'cha chồng', 'nàng dâu',
-        '"bố chồng"', '"con dâu"', '"cha chồng"', '"nàng dâu"',
-        '"bố chồng ơi"', '"con dâu ngoan"', '"bố chồng làm cho con"',
-        '"con dâu của bố"', '"bố muốn con"', '"bố chồng không chịu nổi"',
-        '"con dâu sướng quá"', '"làm dâu bố"', '"bố chồng yêu con dâu"',
-        
-        // ===== Các tình huống thoại đặc thù =====
-        'quan hệ với bố chồng', 'quan hệ cùng con dâu', 
-        'chịch con dâu', 'bố chồng đụ con dâu', 'bố chồng hiếp con dâu',
-        'làm tình với con dâu', 'bố chồng ôm con dâu',
-        'con dâu rên', 'bố chồng thỏa mãn', 'bố chồng cưỡng hiếp'
-            ],
-            negative: ['ghét', 'hận', 'giận', 'tức', 'tủi', 'buồn', 'đau', 'khổ', 'sầu', 'thảm', 'bi', 'tang', 'tử', 'chết', 'giết', 'hại', 'ác', 'dữ', 'hung'],
-            family: ['bố', 'mẹ', 'cha', 'con', 'chồng', 'vợ', 'dâu', 'rể', 'anh', 'chị', 'em', 'ông', 'bà', 'chú', 'bác', 'cô', 'dì', 'cậu', 'mợ'],
-            secret: ['bí mật', 'giấu giếm', 'che giấu', 'giấu diếm', 'lén lút', 'vụng trộm', 'âm thầm', 'lặng lẽ', 'kín đáo', 'riêng tư']
-        };
+    const container = document.getElementById('analysisResults');
+    if (!analysisData || analysisData.length === 0) {
+        container.innerHTML = '<p>Chưa có dữ liệu phân tích.</p>';
+        return;
+    }
 
-        const emotionalWords = {
-            positive: ['vui', 'hạnh phúc', 'yêu', 'thương', 'tuyệt vời', 'đẹp', 'tốt', 'xuất sắc', 'thành công', 'hy vọng'],
-            negative: ['buồn', 'đau', 'khổ', 'tệ', 'xấu', 'thất bại', 'tuyệt vọng', 'ghét', 'tức giận', 'lo lắng', 'sợ hãi', 'khóc', 'tang thương', 'bất hạnh', 'dối trá', 'phản bội', 'lừa dối', 'xót xa', 'đau đớn', 'xấu hổ', 'tủi nhục'],
-            neutral: ['bình thường', 'thông thường', 'trung bình', 'ổn', 'được', 'tạm ổn']
-        };
+    let html = `<h4>📊 Đã phân tích ${analysisData.length} file truyện</h4>`;
 
-        // Từ khóa đặc biệt cho phân tích hội thoại
-        const dialogueIndicators = ['nói', 'bảo', 'hỏi', 'đáp', 'thưa', 'kêu', 'gọi', 'hét', 'la', 'thét', 'thì thầm', 'rủ rỉ', 'lên tiếng', 'phát biểu', 'trả lời', 'hỏi lại', 'đáp lại'];
-        const dialoguePunctuation = ['"', "'", ':', ';', '-', '—', '–'];
+    // Statistics summary
+    const totalWords = analysisData.reduce((sum, d) => sum + (d.basicStats?.wordCount || 0), 0);
+    const avgWords = Math.round(totalWords / analysisData.length);
+    html += `<div style="background:#2c3e50;padding:10px;margin:10px 0;border-radius:8px;">
+        <p><strong>📈 Thống kê tổng quan:</strong></p>
+        <p>• Tổng số từ: ${totalWords.toLocaleString()} từ</p>
+        <p>• Trung bình: ${avgWords.toLocaleString()} từ/file</p>
+    </div>`;
+
+    analysisData.forEach((d, index) => {
+        if (d.error) {
+            html += `<div style="background:#e74c3c;padding:10px;margin:10px 0;border-radius:8px;">
+                ❌ <strong>${d.fileName}</strong>: ${d.error}
+            </div>`;
+        } else {
+            const struct = d.storyStructure || {};
+            html += `<div style="background:#34495e;padding:15px;margin:10px 0;border-radius:8px;">
+                <h5>📄 ${d.fileName}</h5>
+                <p style="color:#bdc3c7;font-size:0.9em;">${d.folderPath} • ${d.timestamp}</p>
+                
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;">
+                    <div><strong>📊 Số từ:</strong> ${(d.basicStats?.wordCount || 0).toLocaleString()}</div>
+                    <div><strong>📝 Ngôi kể:</strong> ${struct.ngoike || 'Không xác định'}</div>
+                </div>
+
+                <div style="margin:10px 0;">
+                    <p><strong>👥 Nhân vật:</strong> ${safeJoin(struct.nhanVat)}</p>
+                    <p><strong>⏰ Thời gian:</strong> ${safeJoin(struct.thoiGian)}</p>
+                    <p><strong>🌍 Địa điểm:</strong> ${safeJoin(struct.diaDiem)}</p>
+                    <p><strong>🎭 Tình huống:</strong> ${safeJoin(struct.tinhHuong)}</p>
+                </div>
+
+                <!-- Content Structure -->
+                <div style="margin:10px 0;">
+                    <details>
+                        <summary style="cursor:pointer;color:#3498db;"><strong>📖 Mở bài</strong></summary>
+                        <div class="story-content">${struct.moBai || 'Không có dữ liệu'}</div>
+                    </details>
+                    
+                    <details>
+                        <summary style="cursor:pointer;color:#3498db;"><strong>📖 Thân bài</strong></summary>
+                        <div class="story-content">${struct.thanBai || 'Không có dữ liệu'}</div>
+                    </details>
+                    
+                    <details>
+                        <summary style="cursor:pointer;color:#3498db;"><strong>📖 Kết bài</strong></summary>
+                        <div class="story-content">${struct.ketBai || 'Không có dữ liệu'}</div>
+                    </details>
+                </div>
+
+                <!-- Dialogue -->
+                ${struct.hoiThoai && struct.hoiThoai.length > 0 ? `
+                <details>
+                    <summary style="cursor:pointer;color:#2ecc71;"><strong>💬 Hội thoại (${struct.hoiThoai.length})</strong></summary>
+                    <div class="story-content">
+                        ${struct.hoiThoai.map(dialogue => `<p>• ${dialogue}</p>`).join('')}
+                    </div>
+                </details>` : ''}
+
+                <!-- Emotional Analysis -->
+                <div style="margin:10px 0;">
+                    <p><strong>😊 Cảm xúc tích cực:</strong> ${safeJoin(safeArray(struct.emotion?.positive))}</p>
+                    <p><strong>😢 Cảm xúc tiêu cực:</strong> ${safeJoin(safeArray(struct.emotion?.negative))}</p>
+                    <p><strong>😐 Cảm xúc trung tính:</strong> ${safeJoin(safeArray(struct.emotion?.neutral))}</p>
+                </div>
+
+                <!-- Content Categories -->
+                <div style="margin:10px 0;">
+                    <p><strong>💝 Ngôn ngữ tình cảm:</strong> ${safeJoin(struct.romantic)}</p>
+                    <p><strong>👨‍👩‍👧‍👦 Gia đình:</strong> ${safeJoin(struct.family)}</p>
+                    <p><strong>🤫 Bí mật:</strong> ${safeJoin(struct.secret)}</p>
+                    <p><strong>⚠️ Tiêu cực:</strong> ${safeJoin(struct.negative)}</p>
+                    ${struct.sexual && struct.sexual.length > 0 ? `
+                        <p><strong>🔞 Nội dung nhạy cảm:</strong> <span style="color:#e74c3c;">${struct.sexual.length} từ khóa phát hiện</span></p>
+                    ` : ''}
+                </div>
+
+                <!-- Content Sample -->
+                <details>
+                    <summary style="cursor:pointer;color:#95a5a6;"><strong>📝 Mẫu nội dung</strong></summary>
+                    <div class="story-content" style="font-style:italic;">${d.contentSample || 'Không có dữ liệu'}</div>
+                </details>
+            </div>`;
+        }
+    });
+
+    container.innerHTML = html;
+}
+
+// ===== UI NAVIGATION =====
+function switchTab(id) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+    
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+}
+
+// ===== INITIALIZATION =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Try to load cached analysis on page load
+    loadAnalysisLocal();
+});
 </script>
+
 <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
 <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </body>
