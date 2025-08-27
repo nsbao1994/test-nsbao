@@ -316,115 +316,220 @@ async function scanFolder() {
     }
 }
 
-async function fetchFilesRecursive(folderId, folderPath) {
-    let pageToken = null;
-    do {
-        const res = await gapi.client.drive.files.list({
-            q: `'${folderId}' in parents and trashed=false`,
-            fields: "nextPageToken, files(id, name, mimeType)",
-            pageToken: pageToken
-        });
-
-        for (const file of res.result.files) {
-            if (file.mimeType === "application/vnd.google-apps.folder") {
-                await fetchFilesRecursive(file.id, `${folderPath}/${file.name}`);
-            } else if (file.mimeType === "text/plain" || file.name.endsWith(".txt")) {
-                txtFiles.push({
-                    id: file.id,
-                    name: file.name,
-                    folderPath: folderPath
-                });
-            }
-        }
-        pageToken = res.result.nextPageToken;
-    } while (pageToken);
+// --- Thay thế fetchFilesRecursive để lưu cả mimeType (nên dán thay hàm cũ) ---
+async function fetchFilesRecursive(folderId, path){
+  let pageToken=null;
+  do{
+    const res = await gapi.client.drive.files.list({
+      q:`'${folderId}' in parents and trashed=false`,
+      fields:"nextPageToken, files(id,name,mimeType)", pageToken
+    });
+    for(const f of res.result.files){
+      if(f.mimeType==="application/vnd.google-apps.folder"){
+        await fetchFilesRecursive(f.id, path+"/"+f.name);
+      } else if(
+        f.mimeType==="text/plain" ||
+        f.name.toLowerCase().endsWith(".txt") ||
+        f.mimeType==="application/vnd.google-apps.document" // hỗ trợ Google Docs
+      ){
+        txtFiles.push({id:f.id,name:f.name,path, mimeType:f.mimeType});
+      }
+    }
+    pageToken=res.result.nextPageToken;
+  }while(pageToken);
 }
 
-// ===== ANALYZE FILES FUNCTION (FIXED) =====
-async function analyzeFiles() {
-    if (!txtFiles || txtFiles.length === 0) {
-        alert('⚠️ Vui lòng quét thư mục trước!');
-        return;
-    }
 
-    // Load existing analysis from local cache
-    let existingAnalysis = [];
-    const localData = localStorage.getItem('analysisResults');
-    if (localData) {
-        try {
-            existingAnalysis = JSON.parse(localData).analysisData || [];
-        } catch (e) {
-            console.error('Error loading existing analysis:', e);
+// --- analyzeFiles nâng cao ---
+async function analyzeFiles(){
+  if(!txtFiles.length){ alert("Chưa có file"); return; }
+  analysisData=[];
+  document.getElementById("detailedStatus").innerText = "";
+  try{
+    for(let i=0;i<txtFiles.length;i++){
+      const f = txtFiles[i];
+      updateProgress(Math.round((i/txtFiles.length)*100));
+      let record = { file: f.name, path: f.path, words:0, sample:'', meta:{}, counts:{}, dialogueCounts:{}, error:null };
+      try{
+        const text = await readFileFromDrive(f.id, f.mimeType);
+        record.words = text.split(/\s+/).filter(Boolean).length;
+        record.sample = text.substring(0,300);
+        const meta = parseMetadataFromText(text);
+        record.meta = meta;
+
+        // đếm sensitiveWords
+        if(meta.sensitiveWords && meta.sensitiveWords.length){
+          for(const w of meta.sensitiveWords){
+            record.counts[w] = countOccurrences(text, w);
+          }
         }
-    }
 
-    const analyzedFileNames = existingAnalysis.map(a => a.fileName);
-    let filesToAnalyze = txtFiles.filter(f => !analyzedFileNames.includes(f.name));
-
-    if (filesToAnalyze.length === 0) {
-        updateStatus('✅ Tất cả file đã được phân tích');
-        analysisData = existingAnalysis;
-        displayAdvancedAnalysisResults();
-        return;
-    }
-
-    const totalFiles = Math.min(filesToAnalyze.length, 50); // Limit to prevent timeout
-    analysisData = [...existingAnalysis];
-    
-    updateStatus(`🧠 Bắt đầu phân tích ${totalFiles} file...`);
-
-    for (let i = 0; i < totalFiles; i++) {
-        const file = filesToAnalyze[i];
-        updateProgress((i / totalFiles) * 100);
-        updateDetailedStatus(`Đang phân tích: ${file.name} (${i + 1}/${totalFiles})`);
-
-        try {
-            // *** FIX: Actually read file content from Google Drive ***
-            const content = await readFileFromDrive(file.id);
-            const analysis = await performAdvancedAnalysis(content, file.name, file.folderPath);
-            analysisData.push(analysis);
-            saveAnalysisLocal();
-            
-            // Small delay to prevent rate limiting
-            await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (err) {
-            console.error(`Error analyzing ${file.name}:`, err);
-            analysisData.push({
-                fileName: file.name,
-                folderPath: file.folderPath,
-                timestamp: new Date().toLocaleString('vi-VN'),
-                error: err.message
-            });
+        // đếm dialogueIndicators
+        if(meta.dialogueIndicators && meta.dialogueIndicators.length){
+          for(const d of meta.dialogueIndicators){
+            record.dialogueCounts[d] = countOccurrences(text, d);
+          }
         }
+
+      } catch(err){
+        record.error = err.message || String(err);
+      }
+      analysisData.push(record);
+      updateProgress(Math.round(((i+1)/txtFiles.length)*100));
     }
 
-    displayAdvancedAnalysisResults();
-    updateProgress(100);
-    updateStatus(`✅ Hoàn thành phân tích ${totalFiles} file`);
-    setTimeout(() => updateProgress(0), 2000);
+    // Hiển thị kết quả
+    displayAnalysis();
+
+  } catch(e){
+    document.getElementById("detailedStatus").innerText = "Lỗi phân tích chung: "+e.message;
+    console.error(e);
+  }
+}
+// --- displayAnalysis nâng cao ---
+function displayAnalysis(){
+  let html = `<h4>Đã phân tích ${analysisData.length} file</h4>`;
+  let overallErrors = [];
+  analysisData.forEach(d=>{
+    html += `<div class='story-content'><b>${d.file}</b> <small>(${d.path})</small><br/>`;
+    if(d.error){
+      html += `<div style="color:#ff6b6b"><b>Lỗi:</b> ${d.error}</div>`;
+      overallErrors.push(`${d.file}: ${d.error}`);
+    } else {
+      html += `Số từ: ${d.words}<br/>Mẫu: <code>${escapeHtml(d.sample)}</code><br/>`;
+      html += `<b>Metadata tìm được:</b><br/>`;
+      html += `<pre>${JSON.stringify(d.meta, null, 2)}</pre>`;
+      if(Object.keys(d.counts).length){
+        html += `<b>Đếm sensitiveWords:</b><ul>`;
+        for(const k in d.counts) html += `<li>${escapeHtml(k)} → ${d.counts[k]}</li>`;
+        html += `</ul>`;
+      }
+      if(Object.keys(d.dialogueCounts).length){
+        html += `<b>Đếm dialogueIndicators:</b><ul>`;
+        for(const k in d.dialogueCounts) html += `<li>${escapeHtml(k)} → ${d.dialogueCounts[k]}</li>`;
+        html += `</ul>`;
+      }
+    }
+    html += `</div>`;
+  });
+  document.getElementById("analysisResults").innerHTML = html;
+  if(overallErrors.length){
+    document.getElementById("detailedStatus").innerText = "Một số file phân tích bị lỗi — xem chi tiết ở bên dưới.";
+    console.warn("Analysis errors:", overallErrors);
+  } else {
+    document.getElementById("detailedStatus").innerText = "Phân tích hoàn tất — không thấy lỗi.";
+  }
 }
 
-// ===== NEW FUNCTION: READ FILE FROM DRIVE =====
-async function readFileFromDrive(fileId) {
-    try {
-        const accessToken = gapi.client.getToken().access_token;
-        const response = await fetch(
-            `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            }
-        );
-        
-        if (!response.ok) {
-            throw new Error(`Failed to read file: ${response.status}`);
-        }
-        
-        return await response.text();
-    } catch (error) {
-        throw new Error(`Error reading file: ${error.message}`);
+// --- escapeHtml helper để hiển thị an toàn trong HTML ---
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
+}
+// --- readFileFromDrive: xử lý export cho Google Docs + kiểm tra lỗi HTTP ---
+async function readFileFromDrive(fileId, mimeType){
+  const token = gapi.client.getToken();
+  if(!token || !token.access_token) throw new Error("Không có access token — hãy đăng nhập trước khi quét/ phân tích.");
+  const accessToken = token.access_token;
+
+  // Nếu là Google Docs, phải export về text/plain
+  if(mimeType === 'application/vnd.google-apps.document'){
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain`, {
+      headers:{ Authorization: `Bearer ${accessToken}` }
+    });
+    if(!res.ok) throw new Error(`Lỗi export Google Doc: ${res.status} ${res.statusText}`);
+    return await res.text();
+  } else {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+      headers:{ Authorization: `Bearer ${accessToken}` }
+    });
+    if(!res.ok) throw new Error(`Lỗi download: ${res.status} ${res.statusText}`);
+    return await res.text();
+  }
+}
+// --- helper: escape regex ---
+function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+// --- helper: đếm occurrences (case-insensitive) ---
+function countOccurrences(text, needle){
+  if(!needle) return 0;
+  try{
+    const re = new RegExp(escapeRegExp(needle), 'gi');
+    const m = text.match(re);
+    return m ? m.length : 0;
+  } catch(e){
+    return 0;
+  }
+}
+// --- helper: parse array-like value cho key (hỗ trợ JS-assignment, JSON, YAML list) ---
+function parseArrayKeyFromText(text, key){
+  // 1) JS or JSON style: key = [...], "key": [...], key: [...]
+  let patterns = [
+    new RegExp(key + '\\s*[:=]\\s*(\\[[\\s\\S]*?\\])','i'),
+    new RegExp('"' + key + '"\\s*:\\s*(\\[[\\s\\S]*?\\])','i'),
+    // YAML list under key:
+    new RegExp(key + '\\s*:\\s*\\n(\\s*\\-\\s.*(?:\\n\\s*\\-.*)*)','i')
+  ];
+  for(const p of patterns){
+    const m = text.match(p);
+    if(m){
+      let arrText = m[1].trim();
+      // YAML list case (lines starting with -)
+      if(arrText.split(/\r?\n/).every(line => line.trim().startsWith('-'))){
+        return arrText.split(/\r?\n/).map(l=>l.replace(/^\s*-\s*/,'').trim()).filter(Boolean);
+      }
+      // Else try normalize to valid JSON array
+      try{
+        // replace single quotes -> double quotes (naive but works for common cases)
+        let candidate = arrText.replace(/'/g, '"').replace(/,\s*]/g,']').replace(/,\s*}/g,'}');
+        return JSON.parse(candidate);
+      } catch(e){
+        // Fallback: split by commas and trim quotes
+        const items = arrText.replace(/^\[|\]$/g,'').split(',').map(s=>s.trim().replace(/^['"]|['"]$/g,'')).filter(Boolean);
+        return items;
+      }
     }
+  }
+  return null;
+}
+// --- parse metadata tổng quát (trả về object: sensitiveWords, dialogueIndicators, errors) ---
+function parseMetadataFromText(text){
+  const out = { sensitiveWords: [], dialogueIndicators: [], errors: [] };
+
+  // 1) YAML frontmatter (--- ... ---)
+  const yamlMatch = text.match(/^---\s*([\s\S]*?)\s*---/);
+  if(yamlMatch){
+    try{
+      const body = yamlMatch[1];
+      // tìm keys trong YAML
+      const sw = body.match(/sensitiveWords\s*:\s*((?:\n\s*-\s.*)+)/i);
+      if(sw) out.sensitiveWords = sw[1].split(/\r?\n/).map(l=>l.replace(/^\s*-\s*/,'').trim()).filter(Boolean);
+      const di = body.match(/dialogueIndicators\s*:\s*((?:\n\s*-\s.*)+)/i);
+      if(di) out.dialogueIndicators = di[1].split(/\r?\n/).map(l=>l.replace(/^\s*-\s*/,'').trim()).filter(Boolean);
+    } catch(e){
+      out.errors.push("YAML parse error: "+e.message);
+    }
+  }
+
+  // 2) JS/JSON style (sensitiveWords = [..], "sensitiveWords": [..], etc.)
+  if(!out.sensitiveWords.length){
+    const parsed = parseArrayKeyFromText(text, 'sensitiveWords');
+    if(parsed) out.sensitiveWords = parsed;
+  }
+  if(!out.dialogueIndicators.length){
+    const parsed = parseArrayKeyFromText(text, 'dialogueIndicators');
+    if(parsed) out.dialogueIndicators = parsed;
+  }
+
+  // 3) Nếu vẫn không có, thử tìm kiểu tên biến với camelCase hoặc snake_case
+  if(!out.sensitiveWords.length){
+    const parsed2 = parseArrayKeyFromText(text, 'sensitive_words') || parseArrayKeyFromText(text, 'sensitiveWords');
+    if(parsed2) out.sensitiveWords = parsed2;
+  }
+  if(!out.dialogueIndicators.length){
+    const parsed2 = parseArrayKeyFromText(text, 'dialogue_indicators') || parseArrayKeyFromText(text, 'dialogueIndicators');
+    if(parsed2) out.dialogueIndicators = parsed2;
+  }
+
+  return out;
 }
 
 // ===== STORY ANALYSIS FUNCTIONS =====
