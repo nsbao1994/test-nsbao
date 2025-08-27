@@ -194,8 +194,9 @@ analysisData.forEach(d=>{
     if(d.error){html+=`<div>❌ ${d.fileName}: ${d.error}</div>`;}
     else
 
-    {html+=`<div>📄 ${d.fileName} - ${d.basicStats.wordCount} từ</div>`;}
-if (d.storyStructure) {
+    {html+=`<div>📄 ${d.fileName} - ${d.basicStats.wordCount} từ</div>`;
+
+        if (d.storyStructure) {
    html += `<div style="margin-left:15px;">
        <p><strong>Ngôi kể:</strong> ${d.storyStructure.ngoike}</p>
        <p><strong>Nhân vật:</strong> ${d.storyStructure.nhanVat.join(', ')}</p>
@@ -216,6 +217,8 @@ if (d.storyStructure) {
       <p><strong>Hội thoại:</strong><br> ${d.storyStructure.hoiThoai.join('<br>')}</p>
    </div>`;
 }
+    }
+
 }
 
 );c.innerHTML=html;
