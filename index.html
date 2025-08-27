@@ -514,7 +514,7 @@ async function readFileFromDrive(fileId) {
         throw new Error(`Error reading file: ${error.message}`);
     }
 }
-  // ===== STORY ANALYSIS FUNCTIONS =====
+ // ===== STORY ANALYSIS FUNCTIONS =====
 async function performAdvancedAnalysis(content, fileName, folderPath) {
     const structure = analyzeStoryStructure(content);
     const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
