@@ -97,7 +97,73 @@ async function uploadAnalysisToDrive(){try{const content=localStorage.getItem('a
 async function downloadAnalysisFromDrive(){try{const response=await gapi.client.drive.files.list({q:`name='${ANALYSIS_CACHE_NAME}' and trashed=false`,fields:'files(id)'});if(response.result.files.length===0){alert('❌ Không có file phân tích trên Drive');return;}const fileId=response.result.files[0].id;const analysisResponse=await gapi.client.drive.files.get({fileId:fileId,alt:'media'});localStorage.setItem('analysisResults',analysisResponse.body);loadAnalysisLocal();alert('✅ Đã tải phân tích từ Drive');}catch(err){console.error(err);}}
 
 // ====== Scan + Analyze ======
-async function scanFolder(){updateStatus('🔍 Quét thư mục...');updateProgress(10);/* giả lập */window.txtFiles=[{id:'1',name:'demo1.txt',folderPath:'QuanLyTruyen'},{id:'2',name:'demo2.txt',folderPath:'QuanLyTruyen'}];updateProgress(100);updateStatus(`✅ Tìm thấy ${window.txtFiles.length} file`);document.getElementById('analyzeBtn').disabled=false;}
+const ROOT_FOLDER_NAME = "QuanLyTruyen";
+
+async function scanFolder() {
+    updateStatus("🔍 Đang quét thư mục QuanLyTruyen...");
+    updateProgress(5);
+
+    try {
+        // 1. Tìm folder gốc "QuanLyTruyen"
+        const folderRes = await gapi.client.drive.files.list({
+            q: `mimeType='application/vnd.google-apps.folder' and name='${ROOT_FOLDER_NAME}' and trashed=false`,
+            fields: "files(id, name)"
+        });
+
+        if (!folderRes.result.files || folderRes.result.files.length === 0) {
+            updateStatus("❌ Không tìm thấy thư mục QuanLyTruyen trên Google Drive!");
+            return;
+        }
+
+        const rootFolderId = folderRes.result.files[0].id;
+
+        // 2. Đệ quy lấy tất cả file txt trong thư mục + con
+        window.txtFiles = [];
+        await fetchFilesRecursive(rootFolderId, ROOT_FOLDER_NAME);
+
+        if (window.txtFiles.length === 0) {
+            updateStatus("⚠️ Không có file .txt nào trong QuanLyTruyen.");
+            return;
+        }
+
+        updateStatus(`✅ Đã quét được ${window.txtFiles.length} file .txt`);
+        updateProgress(100);
+        document.getElementById("analyzeBtn").disabled = false;
+
+    } catch (err) {
+        console.error("❌ Lỗi khi quét thư mục:", err);
+        updateStatus("❌ Lỗi khi quét thư mục!");
+    }
+}
+
+// Hàm đệ quy lấy file txt
+async function fetchFilesRecursive(folderId, folderPath) {
+    // 1. Lấy tất cả file con trong folder hiện tại
+    let pageToken = null;
+    do {
+        const res = await gapi.client.drive.files.list({
+            q: `'${folderId}' in parents and trashed=false`,
+            fields: "nextPageToken, files(id, name, mimeType)",
+            pageToken: pageToken
+        });
+
+        for (const file of res.result.files) {
+            if (file.mimeType === "application/vnd.google-apps.folder") {
+                // Nếu là folder → đệ quy
+                await fetchFilesRecursive(file.id, `${folderPath}/${file.name}`);
+            } else if (file.mimeType === "text/plain" || file.name.endsWith(".txt")) {
+                // Nếu là file txt
+                window.txtFiles.push({
+                    id: file.id,
+                    name: file.name,
+                    folderPath: folderPath
+                });
+            }
+        }
+        pageToken = res.result.nextPageToken;
+    } while (pageToken);
+}
+
 
 async function analyzeFiles(){if(!window.txtFiles||window.txtFiles.length===0){alert('⚠️ Vui lòng quét thư mục trước!');return;}
 let existingAnalysis=[];const localData=localStorage.getItem('analysisResults');if(localData){try{existingAnalysis=JSON.parse(localData).analysisData||[];}catch(e){}}
