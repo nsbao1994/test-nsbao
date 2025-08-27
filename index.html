@@ -116,6 +116,112 @@
       max-height: 50vh;
       overflow-y: auto;
     }
+    .story-generator {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.generator-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.control-group label {
+    color: var(--text-color);
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.control-group select, 
+.control-group input[type="number"],
+.control-group textarea {
+    background: #2c3e50;
+    color: var(--text-color);
+    border: 1px solid #34495e;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.story-preview {
+    background: #1e1e1e;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    max-height: 60vh;
+    overflow-y: auto;
+    border: 1px solid #34495e;
+}
+
+.story-stats {
+    background: #2c3e50;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 0.9em;
+}
+
+.template-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.template-card {
+    background: #34495e;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.template-card:hover {
+    border-color: var(--primary-color);
+    background: #3d566e;
+}
+
+.template-card.selected {
+    border-color: var(--success-color);
+    background: #2d4a3e;
+}
+
+.btn-generate {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-generate:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.btn-generate:disabled {
+    background: #777;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media (max-width: 768px) {
+    .generator-controls {
+        grid-template-columns: 1fr;
+    }
+}
   </style>
 </head>
 
@@ -154,9 +260,117 @@
         </div>
       </div>
     </div>
+    <div id="tab-generator" class="tab-content">
+    <div class="card story-generator">
+        <h3>✍️ Tạo Truyện Thông Minh</h3>
+        <p style="color: #bdc3c7; margin-bottom: 15px;">
+            Sử dụng AI để tạo truyện dựa trên phân tích dữ liệu hiện có
+        </p>
+
+        <!-- Template Selection -->
+        <div class="control-group">
+            <label>📝 Chọn Template Truyện:</label>
+            <div class="template-selector" id="templateSelector">
+                <div class="template-card" data-template="romance">
+                    <h4>💕 Lãng Mạn</h4>
+                    <p>Câu chuyện tình yêu ngọt ngào</p>
+                </div>
+                <div class="template-card" data-template="family">
+                    <h4>👨‍👩‍👧‍👦 Gia Đình</h4>
+                    <p>Tình cảm gia đình ấm áp</p>
+                </div>
+                <div class="template-card" data-template="adventure">
+                    <h4>🗺️ Phiêu Lưu</h4>
+                    <p>Cuộc phiêu lưu kỳ thú</p>
+                </div>
+                <div class="template-card" data-template="drama">
+                    <h4>🎭 Chính Kịch</h4>
+                    <p>Tình huống phức tạp, cảm xúc sâu sắc</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generation Controls -->
+        <div class="generator-controls">
+            <div class="control-group">
+                <label>📏 Độ dài truyện:</label>
+                <select id="storyLength">
+                    <option value="short">Ngắn (200-500 từ)</option>
+                    <option value="medium" selected>Trung bình (500-1000 từ)</option>
+                    <option value="long">Dài (1000-2000 từ)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>👁️ Ngôi kể:</label>
+                <select id="narrativePerspective">
+                    <option value="auto">Tự động (dựa trên phân tích)</option>
+                    <option value="first">Ngôi thứ nhất</option>
+                    <option value="third">Ngôi thứ ba</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>🎯 Độ tương tự với dữ liệu gốc:</label>
+                <input type="range" id="similarityLevel" min="1" max="10" value="7" 
+                       oninput="document.getElementById('similarityValue').textContent = this.value">
+                <span id="similarityValue">7</span>/10
+            </div>
+
+            <div class="control-group">
+                <label>🎨 Phong cách viết:</label>
+                <select id="writingStyle">
+                    <option value="auto">Tự động</option>
+                    <option value="descriptive">Miêu tả chi tiết</option>
+                    <option value="dialogue">Nhiều hội thoại</option>
+                    <option value="emotional">Cảm xúc mạnh</option>
+                    <option value="simple">Đơn giản, dễ hiểu</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Custom Prompt -->
+        <div class="control-group">
+            <label>💭 Yêu cầu đặc biệt (tùy chọn):</label>
+            <textarea id="customPrompt" rows="3" placeholder="Ví dụ: Tập trung vào tình cảm gia đình, có twist bất ngờ, kết thúc có hậu..."></textarea>
+        </div>
+
+        <!-- Generate Button -->
+        <div style="text-align: center; margin: 20px 0;">
+            <button class="btn-generate" onclick="generateStory()" id="generateBtn">
+                🚀 Tạo Truyện Thông Minh
+            </button>
+        </div>
+
+        <!-- Story Stats -->
+        <div class="story-stats" id="generationStats" style="display: none;">
+            <p><strong>📊 Thông tin tạo truyện:</strong></p>
+            <div id="statsContent"></div>
+        </div>
+    </div>
+
+    <!-- Generated Story Display -->
+    <div class="card">
+        <h3>📖 Truyện Được Tạo</h3>
+        <div id="generatedStory" class="story-preview">
+            <p style="color: #7f8c8d; font-style: italic;">
+                Chưa có truyện nào được tạo. Hãy chọn template và nhấn "Tạo Truyện Thông Minh" để bắt đầu!
+            </p>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div style="text-align: center; margin-top: 15px;">
+            <button class="btn" onclick="copyStory()" id="copyBtn" disabled>📋 Sao Chép</button>
+            <button class="btn" onclick="saveStoryToDrive()" id="saveBtn" disabled>💾 Lưu lên Drive</button>
+            <button class="btn" onclick="regenerateStory()" id="regenBtn" disabled>🔄 Tạo Lại</button>
+        </div>
+    </div>
+</div>
   </div>
   <div class="bottom-menu">
     <a href="#" class="menu-item active" onclick="switchTab('tab-analysis')">🔍 Phân tích</a>
+    <a href="#" class="menu-item" onclick="switchTab('tab-generator')">✍️ Tạo truyện</a>
+
   </div>
   <script>
     const CLIENT_ID = '398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com';
@@ -776,6 +990,11 @@ function switchTab(id) {
     
     document.getElementById(id).classList.add('active');
     event.target.classList.add('active');
+    
+    // Auto-select first template when entering generator tab
+    if (id === 'tab-generator' && !selectedTemplate) {
+        document.querySelector('.template-card[data-template="romance"]').click();
+    }
 }
 
 // ===== INITIALIZATION =====
@@ -859,7 +1078,410 @@ function analyzeStoryStructure(content) {
     emotion: { positive: emotionPos, negative: emotionNeg, neutral: emotionNeu }
   };
 }
-   
+   // ===== STORY GENERATION VARIABLES =====
+let selectedTemplate = null;
+let generatedStoryContent = '';
+let currentGenerationParams = {};
+
+// ===== STORY TEMPLATES =====
+const storyTemplates = {
+    romance: {
+        name: "Lãng Mạn",
+        themes: ["tình yêu", "gặp gỡ", "chia ly", "hạnh phúc", "ngọt ngào"],
+        structure: "Gặp gỡ → Tình cảm nảy sinh → Thử thách → Hạnh phúc",
+        emotion: "positive",
+        keywords: ["yêu", "thương", "ngọt ngào", "âm ấp", "hạnh phúc"]
+    },
+    family: {
+        name: "Gia Đình", 
+        themes: ["gia đình", "tình thân", "hy sinh", "yêu thương", "đoàn tụ"],
+        structure: "Gia đình → Thử thách → Hiểu nhau → Đoàn tụ",
+        emotion: "mixed",
+        keywords: ["bố", "mẹ", "con", "gia đình", "yêu thương"]
+    },
+    adventure: {
+        name: "Phiêu Lưu",
+        themes: ["cuộc phiêu lưu", "khám phá", "thử thách", "bạn bè", "chiến thắng"],
+        structure: "Xuất phát → Thử thách → Vượt qua → Thành công",
+        emotion: "exciting",
+        keywords: ["phiêu lưu", "khám phá", "thử thách", "dũng cảm", "chiến thắng"]
+    },
+    drama: {
+        name: "Chính Kịch",
+        themes: ["xung đột", "phức tạp", "cảm xúc", "quyết định", "thay đổi"],
+        structure: "Bình thường → Xung đột → Leo thang → Giải quyết",
+        emotion: "intense", 
+        keywords: ["khó khăn", "quyết định", "thay đổi", "cảm xúc", "vượt qua"]
+    }
+};
+
+// ===== UI EVENT HANDLERS =====
+document.addEventListener('DOMContentLoaded', function() {
+    setupTemplateSelector();
+});
+
+function setupTemplateSelector() {
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove previous selection
+            document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+            // Add selection to clicked card
+            this.classList.add('selected');
+            selectedTemplate = this.dataset.template;
+        });
+    });
+}
+
+// ===== STORY GENERATION CORE =====
+async function generateStory() {
+    if (!selectedTemplate) {
+        alert('⚠️ Vui lòng chọn template truyện trước!');
+        return;
+    }
+
+    if (!analysisData || analysisData.length === 0) {
+        alert('⚠️ Cần có dữ liệu phân tích trước khi tạo truyện!');
+        return;
+    }
+
+    const generateBtn = document.getElementById('generateBtn');
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '⏳ Đang tạo truyện...';
+
+    try {
+        // Get generation parameters
+        const params = getGenerationParameters();
+        currentGenerationParams = params;
+        
+        // Analyze existing stories for patterns
+        const analysisInsights = extractAnalysisInsights();
+        
+        // Generate story using AI-like algorithm
+        const story = await createStoryFromAnalysis(params, analysisInsights);
+        
+        // Display results
+        displayGeneratedStory(story);
+        showGenerationStats(params, analysisInsights);
+        
+        generatedStoryContent = story;
+        enableActionButtons();
+
+    } catch (error) {
+        console.error('Story generation error:', error);
+        alert('❌ Có lỗi khi tạo truyện: ' + error.message);
+    } finally {
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '🚀 Tạo Truyện Thông Minh';
+    }
+}
+
+function getGenerationParameters() {
+    return {
+        template: selectedTemplate,
+        length: document.getElementById('storyLength').value,
+        perspective: document.getElementById('narrativePerspective').value,
+        similarity: parseInt(document.getElementById('similarityLevel').value),
+        style: document.getElementById('writingStyle').value,
+        customPrompt: document.getElementById('customPrompt').value.trim()
+    };
+}
+
+function extractAnalysisInsights() {
+    const insights = {
+        commonCharacters: [],
+        commonPlaces: [],
+        commonEmotions: [],
+        commonThemes: [],
+        writingStyle: 'descriptive',
+        averageLength: 0
+    };
+
+    // Analyze all stories for patterns
+    const allChars = [];
+    const allPlaces = [];
+    const allEmotions = [];
+    let totalWords = 0;
+
+    analysisData.forEach(story => {
+        if (story.storyStructure) {
+            // Characters
+            if (story.storyStructure.nhanVat) {
+                allChars.push(...story.storyStructure.nhanVat);
+            }
+            // Places  
+            if (story.storyStructure.diaDiem) {
+                allPlaces.push(...story.storyStructure.diaDiem);
+            }
+            // Emotions
+            if (story.storyStructure.emotion) {
+                allEmotions.push(...(story.storyStructure.emotion.positive || []));
+                allEmotions.push(...(story.storyStructure.emotion.negative || []));
+            }
+        }
+        
+        if (story.basicStats) {
+            totalWords += story.basicStats.wordCount || 0;
+        }
+    });
+
+    // Find most common elements
+    insights.commonCharacters = getMostCommon(allChars, 5);
+    insights.commonPlaces = getMostCommon(allPlaces, 5);
+    insights.commonEmotions = getMostCommon(allEmotions, 10);
+    insights.averageLength = Math.round(totalWords / analysisData.length);
+
+    return insights;
+}
+
+function getMostCommon(arr, limit) {
+    const frequency = {};
+    arr.forEach(item => {
+        frequency[item] = (frequency[item] || 0) + 1;
+    });
+    
+    return Object.entries(frequency)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, limit)
+        .map(([item]) => item);
+}
+
+// ===== AI-LIKE STORY GENERATION =====
+async function createStoryFromAnalysis(params, insights) {
+    const template = storyTemplates[params.template];
+    
+    // Determine story structure
+    const structure = generateStoryStructure(params, template, insights);
+    
+    // Generate content for each part
+    const story = {
+        title: generateTitle(template, insights),
+        opening: generateOpening(structure, params, insights),
+        development: generateDevelopment(structure, params, insights),
+        climax: generateClimax(structure, params, insights),
+        conclusion: generateConclusion(structure, params, insights)
+    };
+
+    // Combine all parts
+    return formatFullStory(story);
+}
+
+function generateStoryStructure(params, template, insights) {
+    // Create characters based on analysis
+    const characters = generateCharacters(insights, template);
+    
+    // Create setting based on common places
+    const setting = generateSetting(insights, template);
+    
+    // Create plot points
+    const plotPoints = generatePlotPoints(template, params);
+
+    return {
+        characters,
+        setting, 
+        plotPoints,
+        perspective: params.perspective === 'auto' ? 'third' : params.perspective,
+        length: params.length
+    };
+}
+
+function generateCharacters(insights, template) {
+    const characters = [];
+    
+    // Main character
+    const mainCharName = insights.commonCharacters[0] || generateVietnameseName();
+    characters.push({
+        name: mainCharName,
+        role: 'main',
+        traits: generateCharacterTraits(template)
+    });
+
+    // Supporting character
+    const supportCharName = insights.commonCharacters[1] || generateVietnameseName();
+    characters.push({
+        name: supportCharName,
+        role: 'support',
+        traits: generateCharacterTraits(template, true)
+    });
+
+    return characters;
+}
+
+function generateVietnameseName() {
+    const firstNames = ['Minh', 'Hương', 'Nam', 'Lan', 'Hoàng', 'Linh', 'Tuấn', 'Mai', 'Đức', 'Hoa'];
+    const lastNames = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Phan', 'Vũ', 'Đặng', 'Bùi', 'Đỗ'];
+    
+    return lastNames[Math.floor(Math.random() * lastNames.length)] + ' ' + 
+           firstNames[Math.floor(Math.random() * firstNames.length)];
+}
+
+function generateCharacterTraits(template, isSupporting = false) {
+    const traitsByTemplate = {
+        romance: isSupporting ? ['hiểu biết', 'ủng hộ'] : ['dễ thương', 'chân thành', 'ấm áp'],
+        family: isSupporting ? ['khôn ngoan', 'yêu thương'] : ['có trách nhiệm', 'quan tâm gia đình'],
+        adventure: isSupporting ? ['trung thành', 'dũng cảm'] : ['mạo hiểm', 'quyết tâm', 'thông minh'],
+        drama: isSupporting ? ['thấu hiểu', 'kiên nhẫn'] : ['phức tạp', 'sâu sắc', 'có nội tâm']
+    };
+    
+    return traitsByTemplate[template.name.toLowerCase()] || ['tốt bụng', 'thân thiện'];
+}
+
+function generateSetting(insights, template) {
+    const places = insights.commonPlaces.length > 0 ? insights.commonPlaces : 
+                  ['thành phố', 'làng quê', 'trường học', 'nhà', 'công viên'];
+    
+    return {
+        primary: places[0],
+        secondary: places[1] || places[0],
+        timeframe: 'hiện tại'
+    };
+}
+
+function generatePlotPoints(template, params) {
+    const baseStructure = template.structure.split(' → ');
+    return baseStructure.map(point => ({
+        description: point,
+        keywords: template.keywords
+    }));
+}
+
+// ===== STORY CONTENT GENERATION =====
+function generateTitle(template, insights) {
+    const titleTemplates = {
+        romance: ['Tình Yêu ${char}', 'Ngày Em Đến', 'Nỗi Nhớ', 'Hạnh Phúc Nhỏ'],
+        family: ['Gia Đình Nhỏ', 'Tình Thân', 'Về Nhà', 'Ấm Áp Bên Nhau'], 
+        adventure: ['Cuộc Phiêu Lưu', 'Hành Trình', 'Khám Phá', 'Chặng Đường'],
+        drama: ['Những Ngày Đó', 'Cuộc Đời', 'Thời Gian', 'Kí Ức']
+    };
+    
+    const templates = titleTemplates[selectedTemplate] || titleTemplates.drama;
+    return templates[Math.floor(Math.random() * templates.length)];
+}
+
+function generateOpening(structure, params, insights) {
+    const char = structure.characters[0];
+    const setting = structure.setting;
+    
+    const openings = [
+        `${char.name} ngồi bên cửa sổ, nhìn ra ${setting.primary} với tâm trạng trầm lặng. `,
+        `Buổi sáng ở ${setting.primary}, ${char.name} thức dậy với cảm giác có điều gì đó sắp thay đổi. `,
+        `Khi những tia nắng đầu tiên chiếu xuống ${setting.primary}, ${char.name} đã sẵn sàng cho một ngày mới. `
+    ];
+    
+    return openings[Math.floor(Math.random() * openings.length)];
+}
+
+function generateDevelopment(structure, params, insights) {
+    const template = storyTemplates[params.template];
+    const char1 = structure.characters[0];
+    const char2 = structure.characters[1];
+    
+    return `Cuộc gặp gỡ giữa ${char1.name} và ${char2.name} không hề tình cờ. ` +
+           `Trong những ngày qua, ${char1.name} luôn cảm thấy có điều gì đó thiếu vắng trong cuộc sống. ` +
+           `${char2.name} xuất hiện như một làn gió mới, mang đến những cảm xúc mà ${char1.name} chưa từng trải qua. `;
+}
+
+function generateClimax(structure, params, insights) {
+    const template = storyTemplates[params.template];
+    const char1 = structure.characters[0];
+    
+    const climaxByTemplate = {
+        romance: `Khoảnh khắc quyết định đã đến. ${char1.name} nhận ra rằng tình yêu không chỉ là cảm xúc mà còn là sự lựa chọn. `,
+        family: `${char1.name} hiểu ra rằng gia đình là điều quý giá nhất, những hiểu lầm trước đây chỉ làm cách xa nhau. `,
+        adventure: `Thử thách lớn nhất xuất hiện. ${char1.name} phải đưa ra quyết định quan trọng để vượt qua khó khăn. `,
+        drama: `Tất cả mọi thứ đến hồi căng thẳng. ${char1.name} đứng trước ngã rẽ quan trọng nhất của cuộc đời. `
+    };
+    
+    return climaxByTemplate[params.template] || climaxByTemplate.drama;
+}
+
+function generateConclusion(structure, params, insights) {
+    const char1 = structure.characters[0];
+    const setting = structure.setting;
+    
+    return `Và rồi, khi mọi thứ lắng xuống, ${char1.name} nhìn lại chặng đường đã qua với nụ cười thanh thản. ` +
+           `${setting.primary} vẫn như xưa, nhưng ${char1.name} đã khác. Cuộc sống tiếp tục, nhưng giờ đây đã có thêm ý nghĩa. ` +
+           `Có lẽ đây chính là điều mà ${char1.name} đã tìm kiếm từ lâu - không phải là điều gì hoành tráng, mà chỉ là sự bình yên trong tâm hồn.`;
+}
+
+function formatFullStory(story) {
+    return `${story.title}\n\n${story.opening}\n\n${story.development}\n\n${story.climax}\n\n${story.conclusion}`;
+}
+
+// ===== DISPLAY AND UI FUNCTIONS =====
+function displayGeneratedStory(story) {
+    const container = document.getElementById('generatedStory');
+    const formattedStory = story.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+    container.innerHTML = `<p>${formattedStory}</p>`;
+}
+
+function showGenerationStats(params, insights) {
+    const statsDiv = document.getElementById('generationStats');
+    const statsContent = document.getElementById('statsContent');
+    
+    const wordCount = generatedStoryContent.split(/\s+/).length;
+    
+    statsContent.innerHTML = `
+        <p>• Template: <strong>${storyTemplates[params.template].name}</strong></p>
+        <p>• Số từ: <strong>${wordCount}</strong></p>
+        <p>• Ngôi kể: <strong>${params.perspective === 'first' ? 'Ngôi thứ nhất' : 'Ngôi thứ ba'}</strong></p>
+        <p>• Dựa trên: <strong>${analysisData.length} truyện đã phân tích</strong></p>
+        <p>• Nhân vật phổ biến: <strong>${insights.commonCharacters.slice(0, 3).join(', ')}</strong></p>
+    `;
+    
+    statsDiv.style.display = 'block';
+}
+
+function enableActionButtons() {
+    document.getElementById('copyBtn').disabled = false;
+    document.getElementById('saveBtn').disabled = false;
+    document.getElementById('regenBtn').disabled = false;
+}
+
+// ===== ACTION FUNCTIONS =====
+function copyStory() {
+    if (!generatedStoryContent) return;
+    
+    navigator.clipboard.writeText(generatedStoryContent).then(() => {
+        alert('📋 Đã sao chép truyện vào clipboard!');
+    }).catch(err => {
+        console.error('Copy failed:', err);
+        alert('❌ Không thể sao chép. Vui lòng thử lại!');
+    });
+}
+
+function saveStoryToDrive() {
+    if (!generatedStoryContent) return;
+    
+    const fileName = `Generated_Story_${new Date().toISOString().slice(0, 10)}.txt`;
+    const fileContent = generatedStoryContent;
+    
+    const metadata = {
+        name: fileName,
+        mimeType: "text/plain"
+    };
+
+    const accessToken = gapi.client.getToken().access_token;
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+    form.append("file", new Blob([fileContent], { type: "text/plain" }));
+
+    fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
+        method: "POST",
+        headers: new Headers({ "Authorization": "Bearer " + accessToken }),
+        body: form
+    }).then(res => res.json()).then(val => {
+        alert(`💾 Đã lưu truyện lên Google Drive: ${fileName}`);
+    }).catch(err => {
+        console.error("Save error:", err);
+        alert("❌ Lỗi khi lưu truyện: " + err.message);
+    });
+}
+
+function regenerateStory() {
+    if (confirm('🔄 Bạn có muốn tạo lại truyện với các tham số hiện tại?')) {
+        generateStory();
+    }
+}
   </script>
   <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
   <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
