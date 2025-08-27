@@ -1,653 +1,236 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Trình Phân Tích & Tạo Truyện Nâng Cao</title>
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
-    <style>
-        :root {
-           --primary-color: #9b59b6;
-           --secondary-color: #2980b9;
-           --dark-color: #1e1e1e;
-           --light-color: #bdc3c7;
-           --accent-color: #e74c3c;
-           --success-color: #2ecc71;
-           --warning-color: #f39c12;
-           --text-color: #ecf0f1;
-           --card-bg: rgba(30, 30, 30, 0.95);
-           --border-radius: 16px;
-           --shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-           --safe-area-inset-top: env(safe-area-inset-top);
-           --safe-area-inset-bottom: env(safe-area-inset-bottom);
-           --safe-area-inset-left: env(safe-area-inset-left);
-           --safe-area-inset-right: env(safe-area-inset-right);
-        }
-        * {margin:0;padding:0;box-sizing:border-box;}
-        body {background:#121212;color:var(--text-color);font-family:sans-serif;min-height:100vh;}
-        .container {padding:16px;padding-bottom:80px;}
-        .header {text-align:center;color:#fff;margin-bottom:20px;}
-        .card {background:var(--card-bg);border-radius:var(--border-radius);padding:20px;margin-bottom:20px;}
-        .bottom-menu {position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;padding:12px;background:#2c3e50;}
-        .menu-item {color:var(--light-color);text-decoration:none;font-size:0.8rem;opacity:0.7;}
-        .menu-item.active {opacity:1;}
-        .tab-content{display:none;}
-        .tab-content.active{display:block;}
-        .btn{background:var(--primary-color);color:#fff;border:none;padding:10px 16px;border-radius:8px;margin:4px;cursor:pointer;}
-        .btn:disabled{background:#777;cursor:not-allowed;}
-        .story-content{background:#1e1e1e;padding:12px;border-radius:8px;margin:8px 0;max-height:50vh;overflow-y:auto;}
-        .progress-bar {background:#333;border-radius:5px;margin:10px 0;}
-        .progress-fill {height:10px;background:var(--primary-color);border-radius:5px;transition:width 0.3s;}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Quản Lý Truyện — Phân tích + Viết + Đọc</title>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <style>
+    :root {
+      --primary-color: #9b59b6;
+      --secondary-color: #2980b9;
+      --dark-color: #1e1e1e;
+      --light-color: #bdc3c7;
+      --accent-color: #e74c3c;
+      --success-color: #2ecc71;
+      --warning-color: #f39c12;
+      --text-color: #ecf0f1;
+      --card-bg: rgba(30, 30, 30, 0.95);
+      --border-radius: 16px;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#121212;color:var(--text-color);font-family:sans-serif;min-height:100vh;}
+    .container{padding:16px;padding-bottom:80px;}
+    .header{text-align:center;margin-bottom:20px;}
+    .card{background:var(--card-bg);border-radius:var(--border-radius);padding:20px;margin-bottom:20px;}
+    .bottom-menu{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;padding:12px;background:#2c3e50;}
+    .menu-item{color:var(--light-color);text-decoration:none;font-size:0.9rem;opacity:0.7;}
+    .menu-item.active{opacity:1;}
+    .tab-content{display:none;}
+    .tab-content.active{display:block;}
+    .btn{background:var(--primary-color);color:#fff;border:none;padding:10px 16px;border-radius:8px;margin:4px;cursor:pointer;}
+    .btn:disabled{background:#777;cursor:not-allowed;}
+    .story-content{background:#1e1e1e;padding:12px;border-radius:8px;margin:8px 0;max-height:50vh;overflow-y:auto;white-space:pre-line;}
+    select{padding:6px;border-radius:6px;margin:6px 0;}
+  </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1>📖 Trình Phân Tích & Tạo Truyện</h1>
-    <p>Phân tích nâng cao và tạo truyện tự động</p>
+    <h1>📖 Quản Lý Truyện</h1>
+    <p>Phân tích, Viết truyện & Đọc truyện từ Google Drive</p>
   </div>
+
+  <!-- TAB PHÂN TÍCH -->
   <div id="tab-analysis" class="tab-content active">
     <div class="card">
       <h3>🔍 Phân tích nguồn truyện</h3>
-      <div class="status-info" id="statusInfo">🔴 Chưa kết nối Google Drive</div>
-      <div class="detailed-status" id="detailedStatus"></div>
+      <div id="statusInfo">🔴 Chưa kết nối Google Drive</div>
+      <div id="detailedStatus"></div>
       <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
       <button class="btn" onclick="handleAuthClick()">📁 Kết nối Google Drive</button>
       <button class="btn" id="scanBtn" onclick="scanFolder()" disabled>🔍 Quét thư mục</button>
-      <button class="btn" id="analyzeBtn" onclick="analyzeFiles()" disabled>🧠 Phân tích nâng cao</button>
-      <button class="btn" id="downloadAnalysisBtn" onclick="downloadAnalysisFromDrive()" disabled>📥 Tải phân tích</button>
-      <button class="btn" onclick="loadAnalysisLocal()">🔄 Tải cache local</button>
-      <button class="btn" onclick="uploadAnalysisToDrive()">☁️ Upload phân tích</button>
+      <button class="btn" id="analyzeBtn" onclick="analyzeFiles()" disabled>🧠 Phân tích</button>
     </div>
     <div class="card">
       <h3>📊 Kết quả phân tích</h3>
       <div id="analysisResults"><p>Chưa có dữ liệu phân tích.</p></div>
     </div>
   </div>
+
+  <!-- TAB VIẾT TRUYỆN -->
+  <div id="tab-write" class="tab-content">
+    <div class="card">
+      <h3>✍️ Tạo truyện mới</h3>
+      <button class="btn" onclick="generateStory()">🚀 Sinh truyện từ phân tích</button>
+      <button class="btn" onclick="saveStoryToDrive()">☁️ Lưu lên Drive</button>
+    </div>
+    <div class="card">
+      <h3>📖 Truyện đã tạo</h3>
+      <div id="generatedStory">Chưa có truyện.</div>
+    </div>
+  </div>
+
+  <!-- TAB ĐỌC TRUYỆN -->
+  <div id="tab-read" class="tab-content">
+    <div class="card">
+      <h3>📂 Chọn truyện để đọc</h3>
+      <select id="storySelect"></select>
+      <button class="btn" onclick="loadSelectedStory()">📖 Đọc</button>
+    </div>
+    <div class="card">
+      <h3>📖 Nội dung</h3>
+      <div id="readerContent" class="story-content">Chưa chọn truyện.</div>
+    </div>
+  </div>
 </div>
+
 <div class="bottom-menu">
-  <a href="#" class="menu-item active" onclick="switchTab('tab-analysis')">🔍 Phân tích</a>
+  <a href="#" class="menu-item active" onclick="switchTab('tab-analysis', event)">🔍 Phân tích</a>
+  <a href="#" class="menu-item" onclick="switchTab('tab-write', event)">✍️ Viết</a>
+  <a href="#" class="menu-item" onclick="switchTab('tab-read', event)">📖 Đọc</a>
 </div>
 
 <script>
-// ===== CONSTANTS & GLOBALS =====
+// ===== GOOGLE API CONFIG =====
 const CLIENT_ID = '398509518475-7bjid324tkuuh9gv8b0g92lhsgv8nrl5.apps.googleusercontent.com';
 const API_KEY = 'AIzaSyAbcWr0UPvC4YpsunE6uAa7E5pan9iys2o';
-const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/drive';
+const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest";
+const SCOPES = "https://www.googleapis.com/auth/drive";
 const ROOT_FOLDER_NAME = "QuanLyTruyen";
 
 let tokenClient, gapi_inited = false, gsi_inited = false;
-let analysisData = [];
 let txtFiles = [];
+let analysisData = [];
+let generatedStoryData = null;
 
-// ===== WORD DICTIONARIES (Moved to top) =====
-const sensitiveWords = {
-    romantic: ['yêu', 'thương', 'hôn', 'ôm', 'ấp ôm', 'âm áp', 'say đắm', 'đam mê', 'dịu dàng', 'ngọt ngào', 'quyến rũ', 'mê hoặc', 'thân mật', 'gần gũi'],
-    sexual: [
-        'gối chăn', 'phòng the', 'ân ái', 'làm tình', 'quan hệ', 'tình dục',
-        'dâm', 'dục', 'khoái cảm', 'kích thích', 'khoả thân', 'lõa thể',
-        'sướng', 'rên rỉ', 'nứng', 'ướt át', 'cao trào', 'cực khoái', 'xuất tinh',
-        'dương vật', 'cặc', 'buồi', 'chim', 'cái ấy',
-        'âm đạo', 'lồn', 'bướm', 'âm hộ', 'hột le', 'mu', 'lỗ', 'xoạc',
-        'bú vú', 'vú to', 'vú căng', 'bú mút', 'ngực trần', 'ngực khủng', 'đầu ti',
-        'bú lồn', 'bú cặc', 'liếm lồn', 'liếm bi', 'nuốt tinh', 'bú hột le', 'bú đầu cặc',
-        'tử cung', 'bắn vào tử cung', 'cặc dài 20cm', 'ngậm tinh', 'chịch', 'địt', 'nắc',
-        'thổi kèn', 'bj', 'hj', 'anal', 'doggy', '69', 'threesome', 'thủ dâm',
-        'chơi gái', 'đĩ', 'gái mại dâm', 'mông to', 'thụt ra thụt vào', 'cắm sâu',
-        'sờ soạng', 'mút', 'cắn', 'xoa', 'vuốt ve', 'húp sò', 'phê', 'nghiện sex',
-        'xoạc lồn', 'xoạc cặc', 'tra tấn tình dục', 'hành xác', 'chịu trận',
-        'nhét', 'đút', 'làm nhục', 'bóp vú', 'tét đít', 'vỗ mông', 'túm tóc',
-        'bạo dâm', 'cưỡng hiếp', 'hiếp dâm', 'loạn luân', 'thằng cha', 'ông già dâm đãng',
-        'con đĩ', 'con cave', 'chị dâu', 'em dâu', 'anh rể', 'chị gái', 'mẹ chồng', 'cha con', 'mẹ con',
-        'rên la', 'rên rỉ', 'hét lên vì sướng', 'mắt lờ đờ', 'mồ hôi nhễ nhại',
-        'bắn tinh', 'phun tinh', 'tinh dịch', 'tinh tràn', 'nuốt sạch tinh',
-        'mùi tanh', 'vị mặn', 'ướt đẫm', 'nước nhờn', 'dịch nhờn',
-        'bố chồng', 'con dâu', 'cha chồng', 'nàng dâu',
-        '"bố chồng"', '"con dâu"', '"cha chồng"', '"nàng dâu"',
-        '"bố chồng ơi"', '"con dâu ngoan"', '"bố chồng làm cho con"',
-        '"con dâu của bố"', '"bố muốn con"', '"bố chồng không chịu nổi"',
-        '"con dâu sướng quá"', '"làm dâu bố"', '"bố chồng yêu con dâu"',
-        'quan hệ với bố chồng', 'quan hệ cùng con dâu', 
-        'chịch con dâu', 'bố chồng đụ con dâu', 'bố chồng hiếp con dâu',
-        'làm tình với con dâu', 'bố chồng ôm con dâu',
-        'con dâu rên', 'bố chồng thỏa mãn', 'bố chồng cưỡng hiếp'
-    ],
-    negative: ['ghét', 'hận', 'giận', 'tức', 'tủi', 'buồn', 'đau', 'khổ', 'sầu', 'thảm', 'bi', 'tang', 'tử', 'chết', 'giết', 'hại', 'ác', 'dữ', 'hung'],
-    family: ['bố', 'mẹ', 'cha', 'con', 'chồng', 'vợ', 'dâu', 'rể', 'anh', 'chị', 'em', 'ông', 'bà', 'chú', 'bác', 'cô', 'dì', 'cậu', 'mợ'],
-    secret: ['bí mật', 'giấu giếm', 'che giấu', 'giấu diếm', 'lén lút', 'vụng trộm', 'âm thầm', 'lặng lẽ', 'kín đáo', 'riêng tư']
-};
-
-const emotionalWords = {
-    positive: ['vui', 'hạnh phúc', 'yêu', 'thương', 'tuyệt vời', 'đẹp', 'tốt', 'xuất sắc', 'thành công', 'hy vọng'],
-    negative: ['buồn', 'đau', 'khổ', 'tệ', 'xấu', 'thất bại', 'tuyệt vọng', 'ghét', 'tức giận', 'lo lắng', 'sợ hãi', 'khóc', 'tang thương', 'bất hạnh', 'dối trá', 'phản bội', 'lừa dối', 'xót xa', 'đau đớn', 'xấu hổ', 'tủi nhục'],
-    neutral: ['bình thường', 'thông thường', 'trung bình', 'ổn', 'được', 'tạm ổn']
-};
-
-const dialogueIndicators = ['nói', 'bảo', 'hỏi', 'đáp', 'thưa', 'kêu', 'gọi', 'hét', 'la', 'thét', 'thì thầm', 'rủ rỉ', 'lên tiếng', 'phát biểu', 'trả lời', 'hỏi lại', 'đáp lại'];
-const dialoguePunctuation = ['"', "'", ':', ';', '-', '—', '–'];
-
-// ===== GOOGLE API INITIALIZATION =====
-function gapiLoaded() {
-    gapi.load('client', initializeGapiClient);
+// ===== INIT GOOGLE API =====
+function gapiLoaded(){ gapi.load("client", initializeGapiClient); }
+async function initializeGapiClient(){
+  await gapi.client.init({ apiKey: API_KEY, discoveryDocs:[DISCOVERY_DOC] });
+  gapi_inited = true; maybeEnableButtons();
+}
+function gisLoaded(){
+  tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback:"" });
+  gsi_inited = true; maybeEnableButtons();
+}
+function maybeEnableButtons(){ if(gapi_inited && gsi_inited){ document.getElementById("scanBtn").disabled = false; } }
+function handleAuthClick(){
+  tokenClient.callback = async (resp)=>{
+    if(resp.error) throw(resp);
+    gapi.client.setToken({access_token: resp.access_token});
+    updateStatus("🟢 Đã kết nối Google Drive");
+    document.getElementById("scanBtn").disabled = false;
+  };
+  if(gapi.client.getToken()===null){ tokenClient.requestAccessToken({prompt:"consent"}); }
+  else { tokenClient.requestAccessToken({prompt:""}); }
 }
 
-async function initializeGapiClient() {
-    await gapi.client.init({
-        apiKey: API_KEY,
-        discoveryDocs: [DISCOVERY_DOC]
+// ===== UI HELPERS =====
+function updateStatus(msg){ document.getElementById("statusInfo").innerText = msg; }
+function updateProgress(p){ document.getElementById("progressBar").style.width = p+"%"; }
+
+// ===== SCAN DRIVE =====
+async function scanFolder(){
+  updateStatus("🔍 Đang quét thư mục...");
+  const folderRes = await gapi.client.drive.files.list({
+    q:`mimeType='application/vnd.google-apps.folder' and name='${ROOT_FOLDER_NAME}' and trashed=false`,
+    fields:"files(id,name)"
+  });
+  if(!folderRes.result.files.length){ updateStatus("❌ Không tìm thấy thư mục QuanLyTruyen"); return; }
+  txtFiles = [];
+  await fetchFilesRecursive(folderRes.result.files[0].id, ROOT_FOLDER_NAME);
+  if(!txtFiles.length){ updateStatus("⚠️ Không có file .txt"); return; }
+  updateStatus(`✅ Đã quét ${txtFiles.length} file`);
+  document.getElementById("analyzeBtn").disabled = false;
+  fillStorySelect();
+}
+async function fetchFilesRecursive(folderId, path){
+  let pageToken=null;
+  do{
+    const res = await gapi.client.drive.files.list({
+      q:`'${folderId}' in parents and trashed=false`,
+      fields:"nextPageToken, files(id,name,mimeType)", pageToken
     });
-    gapi_inited = true;
-    maybeEnableButtons();
-}
-
-function gisLoaded() {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: ''
-    });
-    gsi_inited = true;
-    maybeEnableButtons();
-}
-
-function maybeEnableButtons() {
-    if (gapi_inited && gsi_inited) {
-        document.getElementById('scanBtn').disabled = false;
+    for(const f of res.result.files){
+      if(f.mimeType==="application/vnd.google-apps.folder"){
+        await fetchFilesRecursive(f.id, path+"/"+f.name);
+      } else if(f.mimeType==="text/plain"||f.name.endsWith(".txt")){
+        txtFiles.push({id:f.id,name:f.name,path});
+      }
     }
+    pageToken=res.result.nextPageToken;
+  }while(pageToken);
 }
 
-function handleAuthClick() {
-    tokenClient.callback = async (resp) => {
-        if (resp.error !== undefined) {
-            throw (resp);
-        }
-        gapi.client.setToken({access_token: resp.access_token});
-        updateStatus('🟢 Đã kết nối Google Drive');
-        document.getElementById('scanBtn').disabled = false;
-        document.getElementById('downloadAnalysisBtn').disabled = false;
-    };
-
-    if (gapi.client.getToken() === null) {
-        tokenClient.requestAccessToken({prompt: 'consent'});
-    } else {
-        tokenClient.requestAccessToken({prompt: ''});
-    }
+// ===== ANALYZE FILES (SIMPLE) =====
+async function analyzeFiles(){
+  if(!txtFiles.length){ alert("Chưa có file"); return; }
+  analysisData=[];
+  for(let i=0;i<txtFiles.length;i++){
+    updateProgress((i/txtFiles.length)*100);
+    let c = await readFileFromDrive(txtFiles[i].id);
+    analysisData.push({file:txtFiles[i].name, words:c.split(/\s+/).length, sample:c.substring(0,200)});
+  }
+  updateProgress(100);
+  displayAnalysis();
+}
+async function readFileFromDrive(fileId){
+  const accessToken = gapi.client.getToken().access_token;
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,{headers:{Authorization:`Bearer ${accessToken}`}});
+  return await r.text();
+}
+function displayAnalysis(){
+  let html = `<h4>Đã phân tích ${analysisData.length} file</h4>`;
+  analysisData.forEach(d=>{ html+=`<div class='story-content'><b>${d.file}</b><br/>Số từ: ${d.words}<br/>Mẫu: ${d.sample}...</div>`; });
+  document.getElementById("analysisResults").innerHTML=html;
 }
 
-// ===== UI UPDATE FUNCTIONS =====
-function updateStatus(msg) {
-    document.getElementById('statusInfo').innerText = msg;
+// ===== VIẾT TRUYỆN =====
+function generateStory(){
+  if(!analysisData.length){ alert("Chưa có dữ liệu phân tích"); return; }
+  let title = "Truyện Mới " + new Date().toLocaleTimeString();
+  let chapters = [];
+  for(let i=1;i<=50;i++) chapters.push(`Chương ${i}: Nội dung giả lập dựa trên phân tích...`);
+  generatedStoryData = {title, chapters};
+  document.getElementById("generatedStory").innerHTML = `<h4>${title}</h4>` + chapters.map(c=>`<p>${c}</p>`).join("");
+}
+async function saveStoryToDrive(){
+  if(!generatedStoryData){ alert("Chưa có truyện"); return; }
+  const content = generatedStoryData.title+"\n\n"+generatedStoryData.chapters.join("\n\n");
+  const blob = new Blob([content],{type:"text/plain"});
+  const metadata={name:generatedStoryData.title+".txt", mimeType:"text/plain"};
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(metadata)],{type:"application/json"}));
+  form.append("file", blob);
+  const accessToken=gapi.client.getToken().access_token;
+  await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",{
+    method:"POST", headers:{Authorization:"Bearer "+accessToken}, body:form
+  });
+  alert("✅ Đã lưu truyện lên Drive");
 }
 
-function updateProgress(p) {
-    document.getElementById('progressBar').style.width = p + '%';
+// ===== ĐỌC TRUYỆN =====
+function fillStorySelect(){
+  const sel=document.getElementById("storySelect"); sel.innerHTML="";
+  txtFiles.forEach(f=>{ let opt=document.createElement("option"); opt.value=f.id; opt.text=f.path+"/"+f.name; sel.appendChild(opt); });
+}
+async function loadSelectedStory(){
+  const sel=document.getElementById("storySelect");
+  if(!sel.value){ alert("Chưa chọn truyện"); return; }
+  let text = await readFileFromDrive(sel.value);
+  document.getElementById("readerContent").innerText=text;
 }
 
-function updateDetailedStatus(msg) {
-    document.getElementById('detailedStatus').innerText = msg;
+// ===== TAB SWITCH =====
+function switchTab(id,e){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  e.target.classList.add('active');
 }
-
-// ===== LOCAL STORAGE FUNCTIONS =====
-function saveAnalysisLocal() {
-    const analysisContent = {
-        analysisData: analysisData,
-        timestamp: new Date().toISOString()
-    };
-    localStorage.setItem('analysisResults', JSON.stringify(analysisContent));
-}
-
-function loadAnalysisLocal() {
-    const data = localStorage.getItem('analysisResults');
-    if (data) {
-        try {
-            const parsed = JSON.parse(data);
-            analysisData = parsed.analysisData || [];
-            displayAdvancedAnalysisResults();
-            updateStatus('✅ Đã tải cache local');
-            return true;
-        } catch (e) {
-            console.error('Error loading local cache:', e);
-        }
-    }
-    return false;
-}
-
-// ===== GOOGLE DRIVE FUNCTIONS =====
-function uploadAnalysisToDrive() {
-    if (!analysisData || analysisData.length === 0) {
-        alert("⚠️ Không có dữ liệu phân tích để upload!");
-        return;
-    }
-
-    const fileContent = JSON.stringify(analysisData, null, 2);
-    const file = new Blob([fileContent], { type: 'application/json' });
-
-    const metadata = {
-        name: "analysisData.json",
-        mimeType: "application/json"
-    };
-
-    const accessToken = gapi.client.getToken().access_token;
-    const form = new FormData();
-    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-    form.append("file", file);
-
-    fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
-        method: "POST",
-        headers: new Headers({ "Authorization": "Bearer " + accessToken }),
-        body: form
-    }).then(res => res.json()).then(val => {
-        alert("✅ Đã upload phân tích lên Google Drive: " + val.id);
-    }).catch(err => {
-        console.error("Upload lỗi:", err);
-        alert("❌ Lỗi khi upload: " + err.message);
-    });
-}
-
-async function downloadAnalysisFromDrive() {
-    try {
-        const accessToken = gapi.client.getToken().access_token;
-
-        let res = await fetch(
-            "https://www.googleapis.com/drive/v3/files?q=name='analysisData.json'&fields=files(id,name)",
-            { headers: new Headers({ "Authorization": "Bearer " + accessToken }) }
-        );
-        let data = await res.json();
-
-        if (!data.files || data.files.length === 0) {
-            alert("⚠️ Không tìm thấy file analysisData.json trên Google Drive!");
-            return;
-        }
-
-        const fileId = data.files[0].id;
-
-        let fileRes = await fetch(
-            `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-            { headers: new Headers({ "Authorization": "Bearer " + accessToken }) }
-        );
-        let content = await fileRes.json();
-
-        analysisData = content;
-        saveAnalysisLocal();
-
-        alert("✅ Đã tải phân tích về từ Google Drive!");
-        displayAdvancedAnalysisResults();
-
-    } catch (err) {
-        console.error("Download lỗi:", err);
-        alert("❌ Lỗi khi tải phân tích từ Google Drive: " + err.message);
-    }
-}
-
-// ===== SCAN FOLDER FUNCTION =====
-async function scanFolder() {
-    updateStatus("🔍 Đang quét thư mục QuanLyTruyen...");
-    updateProgress(5);
-
-    try {
-        const folderRes = await gapi.client.drive.files.list({
-            q: `mimeType='application/vnd.google-apps.folder' and name='${ROOT_FOLDER_NAME}' and trashed=false`,
-            fields: "files(id, name)"
-        });
-
-        if (!folderRes.result.files || folderRes.result.files.length === 0) {
-            updateStatus("❌ Không tìm thấy thư mục QuanLyTruyen trên Google Drive!");
-            return;
-        }
-
-        const rootFolderId = folderRes.result.files[0].id;
-        txtFiles = [];
-        await fetchFilesRecursive(rootFolderId, ROOT_FOLDER_NAME);
-
-        if (txtFiles.length === 0) {
-            updateStatus("⚠️ Không có file .txt nào trong QuanLyTruyen.");
-            return;
-        }
-
-        updateStatus(`✅ Đã quét được ${txtFiles.length} file .txt`);
-        updateProgress(100);
-        document.getElementById("analyzeBtn").disabled = false;
-
-    } catch (err) {
-        console.error("❌ Lỗi khi quét thư mục:", err);
-        updateStatus("❌ Lỗi khi quét thư mục: " + err.message);
-    }
-}
-
-async function fetchFilesRecursive(folderId, folderPath) {
-    let pageToken = null;
-    do {
-        const res = await gapi.client.drive.files.list({
-            q: `'${folderId}' in parents and trashed=false`,
-            fields: "nextPageToken, files(id, name, mimeType)",
-            pageToken: pageToken
-        });
-
-        for (const file of res.result.files) {
-            if (file.mimeType === "application/vnd.google-apps.folder") {
-                await fetchFilesRecursive(file.id, `${folderPath}/${file.name}`);
-            } else if (file.mimeType === "text/plain" || file.name.endsWith(".txt")) {
-                txtFiles.push({
-                    id: file.id,
-                    name: file.name,
-                    folderPath: folderPath
-                });
-            }
-        }
-        pageToken = res.result.nextPageToken;
-    } while (pageToken);
-}
-
-// ===== ANALYZE FILES FUNCTION (FIXED) =====
-async function analyzeFiles() {
-    if (!txtFiles || txtFiles.length === 0) {
-        alert('⚠️ Vui lòng quét thư mục trước!');
-        return;
-    }
-
-    // Load existing analysis from local cache
-    let existingAnalysis = [];
-    const localData = localStorage.getItem('analysisResults');
-    if (localData) {
-        try {
-            existingAnalysis = JSON.parse(localData).analysisData || [];
-        } catch (e) {
-            console.error('Error loading existing analysis:', e);
-        }
-    }
-
-    const analyzedFileNames = existingAnalysis.map(a => a.fileName);
-    let filesToAnalyze = txtFiles.filter(f => !analyzedFileNames.includes(f.name));
-
-    if (filesToAnalyze.length === 0) {
-        updateStatus('✅ Tất cả file đã được phân tích');
-        analysisData = existingAnalysis;
-        displayAdvancedAnalysisResults();
-        return;
-    }
-
-    const totalFiles = Math.min(filesToAnalyze.length, 50); // Limit to prevent timeout
-    analysisData = [...existingAnalysis];
-    
-    updateStatus(`🧠 Bắt đầu phân tích ${totalFiles} file...`);
-
-    for (let i = 0; i < totalFiles; i++) {
-        const file = filesToAnalyze[i];
-        updateProgress((i / totalFiles) * 100);
-        updateDetailedStatus(`Đang phân tích: ${file.name} (${i + 1}/${totalFiles})`);
-
-        try {
-            // *** FIX: Actually read file content from Google Drive ***
-            const content = await readFileFromDrive(file.id);
-            const analysis = await performAdvancedAnalysis(content, file.name, file.folderPath);
-            analysisData.push(analysis);
-            saveAnalysisLocal();
-            
-            // Small delay to prevent rate limiting
-            await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (err) {
-            console.error(`Error analyzing ${file.name}:`, err);
-            analysisData.push({
-                fileName: file.name,
-                folderPath: file.folderPath,
-                timestamp: new Date().toLocaleString('vi-VN'),
-                error: err.message
-            });
-        }
-    }
-
-    displayAdvancedAnalysisResults();
-    updateProgress(100);
-    updateStatus(`✅ Hoàn thành phân tích ${totalFiles} file`);
-    setTimeout(() => updateProgress(0), 2000);
-}
-
-// ===== NEW FUNCTION: READ FILE FROM DRIVE =====
-async function readFileFromDrive(fileId) {
-    try {
-        const accessToken = gapi.client.getToken().access_token;
-        const response = await fetch(
-            `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            }
-        );
-        
-        if (!response.ok) {
-            throw new Error(`Failed to read file: ${response.status}`);
-        }
-        
-        return await response.text();
-    } catch (error) {
-        throw new Error(`Error reading file: ${error.message}`);
-    }
-}
-
-// ===== STORY ANALYSIS FUNCTIONS =====
-async function performAdvancedAnalysis(content, fileName, folderPath) {
-    const structure = analyzeStoryStructure(content);
-    const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
-
-    return {
-        fileName: fileName,
-        folderPath: folderPath,
-        timestamp: new Date().toLocaleString('vi-VN'),
-        basicStats: { 
-            wordCount: wordCount,
-            charCount: content.length,
-            lineCount: content.split('\n').length
-        },
-        contentSample: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
-        storyStructure: structure
-    };
-}
-
-function analyzeStoryStructure(content) {
-    const lower = content.toLowerCase();
-    
-    // Helper function to find matches
-    function findMatches(words) {
-        return words.filter(w => lower.includes(w.toLowerCase()));
-    }
-
-    // 1. Structural analysis
-    const contentLength = content.length;
-    const moBai = content.substring(0, Math.min(300, contentLength));
-    const ketBai = contentLength > 300 ? content.substring(Math.max(0, contentLength - 300)) : '';
-    const thanBai = contentLength > 600 ? content.substring(300, contentLength - 300) : content.substring(300);
-
-    // 2. Narrative perspective
-    let ngoike = "Ngôi thứ ba";
-    if (/\btôi\b|\bta\b|\bchúng tôi\b/i.test(content)) ngoike = "Ngôi thứ nhất";
-    if (/\bbạn\b|\bcậu\b|\bmày\b/i.test(content)) ngoike = "Ngôi thứ hai";
-
-    // 3. Character detection (proper nouns)
-    let characterMatches = content.match(/\b[A-ZÀÁẢÃẠÂĂĐÊÔƠƯ][a-zàáảãạâăđêôơư]+\b/g) || [];
-    let uniqueChars = [...new Set(characterMatches)].slice(0, 10);
-
-    // 4. Dialogue detection
-    let dialogues = [];
-    const lines = content.split('\n');
-    for (const line of lines) {
-        if (/["'].*["']/.test(line) || dialogueIndicators.some(ind => line.toLowerCase().includes(ind))) {
-            dialogues.push(line.trim());
-            if (dialogues.length >= 5) break;
-        }
-    }
-
-    // 5. Time and place keywords
-    const timeKeywords = ["sáng", "trưa", "chiều", "tối", "đêm", "hôm qua", "ngày mai", "năm", "tháng", "tuần", "giờ"];
-    const placeKeywords = ["nhà", "làng", "thành phố", "rừng", "biển", "núi", "trường", "chợ", "sông", "phố", "quê"];
-    const eventKeywords = ["gặp gỡ", "chia ly", "thử thách", "xung đột", "chiến đấu", "giải cứu", "bí mật", "cưới", "chết"];
-
-    let times = findMatches(timeKeywords);
-    let places = findMatches(placeKeywords);
-    let events = findMatches(eventKeywords);
-
-    // 6. Sensitive content analysis
-    let romantic = findMatches(sensitiveWords.romantic);
-    let sexual = findMatches(sensitiveWords.sexual);
-    let negative = findMatches(sensitiveWords.negative);
-    let family = findMatches(sensitiveWords.family);
-    let secret = findMatches(sensitiveWords.secret);
-
-    // 7. Emotional analysis
-    let emotionPos = findMatches(emotionalWords.positive);
-    let emotionNeg = findMatches(emotionalWords.negative);
-    let emotionNeu = findMatches(emotionalWords.neutral);
-
-    return {
-        moBai: moBai,
-        thanBai: thanBai.substring(0, 500) + (thanBai.length > 500 ? '...' : ''),
-        ketBai: ketBai,
-        ngoike: ngoike,
-        nhanVat: uniqueChars,
-        hoiThoai: dialogues,
-        thoiGian: times,
-        diaDiem: places,
-        tinhHuong: events,
-        tuNgu18: sexual, // Renamed for consistency
-        romantic: romantic,
-        sexual: sexual,
-        negative: negative,
-        family: family,
-        secret: secret,
-        emotion: {
-            positive: emotionPos,
-            negative: emotionNeg,
-            neutral: emotionNeu
-        }
-    };
-}
-
-// ===== DISPLAY RESULTS FUNCTION =====
-function displayAdvancedAnalysisResults() {
-    const safeArray = v => Array.isArray(v) ? v : [];
-    const safeJoin = (value, separator = ', ') => {
-        if (Array.isArray(value)) {
-            return value.join(separator);
-        }
-        if (typeof value === "string") {
-            return value;
-        }
-        return "";
-    };
-
-    const container = document.getElementById('analysisResults');
-    if (!analysisData || analysisData.length === 0) {
-        container.innerHTML = '<p>Chưa có dữ liệu phân tích.</p>';
-        return;
-    }
-
-    let html = `<h4>📊 Đã phân tích ${analysisData.length} file truyện</h4>`;
-
-    // Statistics summary
-    const totalWords = analysisData.reduce((sum, d) => sum + (d.basicStats?.wordCount || 0), 0);
-    const avgWords = Math.round(totalWords / analysisData.length);
-    html += `<div style="background:#2c3e50;padding:10px;margin:10px 0;border-radius:8px;">
-        <p><strong>📈 Thống kê tổng quan:</strong></p>
-        <p>• Tổng số từ: ${totalWords.toLocaleString()} từ</p>
-        <p>• Trung bình: ${avgWords.toLocaleString()} từ/file</p>
-    </div>`;
-
-    analysisData.forEach((d, index) => {
-        if (d.error) {
-            html += `<div style="background:#e74c3c;padding:10px;margin:10px 0;border-radius:8px;">
-                ❌ <strong>${d.fileName}</strong>: ${d.error}
-            </div>`;
-        } else {
-            const struct = d.storyStructure || {};
-            html += `<div style="background:#34495e;padding:15px;margin:10px 0;border-radius:8px;">
-                <h5>📄 ${d.fileName}</h5>
-                <p style="color:#bdc3c7;font-size:0.9em;">${d.folderPath} • ${d.timestamp}</p>
-                
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;">
-                    <div><strong>📊 Số từ:</strong> ${(d.basicStats?.wordCount || 0).toLocaleString()}</div>
-                    <div><strong>📝 Ngôi kể:</strong> ${struct.ngoike || 'Không xác định'}</div>
-                </div>
-
-                <div style="margin:10px 0;">
-                    <p><strong>👥 Nhân vật:</strong> ${safeJoin(struct.nhanVat)}</p>
-                    <p><strong>⏰ Thời gian:</strong> ${safeJoin(struct.thoiGian)}</p>
-                    <p><strong>🌍 Địa điểm:</strong> ${safeJoin(struct.diaDiem)}</p>
-                    <p><strong>🎭 Tình huống:</strong> ${safeJoin(struct.tinhHuong)}</p>
-                </div>
-
-                <!-- Content Structure -->
-                <div style="margin:10px 0;">
-                    <details>
-                        <summary style="cursor:pointer;color:#3498db;"><strong>📖 Mở bài</strong></summary>
-                        <div class="story-content">${struct.moBai || 'Không có dữ liệu'}</div>
-                    </details>
-                    
-                    <details>
-                        <summary style="cursor:pointer;color:#3498db;"><strong>📖 Thân bài</strong></summary>
-                        <div class="story-content">${struct.thanBai || 'Không có dữ liệu'}</div>
-                    </details>
-                    
-                    <details>
-                        <summary style="cursor:pointer;color:#3498db;"><strong>📖 Kết bài</strong></summary>
-                        <div class="story-content">${struct.ketBai || 'Không có dữ liệu'}</div>
-                    </details>
-                </div>
-
-                <!-- Dialogue -->
-                ${struct.hoiThoai && struct.hoiThoai.length > 0 ? `
-                <details>
-                    <summary style="cursor:pointer;color:#2ecc71;"><strong>💬 Hội thoại (${struct.hoiThoai.length})</strong></summary>
-                    <div class="story-content">
-                        ${struct.hoiThoai.map(dialogue => `<p>• ${dialogue}</p>`).join('')}
-                    </div>
-                </details>` : ''}
-
-                <!-- Emotional Analysis -->
-                <div style="margin:10px 0;">
-                    <p><strong>😊 Cảm xúc tích cực:</strong> ${safeJoin(safeArray(struct.emotion?.positive))}</p>
-                    <p><strong>😢 Cảm xúc tiêu cực:</strong> ${safeJoin(safeArray(struct.emotion?.negative))}</p>
-                    <p><strong>😐 Cảm xúc trung tính:</strong> ${safeJoin(safeArray(struct.emotion?.neutral))}</p>
-                </div>
-
-                <!-- Content Categories -->
-                <div style="margin:10px 0;">
-                    <p><strong>💝 Ngôn ngữ tình cảm:</strong> ${safeJoin(struct.romantic)}</p>
-                    <p><strong>👨‍👩‍👧‍👦 Gia đình:</strong> ${safeJoin(struct.family)}</p>
-                    <p><strong>🤫 Bí mật:</strong> ${safeJoin(struct.secret)}</p>
-                    <p><strong>⚠️ Tiêu cực:</strong> ${safeJoin(struct.negative)}</p>
-                    ${struct.sexual && struct.sexual.length > 0 ? `
-                        <p><strong>🔞 Nội dung nhạy cảm:</strong> <span style="color:#e74c3c;">${struct.sexual.length} từ khóa phát hiện</span></p>
-                    ` : ''}
-                </div>
-
-                <!-- Content Sample -->
-                <details>
-                    <summary style="cursor:pointer;color:#95a5a6;"><strong>📝 Mẫu nội dung</strong></summary>
-                    <div class="story-content" style="font-style:italic;">${d.contentSample || 'Không có dữ liệu'}</div>
-                </details>
-            </div>`;
-        }
-    });
-
-    container.innerHTML = html;
-}
-
-// ===== UI NAVIGATION =====
-function switchTab(id) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-    
-    document.getElementById(id).classList.add('active');
-    event.target.classList.add('active');
-}
-
-// ===== INITIALIZATION =====
-document.addEventListener('DOMContentLoaded', function() {
-    // Try to load cached analysis on page load
-    loadAnalysisLocal();
-});
 </script>
 
 <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
