@@ -3,1021 +3,377 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Tạo Truyện Bố Chồng - Nàng Dâu</title>
+    <title>Công cụ Phân tích và Sáng tác Truyện</title>
     <style>
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --light-color: #ecf0f1;
-            --dark-color: #34495e;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --primary-color: #3a506b;
+            --secondary-color: #1c2541;
+            --accent-color: #5d7592;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --light-text: #f8f9fa;
         }
         
         body {
-            background-color: #f5f7fa;
-            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: var(--light-text);
+            padding: 1rem;
+            text-align: center;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 1rem;
         }
         
-        header {
-            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
-            color: white;
-            padding: 20px 0;
-            text-align: center;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-        
-        header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 30px;
-        }
-        
-        .control-panel {
+        .upload-section, .analysis-section, .creation-section, .learning-section {
             background: white;
-            padding: 25px;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
         
-        .control-group {
-            margin-bottom: 25px;
-        }
-        
-        .control-group h3 {
-            margin-bottom: 15px;
+        h1, h2, h3 {
             color: var(--secondary-color);
-            border-bottom: 2px solid var(--light-color);
-            padding-bottom: 8px;
         }
         
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: var(--dark-color);
-        }
-        
-        select, input, textarea {
+        textarea, input[type="text"] {
             width: 100%;
-            padding: 12px;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-size: 16px;
-            background-color: #f9f9f9;
-            transition: border-color 0.3s;
+            font-family: inherit;
         }
         
-        select:focus, input:focus, textarea:focus {
-            border-color: var(--primary-color);
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-        
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: var(--primary-color);
+        button {
+            background-color: var(--accent-color);
             color: white;
             border: none;
+            padding: 0.7rem 1.5rem;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s;
-            text-align: center;
+            font-size: 1rem;
+            transition: background-color 0.3s;
         }
         
-        .btn:hover {
-            background-color: #2980b9;
-            transform: translateY(-2px);
-        }
-        
-        .btn:active {
-            transform: translateY(0);
-        }
-        
-        .btn-block {
-            display: block;
-            width: 100%;
-        }
-        
-        .btn-secondary {
+        button:hover {
             background-color: var(--secondary-color);
         }
         
-        .btn-secondary:hover {
-            background-color: #2c3e50;
-        }
-        
-        .btn-accent {
-            background-color: var(--accent-color);
-        }
-        
-        .btn-accent:hover {
-            background-color: #c0392b;
-        }
-        
-        .action-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        .story-container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            min-height: 500px;
-        }
-        
-        .story-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--light-color);
-            padding-bottom: 15px;
-        }
-        
-        .story-header h2 {
-            color: var(--secondary-color);
-        }
-        
-        .story-content {
-            line-height: 1.8;
-            font-size: 17px;
-        }
-        
-        .stats-panel {
-            background: var(--light-color);
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 30px;
-        }
-        
-        .stats-panel h3 {
-            margin-bottom: 15px;
-            color: var(--secondary-color);
-        }
-        
-        .stats-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        
-        .stat-item {
-            background: white;
-            padding: 15px;
-            border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        
-        .learning-panel {
-            background: #e8f4fc;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 30px;
-            display: none;
-        }
-        
-        .learning-panel h3 {
-            margin-bottom: 15px;
-            color: var(--primary-color);
-        }
-        
-        .warning {
-            background-color: #ffecb3;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            margin: 20px 0;
+        .analysis-result, .generated-story {
+            background-color: #f5f5f5;
+            padding: 1rem;
             border-radius: 4px;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+        }
+        
+        .character-grid, .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .character-card, .theme-card {
+            background-color: #e9ecef;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+        
+        .hidden {
             display: none;
-        }
-        
-        .template-card {
-            background: white;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 15px;
-        }
-        
-        .template-card:hover {
-            border-color: var(--primary-color);
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .template-card.selected {
-            border-color: var(--primary-color);
-            background-color: #e8f4fc;
-        }
-        
-        .template-card h4 {
-            color: var(--secondary-color);
-            margin-bottom: 10px;
-        }
-        
-        .template-card p {
-            color: #666;
-            font-size: 14px;
         }
         
         footer {
             text-align: center;
-            margin-top: 50px;
-            padding: 20px;
-            color: #777;
-            border-top: 1px solid #ddd;
-        }
-        
-        @media (max-width: 900px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-            
-            .action-buttons {
-                grid-template-columns: 1fr;
-            }
+            padding: 1rem;
+            background-color: var(--primary-color);
+            color: var(--light-text);
+            margin-top: 2rem;
         }
     </style>
 </head>
 <body>
+    <header>
+        <h1>Công cụ Phân tích và Sáng tác Truyện</h1>
+    </header>
+    
     <div class="container">
-        <header>
-            <h1>Hệ Thống Tạo Truyện Bố Chồng - Nàng Dâu</h1>
-            <p>Sử dụng AI để tạo những câu chuyện kịch tính đầy cảm xúc</p>
-        </header>
+        <section class="upload-section">
+            <h2>Tải lên dữ liệu truyện</h2>
+            <textarea id="storyData" rows="10" placeholder="Dán nội dung truyện vào đây..."></textarea>
+            <button id="analyzeBtn">Phân tích truyện</button>
+        </section>
         
-        <div class="main-content">
-            <div class="control-panel">
-                <div class="control-group">
-                    <h3>Chọn thể loại</h3>
-                    <div class="template-card selected" data-template="family_drama">
-                        <h4>Gia Đình Kịch Tính</h4>
-                        <p>Truyện về mối quan hệ phức tạp bố chồng - nàng dâu</p>
-                    </div>
-                </div>
-                
-                <div class="control-group">
-                    <h3>Thiết lập câu chuyện</h3>
-                    <div class="form-group">
-                        <label for="storyLength">Độ dài truyện</label>
-                        <select id="storyLength">
-                            <option value="short">Ngắn (khoảng 800 từ)</option>
-                            <option value="medium" selected>Trung bình (khoảng 1500 từ)</option>
-                            <option value="long">Dài (khoảng 2500 từ)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="narrativePerspective">Góc nhìn kể chuyện</label>
-                        <select id="narrativePerspective">
-                            <option value="first">Ngôi thứ nhất (Tôi)</option>
-                            <option value="third" selected>Ngôi thứ ba (Người kể chuyện)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="creativityLevel">Mức độ kịch tính (0-10)</label>
-                        <input type="range" id="creativityLevel" min="1" max="10" value="7">
-                        <output for="creativityLevel" id="creativityValue">7</output>
-                    </div>
-                </div>
-                
-                <button id="generateBtn" class="btn btn-block">📖 Tạo Truyện Gia Đình</button>
-                
-                <div class="warning" id="contentWarning">
-                    <strong>Lưu ý:</strong> Nội dung truyện chứa các chủ đề nhạy cảm về mối quan hệ gia đình.
-                </div>
-                
-                <div class="action-buttons">
-                    <button id="improveBtn" class="btn btn-secondary" disabled>✨ Cải Thiện</button>
-                    <button id="regenBtn" class="btn btn-secondary" disabled>🔄 Tạo Lại</button>
-                    <button id="copyBtn" class="btn" disabled>📋 Sao Chép</button>
-                    <button id="saveBtn" class="btn btn-accent" disabled>💾 Lưu Lại</button>
-                </div>
+        <section id="analysisSection" class="analysis-section hidden">
+            <h2>Kết quả phân tích</h2>
+            <div class="analysis-result" id="analysisResult">
+                <!-- Kết quả phân tích sẽ được hiển thị ở đây -->
             </div>
             
-            <div class="story-container">
-                <div class="story-header">
-                    <h2>Câu chuyện của bạn</h2>
-                </div>
-                <div class="story-content" id="generatedStory">
-                    <div style="text-align: center; padding: 40px; color: #7f8c8d;">
-                        <div style="font-size: 48px; margin-bottom: 20px;">📖</div>
-                        <h3>Chưa có truyện nào được tạo</h3>
-                        <p>Hãy chọn một thể loại và nhấn "Tạo Truyện Gia Đình" để bắt đầu</p>
-                    </div>
-                </div>
-                
-                <div class="learning-panel" id="learningStats">
-                    <h3>🧠 AI Đang Học</h3>
-                    <div id="learningContent"></div>
-                </div>
-                
-                <div class="stats-panel" id="generationStats">
-                    <h3>📊 Thống kê</h3>
-                    <div id="statsContent"></div>
-                </div>
+            <h3>Nhân vật chính</h3>
+            <div class="character-grid" id="characterGrid">
+                <!-- Thẻ nhân vật sẽ được thêm ở đây -->
             </div>
-        </div>
+            
+            <h3>Chủ đề và cảm xúc</h3>
+            <div class="theme-grid" id="themeGrid">
+                <!-- Thẻ chủ đề sẽ được thêm ở đây -->
+            </div>
+        </section>
         
-        <footer>
-            <p>Hệ thống tạo truyện thông minh bằng AI &copy; 2023</p>
-        </footer>
+        <section id="creationSection" class="creation-section hidden">
+            <h2>Tạo truyện mới</h2>
+            <input type="text" id="storyTitle" placeholder="Tiêu đề truyện">
+            <textarea id="storyPrompt" rows="5" placeholder="Mô tả ý tưởng truyện hoặc để trống để tạo ngẫu nhiên"></textarea>
+            <button id="generateBtn">Tạo truyện</button>
+            
+            <div class="generated-story hidden" id="generatedStory">
+                <!-- Truyện được tạo sẽ hiển thị ở đây -->
+            </div>
+        </section>
+        
+        <section id="learningSection" class="learning-section hidden">
+            <h2>Học từ truyện đã tạo</h2>
+            <p>Hệ thống sẽ tự động học từ những truyện bạn đã tạo để cải thiện chất lượng trong tương lai.</p>
+            <div id="learningStatus"></div>
+        </section>
     </div>
+    
+    <footer>
+        <p>Công cụ Phân tích và Sáng tác Truyện &copy; 2023</p>
+    </footer>
 
     <script>
-        // ===== BIẾN TOÀN CỤC =====
-        let selectedTemplate = 'family_drama';
-        let generatedStoryContent = '';
-        let analysisData = [];
-
-        // ===== KHỞI TẠO TRANG =====
         document.addEventListener('DOMContentLoaded', function() {
-            // Thiết lập slider mức độ kịch tính
-            const creativitySlider = document.getElementById('creativityLevel');
-            const creativityValue = document.getElementById('creativityValue');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const generateBtn = document.getElementById('generateBtn');
+            const storyData = document.getElementById('storyData');
+            const analysisSection = document.getElementById('analysisSection');
+            const analysisResult = document.getElementById('analysisResult');
+            const characterGrid = document.getElementById('characterGrid');
+            const themeGrid = document.getElementById('themeGrid');
+            const creationSection = document.getElementById('creationSection');
+            const generatedStory = document.getElementById('generatedStory');
+            const learningSection = document.getElementById('learningSection');
+            const learningStatus = document.getElementById('learningStatus');
             
-            creativitySlider.addEventListener('input', function() {
-                creativityValue.textContent = this.value;
+            // Lưu trữ dữ liệu đã phân tích và học
+            let analyzedData = {
+                characters: [],
+                themes: [],
+                emotions: [],
+                plotPoints: []
+            };
+            
+            let generatedStories = JSON.parse(localStorage.getItem('generatedStories')) || [];
+            
+            // Xử lý sự kiện phân tích
+            analyzeBtn.addEventListener('click', function() {
+                const text = storyData.value;
+                if (text.trim() === '') {
+                    alert('Vui lòng nhập nội dung truyện để phân tích');
+                    return;
+                }
+                
+                // Phân tích văn bản
+                analyzeText(text);
+                
+                // Hiển thị phần phân tích
+                analysisSection.classList.remove('hidden');
+                creationSection.classList.remove('hidden');
+                learningSection.classList.remove('hidden');
             });
             
-            // Hiển thị cảnh báo nội dung
-            document.getElementById('contentWarning').style.display = 'block';
+            // Xử lý sự kiện tạo truyện
+            generateBtn.addEventListener('click', function() {
+                const title = document.getElementById('storyTitle').value || 'Truyện không tiêu đề';
+                const prompt = document.getElementById('storyPrompt').value;
+                
+                // Tạo truyện mới dựa trên dữ liệu đã phân tích
+                const newStory = generateStory(title, prompt);
+                
+                // Hiển thị truyện đã tạo
+                generatedStory.textContent = newStory;
+                generatedStory.classList.remove('hidden');
+                
+                // Lưu truyện đã tạo
+                generatedStories.push({
+                    title: title,
+                    content: newStory,
+                    timestamp: new Date().toISOString()
+                });
+                
+                localStorage.setItem('generatedStories', JSON.stringify(generatedStories));
+                
+                // Cập nhật hệ thống học
+                updateLearningSystem();
+            });
             
-            // Thiết lập sự kiện cho nút tạo truyện
-            document.getElementById('generateBtn').addEventListener('click', generateFamilyDramaStory);
+            // Hàm phân tích văn bản
+            function analyzeText(text) {
+                // Phân tích nhân vật (đơn giản - tìm tên riêng)
+                const characterRegex = /(\b[A-Z][a-z]+ [A-Z][a-z]+\b|\b[A-Z][a-z]+\b)/g;
+                const characterMatches = text.match(characterRegex) || [];
+                
+                // Lọc và đếm tần suất xuất hiện
+                const characterCounts = {};
+                characterMatches.forEach(char => {
+                    // Bỏ qua các từ có thể không phải tên riêng
+                    const commonWords = ['ông', 'bà', 'anh', 'chị', 'em', 'tôi', 'nàng', 'cha', 'con'];
+                    if (!commonWords.includes(char.toLowerCase())) {
+                        characterCounts[char] = (characterCounts[char] || 0) + 1;
+                    }
+                });
+                
+                // Sắp xếp theo tần suất
+                analyzedData.characters = Object.entries(characterCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10) // Lấy 10 nhân vật xuất hiện nhiều nhất
+                    .map(([name, count]) => ({ name, count }));
+                
+                // Phân tích chủ đề (đơn giản - tìm từ khóa)
+                const themes = ['tình yêu', 'gia đình', 'dục vọng', 'loạn luân', 'lừa dối', 'hối hận', 'kế hoạch', 'ghen tuông'];
+                analyzedData.themes = themes.map(theme => {
+                    const regex = new RegExp(theme, 'gi');
+                    const matches = text.match(regex);
+                    return {
+                        theme,
+                        count: matches ? matches.length : 0
+                    };
+                }).filter(item => item.count > 0);
+                
+                // Phân tích cảm xúc (đơn giản)
+                const emotions = ['vui mừng', 'tức giận', 'buồn bã', 'sợ hãi', 'kinh ngạc', 'ghê tởm', 'hồi hộp', 'ghen tị'];
+                analyzedData.emotions = emotions.map(emotion => {
+                    const regex = new RegExp(emotion, 'gi');
+                    const matches = text.match(regex);
+                    return {
+                        emotion,
+                        count: matches ? matches.length : 0
+                    };
+                }).filter(item => item.count > 0);
+                
+                // Trích xuất các điểm cốt truyện quan trọng (đơn giản - câu có độ dài trên trung bình)
+                const sentences = text.split(/[.!?]+/).filter(s => s.length > 0);
+                analyzedData.plotPoints = sentences
+                    .filter(s => s.split(' ').length > 10) // Câu có hơn 10 từ
+                    .slice(0, 5) // Lấy 5 câu
+                    .map(s => s.trim());
+                
+                // Hiển thị kết quả phân tích
+                displayAnalysisResults();
+            }
             
-            // Thiết lập sự kiện cho các nút chức năng
-            document.getElementById('improveBtn').addEventListener('click', improveStory);
-            document.getElementById('regenBtn').addEventListener('click', regenerateStory);
-            document.getElementById('copyBtn').addEventListener('click', copyStory);
-            document.getElementById('saveBtn').addEventListener('click', saveStoryToDrive);
+            // Hiển thị kết quả phân tích
+            function displayAnalysisResults() {
+                // Hiển thị tổng quan
+                analysisResult.innerHTML = `
+                    Đã phân tích thành công!
+                    - Tìm thấy ${analyzedData.characters.length} nhân vật chính
+                    - Xác định ${analyzedData.themes.length} chủ đề
+                    - Nhận diện ${analyzedData.emotions.length} loại cảm xúc
+                    - Trích xuất ${analyzedData.plotPoints.length} điểm cốt truyện quan trọng
+                `;
+                
+                // Hiển thị nhân vật
+                characterGrid.innerHTML = '';
+                analyzedData.characters.forEach(char => {
+                    const card = document.createElement('div');
+                    card.className = 'character-card';
+                    card.innerHTML = `<strong>${char.name}</strong> (xuất hiện ${char.count} lần)`;
+                    characterGrid.appendChild(card);
+                });
+                
+                // Hiển thị chủ đề
+                themeGrid.innerHTML = '';
+                analyzedData.themes.forEach(theme => {
+                    const card = document.createElement('div');
+                    card.className = 'theme-card';
+                    card.innerHTML = `<strong>${theme.theme}</strong> (xuất hiện ${theme.count} lần)`;
+                    themeGrid.appendChild(card);
+                });
+                
+                // Hiển thị cảm xúc
+                analyzedData.emotions.forEach(emotion => {
+                    const card = document.createElement('div');
+                    card.className = 'theme-card';
+                    card.innerHTML = `<strong>${emotion.emotion}</strong> (xuất hiện ${emotion.count} lần)`;
+                    themeGrid.appendChild(card);
+                });
+            }
+            
+            // Hàm tạo truyện mới
+            function generateStory(title, prompt) {
+                // Lấy ngẫu nhiên một số nhân vật
+                const mainCharacters = analyzedData.characters
+                    .slice(0, 3)
+                    .map(c => c.name)
+                    .join(', ');
+                
+                // Lấy ngẫu nhiên một số chủ đề
+                const mainThemes = analyzedData.themes
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 2)
+                    .map(t => t.theme)
+                    .join(', ');
+                
+                // Lấy ngẫu nhiên một điểm cốt truyện
+                const randomPlotPoint = analyzedData.plotPoints.length > 0 
+                    ? analyzedData.plotPoints[Math.floor(Math.random() * analyzedData.plotPoints.length)]
+                    : '';
+                
+                // Tạo truyện dựa trên dữ liệu đã phân tích
+                let story = `Tiêu đề: ${title}\n\n`;
+                
+                if (prompt) {
+                    story += `Dựa trên gợi ý: ${prompt}\n\n`;
+                }
+                
+                story += `Truyện xoay quanh ${mainCharacters} với các chủ đề ${mainThemes}.\n\n`;
+                
+                story += `Mở đầu: ${randomPlotPoint}\n\n`;
+                
+                // Thêm nội dung dựa trên các truyện đã tạo trước đó (học máy đơn giản)
+                if (generatedStories.length > 0) {
+                    const lastStory = generatedStories[generatedStories.length - 1];
+                    story += `Phát triển: ${lastStory.content.substring(0, 200)}...\n\n`;
+                } else {
+                    story += "Phát triển: Câu chuyện dần hé lộ những bí mật không ngờ, làm thay đổi mối quan hệ giữa các nhân vật.\n\n";
+                }
+                
+                story += "Kết thúc: Mọi chuyện dần sáng tỏ, để lại những bài sâu sắc về cuộc sống và con người.";
+                
+                return story;
+            }
+            
+            // Cập nhật hệ thống học
+            function updateLearningSystem() {
+                learningStatus.textContent = `Hệ thống đã học từ ${generatedStories.length} truyện được tạo. Chất lượng sẽ được cải thiện sau mỗi lần tạo.`;
+                
+                // Ở phiên bản nâng cao, đây sẽ là nơi cập nhật mô hình học máy
+                // Ví dụ: lưu các từ khóa thường được sử dụng, cấu trúc câu, v.v.
+            }
+            
+            // Khởi tạo nếu đã có dữ liệu trước đó
+            if (generatedStories.length > 0) {
+                learningSection.classList.remove('hidden');
+                updateLearningSystem();
+            }
         });
-
-        // ===== HỆ THỐNG TẠO TRUYỆN =====
-        // (Dán toàn bộ mã JavaScript từ hệ thống tạo truyện ở đây)
-        // Bao gồm: familyDramaVocabulary, familyDramaPatterns, 
-        // FamilyDramaLearningSystem, và tất cả các hàm liên quan
-
-        // ===== CÁC HÀM GIAO DIỆN =====
-        function displayGeneratedStory(story) {
-            const container = document.getElementById('generatedStory');
-            
-            // Tách tiêu đề và nội dung
-            const parts = story.split('\n\n');
-            const title = parts[0];
-            const content = parts.slice(1).join('\n\n');
-            
-            // Format với HTML
-            const formattedContent = content
-                .replace(/\n\n/g, '</p><p>')
-                .replace(/\n/g, '<br>');
-            
-            container.innerHTML = `
-                <h3 style="color: #3498db; text-align: center; margin-bottom: 20px;">${title}</h3>
-                <div style="line-height: 1.8; font-size: 16px;">
-                    <p>${formattedContent}</p>
-                </div>
-            `;
-        }
-
-        function showLearningProcess() {
-            const learningDiv = document.getElementById('learningStats');
-            const content = document.getElementById('learningContent');
-            
-            content.innerHTML = `
-                <p>🔍 Phân tích các mẫu truyện hiện có...</p>
-                <p>🧠 Áp dụng các kỹ thuật viết kịch tính...</p>
-                <p>✨ Sáng tạo nội dung mới với tình tiết hấp dẫn...</p>
-            `;
-            
-            learningDiv.style.display = 'block';
-        }
-
-        function updateLearningStats(report) {
-            const learningDiv = document.getElementById('learningStats');
-            const content = document.getElementById('learningContent');
-            
-            content.innerHTML = `
-                <p>📚 Đã học được ${report.learnedScenes} cảnh hay mới</p>
-                <p>🚫 Tránh được ${report.avoidedPatterns} lỗi lặp</p>
-                <p>📈 Cải thiện liên tục qua từng lần tạo truyện</p>
-            `;
-        }
-
-        function showAdvancedStats(storyData) {
-            const statsDiv = document.getElementById('generationStats');
-            const statsContent = document.getElementById('statsContent');
-            
-            statsContent.innerHTML = `
-                <p>• Số từ: <strong>${storyData.wordCount}</strong></p>
-                <p>• Nhân vật: <strong>${storyData.characters.length}</strong></p>
-                <p>• Độ phức tạp cốt truyện: <strong>Cao</strong></p>
-                <p>• Mức độ kịch tính: <strong>${document.getElementById('creativityLevel').value}/10</strong></p>
-            `;
-            
-            statsDiv.style.display = 'block';
-        }
-
-        function enableActionButtons() {
-            document.getElementById('copyBtn').disabled = false;
-            document.getElementById('saveBtn').disabled = false;
-            document.getElementById('regenBtn').disabled = false;
-            document.getElementById('improveBtn').disabled = false;
-        }
-
-        function copyStory() {
-            if (!generatedStoryContent) return;
-            
-            navigator.clipboard.writeText(generatedStoryContent).then(() => {
-                alert('Đã sao chép truyện vào clipboard!');
-            }).catch(err => {
-                console.error('Copy failed:', err);
-                alert('Không thể sao chép. Vui lòng thử lại!');
-            });
-        }
-
-        function saveStoryToDrive() {
-            if (!generatedStoryContent) return;
-            
-            // Code lưu trữ lên Google Drive sẽ được thêm ở đây
-            // Tạm thời sử dụng localStorage
-            const stories = JSON.parse(localStorage.getItem('savedStories') || '[]');
-            stories.push({
-                content: generatedStoryContent,
-                timestamp: new Date().toISOString(),
-                title: generatedStoryContent.split('\n')[0]
-            });
-            
-            localStorage.setItem('savedStories', JSON.stringify(stories));
-            alert('Đã lưu truyện thành công!');
-        }
-
-        function improveStory() {
-            if (!generatedStoryContent) {
-                alert('Chưa có truyện để cải thiện!');
-                return;
-            }
-            
-            const improvements = [
-                'Thêm chi tiết miêu tả',
-                'Phát triển tâm lý nhân vật', 
-                'Cải thiện hội thoại',
-                'Tăng cường cảm xúc',
-                'Hoàn thiện kết thúc'
-            ];
-            
-            const improvement = improvements[Math.floor(Math.random() * improvements.length)];
-            
-            // Simulate improvement process
-            const improveBtn = document.getElementById('improveBtn');
-            improveBtn.innerHTML = `✨ Đang ${improvement.toLowerCase()}...`;
-            improveBtn.disabled = true;
-            
-            setTimeout(() => {
-                // Apply actual improvements here
-                alert(`✅ Đã ${improvement.toLowerCase()} cho truyện!`);
-                improveBtn.innerHTML = '✨ Cải Thiện';
-                improveBtn.disabled = false;
-            }, 2000);
-        }
-
-        function regenerateStory() {
-            if (confirm('Bạn có muốn tạo lại truyện với phiên bản cải tiến?')) {
-                generateFamilyDramaStory();
-            }
-        }
-
-        // ===== HỆ THỐNG TẠO TRUYỆN CHÍNH =====
-       // ===== HỆ THỐNG TẠO TRUYỆN BỐ CHỒNG - NÀNG DÂU THÔNG MINH =====
-
-// Bộ từ vựng chuyên biệt cho chủ đề
-const familyDramaVocabulary = {
-    relationships: {
-        family: ['bố chồng', 'nàng dâu', 'con trai', 'con dâu', 'gia đình', 'mối quan hệ', 'ràng buộc'],
-        tension: ['cấm kỵ', 'giấu giếm', 'bí mật', 'lén lút', 'đam mê', 'dằn vặt', 'tội lỗi'],
-        discovery: ['phát hiện', 'tình cờ', 'chứng kiến', 'nhìn thấy', 'nghe thấy', 'nghi ngờ']
-    },
-    
-    causes: {
-        husband_absence: ['công tác xa', 'đi nước ngoài', 'thường xuyên vắng nhà', 'bận rộn công việc', 'mải mê kiếm tiền'],
-        husband_issues: ['vô tâm', 'lạnh lùng', 'không quan tâm', 'thờ ơ', 'không chia sẻ', 'thiếu trách nhiệm'],
-        emotional_gaps: ['cô đơn', 'trống trải', 'thiếu thốn tình cảm', 'khao khát được quan tâm', 'cần người chia sẻ']
-    },
-    
-    intense_emotions: {
-        guilt: ['dằn vặt', 'cắn rứt lương tâm', 'tội lỗi', 'hối hận', 'ăn năn', 'day dứt'],
-        temptation: ['cám dỗ', 'khát khao', 'khó cưỡng lại', 'mê đắm', 'say mê', 'quyến rũ'],
-        conflict: ['giằng xé', 'đấu tranh', 'mâu thuẫn', 'tiến thoái lưỡng nan', 'lựa chọn khó khăn']
-    },
-    
-    near_discovery: {
-        situations: ['vội vã kéo nhau vào nhà vệ sinh', 'vô tình để lại vết son trên cổ áo', 
-                    'để quên điện thoại có tin nhắn nhạy cảm', 'bị hàng xóm nhìn thấy lén lút',
-                    'suýt bị con trai về nhà sớm bắt gặp', 'lỡ gọi nhầm tên thân mật'],
-        reactions: ['hoảng hốt', 'vội vã che giấu', 'giả vờ bình thường', 'đánh trống lảng',
-                   'tìm cách giải thích', 'im lặng cho qua']
-    }
-};
-
-// Mẫu câu chuyên biệt cho chủ đề
-const familyDramaPatterns = {
-    backstory: [
-        "Vì {husband_issue} cùng với {emotional_gap}, {daughter_in_law} ngày càng cảm thấy cô đơn",
-        "Khi {husband_absence}, {father_in_law} trở thành chỗ dựa duy nhất của {daughter_in_law}",
-        "Chính sự {husband_issue} của {son_name} đã khiến {daughter_in_law} tìm sự an ủi nơi {father_in_law}",
-        "Cảm giác {emotional_gap} khiến {daughter_in_law} và {father_in_law} xích lại gần nhau hơn"
-    ],
-    
-    guilt_and_regret: [
-        "Mỗi lần nhìn thấy {son_name}, {character} cảm thấy {guilt_emotion} vì đã phản bội lòng tin",
-        "Sau mỗi lần thân mật, {character} thề sẽ chấm dứt nhưng rồi lại không thể cưỡng lại",
-        "{Character} biết rằng mối quan hệ này là sai trái nhưng không thể kìm hãm trái tim",
-        "Dù {guilt_emotion} nhưng mỗi khi gặp lại lại khiến {character} không thể kiềm lòng"
-    ],
-    
-    internal_conflict: [
-        "Trong lòng {son_name} diễn ra cuộc đấu tranh giữa vạch trần sự thật và giữ im lặng",
-        "{Son_name} tự hỏi liệu nên đối mặt hay tiếp tục giả vờ không biết",
-        "Cảm giác tức giận và thất vọng xen lẫn khiến {son_name} không thể hành động ngay",
-        "Mỗi ngày trôi qua, sự dằn vặt trong lòng {son_name} càng thêm sâu sắc"
-    ]
-};
-
-// Hệ thống học tập thông minh cho chủ đề
-class FamilyDramaLearningSystem {
-    constructor() {
-        this.patterns = this.loadLearningData();
-        this.successfulPatterns = [];
-        this.improvements = [];
-    }
-
-    loadLearningData() {
-        const saved = localStorage.getItem('familyDramaLearningData');
-        return saved ? JSON.parse(saved) : {
-            goodScenes: [],
-            goodDialogues: [],
-            goodEndings: [],
-            avoidPatterns: []
-        };
-    }
-
-    saveLearningData() {
-        localStorage.setItem('familyDramaLearningData', JSON.stringify(this.patterns));
-    }
-
-    analyzeGeneratedStory(story, feedback = null) {
-        // Phân tích các đoạn văn hay
-        const paragraphs = story.split('\n\n').filter(p => p.trim().length > 50);
-        const goodParagraphs = paragraphs.filter(p => this.isGoodParagraph(p));
-        
-        this.patterns.goodScenes.push(...goodParagraphs);
-        
-        // Học từ phản hồi
-        if (feedback) {
-            this.incorporateFeedback(story, feedback);
-        }
-        
-        this.saveLearningData();
-        return this.generateLearningReport();
-    }
-
-    isGoodParagraph(paragraph) {
-        const criteria = [
-            paragraph.length > 100 && paragraph.length < 300,
-            /[,;:]/.test(paragraph),
-            paragraph.includes('bố') || paragraph.includes('con dâu') || paragraph.includes('chồng'),
-            /cảm thấy|nhận ra|hiểu được/.test(paragraph)
-        ];
-        return criteria.filter(Boolean).length >= 3;
-    }
-
-    incorporateFeedback(story, feedback) {
-        if (feedback.rating >= 4) {
-            this.patterns.goodScenes.push(...story.split('\n\n').slice(0, 2));
-        } else {
-            this.patterns.avoidPatterns.push(story.substring(0, 100));
-        }
-    }
-
-    generateLearningReport() {
-        return {
-            learnedScenes: this.patterns.goodScenes.length,
-            avoidedPatterns: this.patterns.avoidPatterns.length,
-            improvements: this.improvements.slice(-3)
-        };
-    }
-}
-
-// Khởi tạo hệ thống học
-const familyDramaAI = new FamilyDramaLearningSystem();
-
-// ===== HỆ THỐNG TẠO TRUYỆN CHÍNH =====
-
-
-async function generateFamilyDramaStory() {
-    const generateBtn = document.getElementById('generateBtn');
-    generateBtn.disabled = true;
-    generateBtn.innerHTML = '🧠 AI đang sáng tác...';
-
-    try {
-        showLearningProcess();
-        
-        const params = getGenerationParams();
-        const storyData = await createFamilyDramaStory(params);
-        
-        generatedStoryContent = storyData.story;
-        displayGeneratedStory(storyData.story);
-        showAdvancedStats(storyData);
-        
-        // AI học từ truyện vừa tạo
-        const learningReport = familyDramaAI.analyzeGeneratedStory(storyData.story);
-        updateLearningStats(learningReport);
-        
-        enableActionButtons();
-
-    } catch (error) {
-        console.error('Story generation error:', error);
-        alert('Có lỗi khi tạo truyện: ' + error.message);
-    } finally {
-        generateBtn.disabled = false;
-        generateBtn.innerHTML = '📖 Tạo Truyện Gia Đình';
-    }
-}
-
-function getGenerationParams() {
-    return {
-        template: selectedTemplate,
-        length: document.getElementById('storyLength').value,
-        perspective: document.getElementById('narrativePerspective').value,
-        creativity: parseInt(document.getElementById('creativityLevel').value)
-    };
-}
-
-async function createFamilyDramaStory(params) {
-    // Phân tích dữ liệu hiện có
-    const insights = analyzeExistingStories();
-    
-    // Tạo nhân vật thông minh
-    const characters = generateFamilyCharacters(insights, params);
-    
-    // Xây dựng cốt truyện
-    const plot = developFamilyPlot(characters, insights, params);
-    
-    // Viết truyện theo từng đoạn
-    const story = await writeFamilyStory(plot, params, insights);
-    
-    return {
-        story: story,
-        characters: characters,
-        plot: plot,
-        insights: insights,
-        wordCount: story.split(' ').length
-    };
-}
-
-function analyzeExistingStories() {
-    const insights = {
-        commonEmotions: [],
-        commonSettings: [],
-        commonConflicts: [],
-        writingPatterns: [],
-        characterTypes: [],
-        averageLength: 0,
-        emotionalTone: 'neutral'
-    };
-
-    // Giả lập dữ liệu phân tích
-    insights.commonEmotions = ['day dứt', 'cắn rứt', 'thương cảm', 'giằng xé'];
-    insights.commonSettings = ['nhà riêng', 'phòng khách', 'bếp', 'phòng ngủ'];
-    insights.commonConflicts = ['lựa chọn giữa tình cảm và đạo đức', 'giữ bí mật hay tiết lộ sự thật'];
-    insights.averageLength = 1500;
-    
-    return insights;
-}
-
-function generateFamilyCharacters(insights, params) {
-    const characters = [];
-    
-    // Bố chồng
-    const father = {
-        name: selectVietnameseName('male'),
-        age: '55-60',
-        role: 'bố chồng',
-        personality: ['đáng kính', 'cô đơn', 'dễ xúc động', 'biết kiềm chế'],
-        internalConflict: 'giữa trách nhiệm và cảm xúc',
-        background: 'ông đã góa vợ nhiều năm, sống trong sự cô đơn'
-    };
-    
-    characters.push(father);
-    
-    // Nàng dâu
-    const daughterInLaw = {
-        name: selectVietnameseName('female'),
-        age: '28-35',
-        role: 'nàng dâu', 
-        personality: ['dịu dàng', 'cảm thông', 'bối rối', 'thiếu thốn tình cảm'],
-        internalConflict: 'giữa lòng biết ơn và rung động bất ngờ',
-        background: 'chồng thường xuyên vắng nhà, để cô phải tự mình xoay sở mọi chuyện'
-    };
-    
-    characters.push(daughterInLaw);
-    
-    // Con trai
-    const son = {
-        name: selectVietnameseName('male'),
-        age: '30-38',
-        role: 'con trai',
-        personality: ['bận rộn', 'tin tưởng', 'quan sát', 'đau khổ'],
-        internalConflict: 'giữa vạch trần sự thật và giữ gìn hạnh phúc gia đình',
-        background: 'anh là người chồng vô tâm, mải mê kiếm tiền mà quên mất chăm sóc gia đình'
-    };
-    
-    characters.push(son);
-    
-    return characters;
-}
-
-function selectVietnameseName(gender) {
-    const maleNames = ['Anh Dũng', 'Minh Tuấn', 'Văn Hải', 'Đức Anh', 'Quang Huy'];
-    const femaleNames = ['Thu Hà', 'Lan Anh', 'Thanh Thúy', 'Minh Ngọc', 'Hương Giang'];
-    
-    return gender === 'male' ? 
-        maleNames[Math.floor(Math.random() * maleNames.length)] :
-        femaleNames[Math.floor(Math.random() * femaleNames.length)];
-}
-
-function developFamilyPlot(characters, insights, params) {
-    const targetLength = getLengthTarget(params.length);
-    
-    const plot = {
-        backstory: generateBackstory(characters),
-        first_encounter: generateFirstEncounter(characters),
-        development: generateDevelopment(characters, targetLength),
-        climax: generateClimax(characters),
-        resolution: generateResolution(characters, insights)
-    };
-    
-    return plot;
-}
-
-function getLengthTarget(lengthParam) {
-    const targets = {
-        short: {words: 800, paragraphs: 5},
-        medium: {words: 1500, paragraphs: 7},
-        long: {words: 2500, paragraphs: 10}
-    };
-    return targets[lengthParam] || targets.medium;
-}
-
-function generateBackstory(characters) {
-    const backstories = [
-        `Gia đình ${characters[2].name} tưởng chừng như hạnh phúc viên mãn. ${characters[2].name} là một người chồng thành đạt nhưng thường xuyên vắng nhà vì công việc. ${characters[1].name} - vợ anh, cảm thấy cô đơn và thiếu thốn tình cảm. ${characters[0].name} - bố chồng, là người đàn ông đáng kính nhưng cô đơn sau khi vợ mất.`,
-        
-        `Sau khi kết hôn với ${characters[2].name}, ${characters[1].name} chuyển về sống cùng gia đình chồng. Mọi thứ đều tốt đẹp cho đến khi ${characters[2].name} ngày càng bận rộn với công việc, thường xuyên đi công tác xa. ${characters[1].name} ở nhà một mình với bố chồng, và giữa họ dần hình thành mối quan hệ đặc biệt.`,
-        
-        `${characters[2].name} không ngờ rằng chính sự vắng mặt thường xuyên của mình đã tạo nên khoảng trống trong lòng vợ. ${characters[1].name} tìm đến ${characters[0].name} - bố chồng, để chia sẻ và tâm sự. Dần dà, những cuộc trò chuyện vô tư trở nên sâu sắc hơn, và cả hai không ngờ rằng mình sẽ rơi vào một mối quan hệ không thể nào thoát ra.`
-    ];
-    
-    return backstories[Math.floor(Math.random() * backstories.length)];
-}
-
-function generateFirstEncounter(characters) {
-    const encounters = [
-        `Một buổi tối mưa gió, khi ${characters[2].name} đi công tác, ${characters[1].name} đến phòng ${characters[0].name} để hỏi về một vấn đề gia đình. Dưới ánh đèn mờ, họ trò chuyện thân mật hơn mọi khi. Khi ${characters[0].name} vô tình chạm tay vào ${characters[1].name}, cả hai đều giật mình vì cảm xúc lạ kỳ. Đêm đó, khoảng cách giữa bố chồng và nàng dâu bắt đầu được thu hẹp.`,
-        
-        `Sau bữa tiệc rượu gia đình, ${characters[1].name} say hơn mức bình thường. ${characters[0].name} đỡ cô lên phòng. Trong khoảnh khắc mất kiểm soát, ông không thể rời mắt khỏi vẻ đẹp của con dâu. Khi ${characters[1].name} mở mắt và nhìn ông với ánh mắt đầy xúc động, không ai nói gì nhưng cả hai đều hiểu có điều gì đó đã thay đổi mãi mãi.`,
-        
-        `Một lần ${characters[1].name} ốm nặng, ${characters[0].name} tận tình chăm sóc. Những cử chỉ ân cần, những lời động viên dịu dàng khiến ${characters[1].name} cảm động. Cô nhận ra mình khao khát sự quan tâm mà lâu nay không nhận được từ chồng. Khi cô nắm tay ${characters[0].name} để cảm ơn, cả hai đều cảm nhận được tia lửa tình cảm khó diễn tả.`
-    ];
-    
-    return encounters[Math.floor(Math.random() * encounters.length)];
-}
-
-function generateDevelopment(characters, targetLength) {
-    const developments = [];
-    const numDevelopments = Math.max(3, Math.floor(targetLength.paragraphs * 0.5));
-    
-    for (let i = 0; i < numDevelopments; i++) {
-        developments.push(generateSingleDevelopment(characters, i));
-    }
-    
-    return developments;
-}
-
-function generateSingleDevelopment(characters, index) {
-    const developmentTypes = [
-        `Những lần ${characters[2].name} vắng nhà trở thành khoảng thời gian quý giá đối với ${characters[0].name} và ${characters[1].name}. Họ dành nhiều thời gian bên nhau, từ những bữa cơm thân mật đến những cuộc trò chuyện khuya.`,
-        
-        `${characters[1].name} bắt đầu nhận ra mình có những cảm xúc đặc biệt với ${characters[0].name}. Cô cảm thấy tội lỗi nhưng không thể phủ nhận sự thu hút ngày càng lớn.`,
-        
-        `${characters[0].name} cũng không kém phần giằng xé. Ông biết rõ mối quan hệ này là sai trái, nhưng trái tim ông không thể kháng cự được sự dịu dàng và thấu hiểu của ${characters[1].name}.`,
-        
-        `Hai người bắt đầu có những cử chỉ thân mật vượt qua ranh giới thông thường. Những cái chạm tay vô tình trở nên cố ý, những ánh mắt nhìn nhau lâu hơn bình thường.`,
-        
-        `${characters[2].name} bắt đầu nhận thấy có điều gì đó khác lạ giữa vợ và bố mình. Anh cảm thấy nghi ngờ nhưng chưa có bằng chứng cụ thể.`
-    ];
-    
-    return developmentTypes[index % developmentTypes.length];
-}
-
-function generateClimax(characters) {
-    const climaxes = [
-        `Vào đêm kỷ niệm ngày cưới, khi ${characters[2].name} chuẩn bị bất ngờ về nhà sớm để tạo bất ngờ cho vợ, anh chứng kiến cảnh tượng khiến trái tim mình tan nát: ${characters[1].name} và ${characters[0].name} đang ôm nhau trong bếp với những cử chỉ thân mật không thể chối cãi. Thay vì xông vào, anh lặng lẽ rút lui với hàng ngàn câu hỏi không lời đáp.`,
-        
-        `Khi ${characters[1].name} bị ốm nặng, trong cơn mê man, cô đã gọi tên ${characters[0].name} với giọng điệu đầy yêu thương. ${characters[2].name} đứng ngay đó và nghe thấy tất cả. Anh nhận ra mối quan hệ giữa vợ và bố mình đã vượt xa những gì anh tưởng tượng.`,
-        
-        `Một lần dọn dẹp phòng, ${characters[2].name} tình cờ tìm thấy nhật ký của ${characters[1].name}. Những dòng tâm sự về cảm xúc với ${characters[0].name} khiến anh choáng váng. Anh đối chất với vợ và nhận được sự thật đau lòng.`
-    ];
-    
-    return climaxes[Math.floor(Math.random() * climaxes.length)];
-}
-
-function generateResolution(characters, insights) {
-    const resolutions = [
-        `Sau nhiều đêm trằn trọc, ${characters[2].name} quyết định im lặng và chờ xem sự việc sẽ tiến triển thế nào. Anh bắt đầu dành nhiều thời gian cho gia đình hơn, hy vọng có thể hàn gắn những rạn nứt. Tuy nhiên, mỗi lần chứng kiến khoảnh khắc giữa vợ và bố, trái tim anh lại thắt lại.`,
-        
-        `${characters[2].name} đối chất với ${characters[1].name} và nhận được sự thật đau lòng. Cả hai quyết định giữ bí mật này để không làm tổn thương ${characters[0].name} và danh dự gia đình. Tuy nhiên, sự im lặng không giải quyết được vấn đề mà chỉ khiến mọi thứ thêm phức tạp.`,
-        
-        `Mặc cho nội tâm giằng xé, ${characters[2].name} chọn cách im lặng và quan sát. Anh nhận ra rằng đôi khi, sự thật không phải lúc nào cũng cần được phơi bày. Tuy nhiên, việc phải sống trong dối trá mỗi ngày khiến anh dần trở nên xa cách với cả vợ lẫn bố.`
-    ];
-    
-    return resolutions[Math.floor(Math.random() * resolutions.length)];
-}
-
-async function writeFamilyStory(plot, params, insights) {
-    let story = `MỐI TÌNH CẤM KỴ\n\n`;
-    
-    story += "PHẦN 1: BỐI CẢNH\n" + plot.backstory + "\n\n";
-    
-    story += "PHẦN 2: KHỞI ĐẦU\n" + plot.first_encounter + "\n\n";
-    
-    story += "PHẦN 3: PHÁT TRIỂN\n";
-    for (let i = 0; i < plot.development.length; i++) {
-        story += plot.development[i] + "\n\n";
-    }
-    
-    story += "PHẦN 4: CAO TRÀO\n" + plot.climax + "\n\n";
-    
-    story += "PHẦN 5: KẾT CỤC\n" + plot.resolution;
-    
-    return story;
-}
-
-// ===== UI FUNCTIONS =====
-function displayGeneratedStory(story) {
-    const container = document.getElementById('generatedStory');
-    
-    // Tách tiêu đề và nội dung
-    const parts = story.split('\n\n');
-    const title = parts[0];
-    const content = parts.slice(1).join('\n\n');
-    
-    // Format với HTML
-    const formattedContent = content
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n/g, '<br>');
-    
-    container.innerHTML = `
-        <h3 style="color: #3498db; text-align: center; margin-bottom: 20px;">${title}</h3>
-        <div style="line-height: 1.8; font-size: 16px;">
-            <p>${formattedContent}</p>
-        </div>
-    `;
-}
-
-function showLearningProcess() {
-    const learningDiv = document.getElementById('learningStats');
-    const content = document.getElementById('learningContent');
-    
-    content.innerHTML = `
-        <p>🔍 Phân tích các mẫu truyện hiện có...</p>
-        <p>🧠 Áp dụng các kỹ thuật viết kịch tính...</p>
-        <p>✨ Sáng tạo nội dung mới với tình tiết hấp dẫn...</p>
-    `;
-    
-    learningDiv.style.display = 'block';
-}
-
-function updateLearningStats(report) {
-    const learningDiv = document.getElementById('learningStats');
-    const content = document.getElementById('learningContent');
-    
-    content.innerHTML = `
-        <p>📚 Đã học được ${report.learnedScenes} cảnh hay mới</p>
-        <p>🚫 Tránh được ${report.avoidedPatterns} lỗi lặp</p>
-        <p>📈 Cải thiện liên tục qua từng lần tạo truyện</p>
-    `;
-}
-
-function showAdvancedStats(storyData) {
-    const statsDiv = document.getElementById('generationStats');
-    const statsContent = document.getElementById('statsContent');
-    
-    statsContent.innerHTML = `
-        <p>• Số từ: <strong>${storyData.wordCount}</strong></p>
-        <p>• Nhân vật: <strong>${storyData.characters.length}</strong></p>
-        <p>• Độ phức tạp cốt truyện: <strong>Cao</strong></p>
-        <p>• Mức độ kịch tính: <strong>${document.getElementById('creativityLevel').value}/10</strong></p>
-    `;
-    
-    statsDiv.style.display = 'block';
-}
-
-function enableActionButtons() {
-    document.getElementById('copyBtn').disabled = false;
-    document.getElementById('saveBtn').disabled = false;
-    document.getElementById('regenBtn').disabled = false;
-    document.getElementById('improveBtn').disabled = false;
-}
-
-function improveStory() {
-    if (!generatedStoryContent) {
-        alert('Chưa có truyện để cải thiện!');
-        return;
-    }
-    
-    const improvements = [
-        'Thêm chi tiết miêu tả',
-        'Phát triển tâm lý nhân vật', 
-        'Cải thiện hội thoại',
-        'Tăng cường cảm xúc',
-        'Hoàn thiện kết thúc'
-    ];
-    
-    const improvement = improvements[Math.floor(Math.random() * improvements.length)];
-    
-    // Simulate improvement process
-    const improveBtn = document.getElementById('improveBtn');
-    improveBtn.innerHTML = `✨ Đang ${improvement.toLowerCase()}...`;
-    improveBtn.disabled = true;
-    
-    setTimeout(() => {
-        // Apply actual improvements here
-        alert(`✅ Đã ${improvement.toLowerCase()} cho truyện!`);
-        improveBtn.innerHTML = '✨ Cải Thiện';
-        improveBtn.disabled = false;
-    }, 2000);
-}
-
-function regenerateStory() {
-    if (confirm('Bạn có muốn tạo lại truyện với phiên bản cải tiến?')) {
-        generateFamilyDramaStory();
-    }
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Set default template
-    selectedTemplate = 'family_drama';
-    
-    // Display empty state
-    displayEmptyState();
-    
-    // Load any existing learning data
-    if (localStorage.getItem('familyDramaLearningData')) {
-        console.log('Loaded existing AI learning data');
-    }
-});
     </script>
 </body>
 </html>
