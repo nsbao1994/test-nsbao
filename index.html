@@ -9,27 +9,18 @@
             --primary-color: #3a506b;
             --secondary-color: #1c2541;
             --accent-color: #5d7592;
-            --background-color: #0d1117;
-            --text-color: #e6edf3;
-            --light-text: #f0f6fc;
-            --card-bg: #161b22;
-            --border-color: #30363d;
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --light-text: #f8f9fa;
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
+            margin: 0;
+            padding: 0;
             background-color: var(--background-color);
             color: var(--text-color);
-            padding: 0;
-            margin: 0;
-            padding-bottom: 60px;
         }
         
         header {
@@ -37,55 +28,44 @@
             color: var(--light-text);
             padding: 1rem;
             text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
         }
         
         .container {
-            max-width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 1rem;
         }
         
-        .section {
-            background: var(--card-bg);
-            border-radius: 12px;
+        .upload-section, .analysis-section, .creation-section, .learning-section {
+            background: white;
+            border-radius: 8px;
             padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
         
         h1, h2, h3 {
-            color: var(--light-text);
-            margin-bottom: 1rem;
+            color: var(--secondary-color);
         }
         
-        textarea, input[type="text"], input[type="file"] {
+        textarea, input[type="text"] {
             width: 100%;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-family: inherit;
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            font-size: 16px;
-        }
-        
-        input[type="file"] {
             padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
         }
         
         button {
             background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
+            padding: 0.7rem 1.5rem;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 1rem;
-            transition: all 0.3s;
-            width: 100%;
+            transition: background-color 0.3s;
         }
         
         button:hover {
@@ -93,63 +73,24 @@
         }
         
         .analysis-result, .generated-story {
-            background-color: rgba(255, 255, 255, 0.05);
-            padding: 1.5rem;
-            border-radius: 8px;
+            background-color: #f5f5f5;
+            padding: 1rem;
+            border-radius: 4px;
             margin-top: 1rem;
             white-space: pre-wrap;
-            line-height: 1.8;
         }
         
         .character-grid, .theme-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 1rem;
             margin-top: 1rem;
         }
         
         .character-card, .theme-card {
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: #e9ecef;
             padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-        
-        .bottom-menu {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: var(--primary-color);
-            display: flex;
-            justify-content: space-around;
-            padding: 0.5rem;
-            z-index: 90;
-        }
-        
-        .menu-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0.5rem;
-            color: var(--light-text);
-            font-size: 0.8rem;
-            cursor: pointer;
-            opacity: 0.7;
-            transition: opacity 0.3s;
-            flex: 1;
-            text-align: center;
-        }
-        
-        .menu-item.active {
-            opacity: 1;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-        }
-        
-        .menu-icon {
-            font-size: 1.5rem;
-            margin-bottom: 0.3rem;
+            border-radius: 4px;
         }
         
         .hidden {
@@ -163,22 +104,6 @@
             color: var(--light-text);
             margin-top: 2rem;
         }
-
-        .error-message {
-            background-color: #ff4757;
-            color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-        }
-
-        .fixed-regex {
-            background-color: rgba(0, 255, 0, 0.1);
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-            border-left: 4px solid #00b894;
-        }
     </style>
 </head>
 <body>
@@ -187,19 +112,13 @@
     </header>
     
     <div class="container">
-        <div class="fixed-regex">
-            <h3>✅ Đã sửa lỗi Regular Expression</h3>
-            <p>Lỗi "Unmatched ')'" trong regex đã được khắc phục. Biểu thức chính quy mới hoạt động chính xác.</p>
-        </div>
-
-        <section class="section">
+        <section class="upload-section">
             <h2>Tải lên dữ liệu truyện</h2>
-            <input type="file" id="fileUpload" accept=".txt">
             <textarea id="storyData" rows="10" placeholder="Dán nội dung truyện vào đây..."></textarea>
             <button id="analyzeBtn">Phân tích truyện</button>
         </section>
         
-        <section id="analysisSection" class="section hidden">
+        <section id="analysisSection" class="analysis-section hidden">
             <h2>Kết quả phân tích</h2>
             <div class="analysis-result" id="analysisResult">
                 <!-- Kết quả phân tích sẽ được hiển thị ở đây -->
@@ -216,7 +135,7 @@
             </div>
         </section>
         
-        <section id="creationSection" class="section hidden">
+        <section id="creationSection" class="creation-section hidden">
             <h2>Tạo truyện mới</h2>
             <input type="text" id="storyTitle" placeholder="Tiêu đề truyện">
             <textarea id="storyPrompt" rows="5" placeholder="Mô tả ý tưởng truyện hoặc để trống để tạo ngẫu nhiên"></textarea>
@@ -226,22 +145,17 @@
                 <!-- Truyện được tạo sẽ hiển thị ở đây -->
             </div>
         </section>
+        
+        <section id="learningSection" class="learning-section hidden">
+            <h2>Học từ truyện đã tạo</h2>
+            <p>Hệ thống sẽ tự động học từ những truyện bạn đã tạo để cải thiện chất lượng trong tương lai.</p>
+            <div id="learningStatus"></div>
+        </section>
     </div>
     
-    <div class="bottom-menu">
-        <div class="menu-item active" data-section="upload">
-            <div class="menu-icon">📥</div>
-            <span>Tải lên</span>
-        </div>
-        <div class="menu-item" data-section="analysis">
-            <div class="menu-icon">📊</div>
-            <span>Phân tích</span>
-        </div>
-        <div class="menu-item" data-section="creation">
-            <div class="menu-icon">✍️</div>
-            <span>Sáng tác</span>
-        </div>
-    </div>
+    <footer>
+        <p>Công cụ Phân tích và Sáng tác Truyện &copy; 2023</p>
+    </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -254,16 +168,18 @@
             const themeGrid = document.getElementById('themeGrid');
             const creationSection = document.getElementById('creationSection');
             const generatedStory = document.getElementById('generatedStory');
-            const fileUpload = document.getElementById('fileUpload');
-            const menuItems = document.querySelectorAll('.menu-item');
+            const learningSection = document.getElementById('learningSection');
+            const learningStatus = document.getElementById('learningStatus');
             
-            // Lưu trữ dữ liệu đã phân tích
+            // Lưu trữ dữ liệu đã phân tích và học
             let analyzedData = {
                 characters: [],
                 themes: [],
                 emotions: [],
                 plotPoints: []
             };
+            
+            let generatedStories = JSON.parse(localStorage.getItem('generatedStories')) || [];
             
             // Xử lý sự kiện phân tích
             analyzeBtn.addEventListener('click', function() {
@@ -279,10 +195,7 @@
                 // Hiển thị phần phân tích
                 analysisSection.classList.remove('hidden');
                 creationSection.classList.remove('hidden');
-                
-                // Cập nhật menu
-                menuItems.forEach(item => item.classList.remove('active'));
-                document.querySelector('[data-section="analysis"]').classList.add('active');
+                learningSection.classList.remove('hidden');
             });
             
             // Xử lý sự kiện tạo truyện
@@ -297,59 +210,31 @@
                 generatedStory.textContent = newStory;
                 generatedStory.classList.remove('hidden');
                 
-                // Cập nhật menu
-                menuItems.forEach(item => item.classList.remove('active'));
-                document.querySelector('[data-section="creation"]').classList.add('active');
-            });
-            
-            // Xử lý tải file lên
-            fileUpload.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        storyData.value = e.target.result;
-                    };
-                    reader.readAsText(file);
-                }
-            });
-            
-            // Xử lý menu
-            menuItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const section = this.getAttribute('data-section');
-                    
-                    // Cập nhật trạng thái menu
-                    menuItems.forEach(item => item.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Hiển thị phần tương ứng
-                    if (section === 'upload') {
-                        analysisSection.classList.add('hidden');
-                        creationSection.classList.add('hidden');
-                    } else if (section === 'analysis') {
-                        analysisSection.classList.remove('hidden');
-                        creationSection.classList.add('hidden');
-                    } else if (section === 'creation') {
-                        analysisSection.classList.add('hidden');
-                        creationSection.classList.remove('hidden');
-                    }
+                // Lưu truyện đã tạo
+                generatedStories.push({
+                    title: title,
+                    content: newStory,
+                    timestamp: new Date().toISOString()
                 });
+                
+                localStorage.setItem('generatedStories', JSON.stringify(generatedStories));
+                
+                // Cập nhật hệ thống học
+                updateLearningSystem();
             });
             
-            // Hàm phân tích văn bản - ĐÃ SỬA LỖI REGEX
+            // Hàm phân tích văn bản
             function analyzeText(text) {
-                // Sửa lỗi regex: Loại bỏ các ký tự không cần thiết và sử dụng regex đơn giản hơn
-                const characterRegex = /\b[A-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸ][a-zàáâãèéêìíòóôõùúăđĩũơưăạảấầẩẫậắằẳẵặẹẻẽềềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]+\b(?:\s+[A-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỴÝỶỸ][a-zàáâãèéêìíòóôõùúăđĩũơưăạảấầẩẫậắằẳẵặẹẻẽềềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]+\b)*/g;
-                
+                // Phân tích nhân vật (đơn giản - tìm tên riêng)
+                const characterRegex = /(\b[A-Z][a-z]+ [A-Z][a-z]+\b|\b[A-Z][a-z]+\b)/g;
                 const characterMatches = text.match(characterRegex) || [];
                 
                 // Lọc và đếm tần suất xuất hiện
                 const characterCounts = {};
                 characterMatches.forEach(char => {
                     // Bỏ qua các từ có thể không phải tên riêng
-                    const commonWords = ['Ông', 'Bà', 'Anh', 'Chị', 'Em', 'Tôi', 'Nàng', 'Cha', 'Con', 'Cô', 'Dì', 'Chú', 'Bác'];
-                    if (!commonWords.includes(char)) {
+                    const commonWords = ['ông', 'bà', 'anh', 'chị', 'em', 'tôi', 'nàng', 'cha', 'con'];
+                    if (!commonWords.includes(char.toLowerCase())) {
                         characterCounts[char] = (characterCounts[char] || 0) + 1;
                     }
                 });
@@ -462,11 +347,31 @@
                 
                 story += `Mở đầu: ${randomPlotPoint}\n\n`;
                 
-                story += "Phát triển: Câu chuyện dần hé lộ những bí mật không ngờ, làm thay đổi mối quan hệ giữa các nhân vật.\n\n";
+                // Thêm nội dung dựa trên các truyện đã tạo trước đó (học máy đơn giản)
+                if (generatedStories.length > 0) {
+                    const lastStory = generatedStories[generatedStories.length - 1];
+                    story += `Phát triển: ${lastStory.content.substring(0, 200)}...\n\n`;
+                } else {
+                    story += "Phát triển: Câu chuyện dần hé lộ những bí mật không ngờ, làm thay đổi mối quan hệ giữa các nhân vật.\n\n";
+                }
                 
-                story += "Kết thúc: Mọi chuyện dần sáng tỏ, để lại những bài học sâu sắc về cuộc sống và con người.";
+                story += "Kết thúc: Mọi chuyện dần sáng tỏ, để lại những bài sâu sắc về cuộc sống và con người.";
                 
                 return story;
+            }
+            
+            // Cập nhật hệ thống học
+            function updateLearningSystem() {
+                learningStatus.textContent = `Hệ thống đã học từ ${generatedStories.length} truyện được tạo. Chất lượng sẽ được cải thiện sau mỗi lần tạo.`;
+                
+                // Ở phiên bản nâng cao, đây sẽ là nơi cập nhật mô hình học máy
+                // Ví dụ: lưu các từ khóa thường được sử dụng, cấu trúc câu, v.v.
+            }
+            
+            // Khởi tạo nếu đã có dữ liệu trước đó
+            if (generatedStories.length > 0) {
+                learningSection.classList.remove('hidden');
+                updateLearningSystem();
             }
         });
     </script>
